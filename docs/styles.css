@@ -1,0 +1,163 @@
+:root {
+  --ink: #15303a;
+  --ink-2: #2f6475;
+  --muted: #4a6872;
+  --muted-2: #5d7f8a;
+  --accent: #1f6f86;
+  --accent-2: #3f8fa6;
+  --dot: #5aaac0;
+  --line: #d9e8ec;
+  --line-2: #cfe2e8;
+  --line-3: #e6f0f3;
+  --soft: #f4f9fa;
+  --soft-2: #e2eff2;
+  --chip: #e3f0f3;
+  --screen: #eef4f5;
+  --mono: 'JetBrains Mono', monospace;
+}
+
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  background: #fff;
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-tap-highlight-color: transparent;
+}
+
+button { font: inherit; color: inherit; }
+
+/* 滑桿：2px 細線 + 白底圓點 */
+input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #c3dbe2; border-radius: 1px; }
+input[type=range]::-moz-range-track { height: 2px; background: #c3dbe2; border-radius: 1px; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 22px; height: 22px; margin-top: -10px; border-radius: 50%; background: #fff; border: 1.5px solid var(--accent-2); box-shadow: 0 1px 3px rgba(21,48,58,.15); }
+input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: #fff; border: 1.5px solid var(--accent-2); }
+
+/* ---------- 首頁 ---------- */
+.home { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #fff; }
+.home-inner { padding: 56px 20px 40px; box-sizing: border-box; }
+.title {
+  margin: 8px 8px 40px; font-size: 34px; font-weight: 500;
+  letter-spacing: .3em; text-indent: .3em; text-align: center; color: var(--ink-2);
+}
+.list { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.row {
+  display: flex; align-items: center; gap: 18px; min-width: 0;
+  padding: 26px 8px; border: none; border-bottom: 1px solid var(--line);
+  background: none; text-align: left; cursor: pointer; width: 100%;
+}
+.row:hover { background: var(--soft); }
+.row-icon {
+  width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--chip);
+  display: flex; align-items: center; justify-content: center;
+}
+.row-icon img { width: 34px; height: 34px; display: block; }
+.row-icon svg { width: 26px; height: 26px; display: block; }
+.row-name { font-size: 28px; font-weight: 300; letter-spacing: .04em; color: var(--ink); }
+
+/* ---------- 共用全螢幕 ---------- */
+.screen { position: fixed; inset: 0; background: var(--screen); overflow-y: auto; }
+.screen-center { display: flex; justify-content: center; overflow: hidden; }
+
+/* ---------- 設定頁 ---------- */
+.setup-inner {
+  max-width: 480px; margin: 0 auto; min-height: 100%;
+  display: flex; flex-direction: column; padding: 44px 24px 0; box-sizing: border-box;
+}
+.back {
+  align-self: flex-start; border: none; background: none; font-size: 15px; color: var(--ink-2);
+  padding: 8px 0; min-height: 44px; cursor: pointer;
+}
+.ex-name { margin: 12px 4px 4px; font-size: 26px; font-weight: 700; }
+.wip {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 10px; padding-bottom: 80px; text-align: center;
+}
+.wip-title { font-size: 20px; font-weight: 500; }
+.setup-body { flex: 1; display: flex; flex-direction: column; }
+.desc { margin: 0 4px 28px; font-size: 14px; color: var(--muted); }
+.section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 4px 10px; }
+.section-title { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.music-title { margin: 0 4px 10px; }
+.reset { border: none; background: none; font-size: 12px; color: var(--muted-2); cursor: pointer; padding: 4px 0; }
+.panel { background: #fff; border: 1px solid var(--line); border-radius: 20px; }
+.rows { padding: 4px 16px; }
+.phase-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid var(--line-3);
+}
+.phase-row:last-child { border-bottom: none; }
+.phase-row-label { font-size: 15px; }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.step {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-2);
+  background: var(--soft); font-size: 20px; color: var(--ink-2); cursor: pointer; padding: 0;
+}
+.step:hover { background: var(--soft-2); }
+.step-val { font: 400 18px var(--mono); min-width: 56px; text-align: center; }
+.hint { margin: 10px 4px 28px; font-size: 12px; color: var(--muted-2); }
+.music-hint { margin: 12px 4px 0; }
+.minutes-val { font: 500 16px var(--mono); }
+.slider-panel { padding: 18px 16px 12px; margin-bottom: 28px; }
+.slider-panel input { width: 100%; height: 28px; margin: 0; }
+.ticks { display: flex; justify-content: space-between; font: 400 11px var(--mono); color: var(--muted-2); margin-top: 4px; }
+.music-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.music-opt {
+  height: 48px; border-radius: 14px; border: 1px solid var(--line); background: #fff; color: var(--ink);
+  font-size: 14px; font-weight: 500; cursor: pointer;
+}
+.music-opt.on { background: var(--ink); color: var(--screen); border-color: var(--ink); }
+.start-bar {
+  position: sticky; bottom: 0; margin-top: auto; padding: 28px 0 32px;
+  background: linear-gradient(rgba(238,244,245,0), var(--screen) 30%);
+}
+
+.btn { width: 100%; height: 56px; border-radius: 16px; font-size: 17px; font-weight: 500; cursor: pointer; }
+.btn-primary { border: none; background: var(--ink); color: var(--screen); }
+.btn-secondary { border: 1px solid var(--line-2); background: #fff; color: var(--ink); }
+
+/* ---------- 練習畫面 ---------- */
+.run-inner {
+  width: 100%; max-width: 480px; display: flex; flex-direction: column;
+  padding: 44px 24px 36px; box-sizing: border-box;
+}
+.run-head { display: flex; justify-content: space-between; align-items: center; }
+.run-name { font-size: 15px; font-weight: 500; }
+.run-left { font: 400 15px var(--mono); color: var(--ink-2); }
+.progress { height: 3px; background: var(--line); border-radius: 2px; margin-top: 14px; overflow: hidden; }
+.progress-fill { height: 100%; width: 0; background: var(--dot); transition: width 1s linear; }
+.stage { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+
+.dot {
+  position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--dot); box-shadow: 0 0 0 6px rgba(90,170,192,.25);
+}
+.anim-box { width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; }
+.box-frame { width: 220px; height: 220px; position: relative; border: 2px solid var(--line-2); border-radius: 6px; box-sizing: border-box; }
+.anim-n { width: 260px; height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; }
+.n-frame {
+  width: 220px; height: 220px; position: relative; border: 2px solid var(--line-2);
+  border-bottom: none; border-radius: 8px 8px 0 0; box-sizing: border-box;
+}
+.n-labels { width: 236px; display: flex; justify-content: space-between; font-size: 12px; color: var(--muted-2); }
+#animFig { display: block; }
+.anim-wave { width: 300px; display: flex; flex-direction: column; gap: 12px; }
+.wave-box { position: relative; width: 300px; height: 160px; }
+.wave-svg {
+  position: absolute; inset: 0;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 22%, #000 78%, transparent);
+}
+.wave-cycle { text-align: center; font: 400 11px var(--mono); color: var(--muted-2); white-space: nowrap; }
+.phase { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.phase-label { font-size: 20px; font-weight: 500; min-height: 30px; }
+.phase-count { font: 400 40px var(--mono); color: var(--accent); min-height: 52px; }
+
+/* ---------- 完成畫面 ---------- */
+.done-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+.done-tag { font-size: 13px; letter-spacing: .3em; color: var(--ink-2); }
+.done-time { font: 300 56px/1 var(--mono); }
+.done-name { font-size: 15px; color: var(--muted); }
+.done-actions { display: flex; flex-direction: column; gap: 10px; }
