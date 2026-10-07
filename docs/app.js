@@ -183,6 +183,69 @@ function stopMusic(immediate) {
   }, 30);
 }
 
+// ---------- 節拍音效（即時合成） ----------
+let ac = null, noiseBuf = null, breath = null;
+function ctx() {
+  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
+  if (ac.state === 'suspended') ac.resume();
+  return ac;
+}
+function noise() {
+  if (!noiseBuf) {
+    noiseBuf = ac.createBuffer(1, ac.sampleRate * 3, ac.sampleRate);
+    const d = noiseBuf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  }
+  const s = ac.createBufferSource();
+  s.buffer = noiseBuf; s.loop = true;
+  return s;
+}
+function stopBreath() {
+  const b = breath; if (!b) return;
+  breath = null;
+  const t = ac.currentTime;
+  try { b.g.gain.cancelScheduledValues(t); b.g.gain.setTargetAtTime(0, t, .08); b.s.stop(t + .5); } catch (e) {}
+}
+// 諧振式呼吸：每段開頭敲一下鼓（吸氣高音、吐氣低音）
+function drumFx(high) {
+  ctx();
+  const now = ac.currentTime, f0 = high ? 520 : 390;
+  [[1, .32, .22], [1.5, .12, .12], [2.4, .06, .07]].forEach(([m, v, d]) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = m === 1 ? 'triangle' : 'sine';
+    o.frequency.setValueAtTime(f0 * m * 1.15, now);
+    o.frequency.exponentialRampToValueAtTime(f0 * m, now + .02);
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(v, now + .002);
+    g.gain.exponentialRampToValueAtTime(.001, now + d);
+    o.connect(g); g.connect(ac.destination);
+    o.start(now); o.stop(now + d + .05);
+  });
+  const s = noise(), hp = ac.createBiquadFilter(), ng = ac.createGain();
+  hp.type = 'highpass'; hp.frequency.value = 4000;
+  ng.gain.setValueAtTime(.1, now); ng.gain.exponentialRampToValueAtTime(.001, now + .025);
+  s.connect(hp); hp.connect(ng); ng.connect(ac.destination);
+  s.start(now); s.stop(now + .04);
+}
+// 其他練習：吸氣、吐氣時播放呼吸聲，停住時安靜
+function breathFx(k, t) {
+  stopBreath();
+  if (k === HOLD || !t) return;
+  ctx();
+  const now = ac.currentTime, s = noise(), bp = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), g = ac.createGain();
+  bp.type = 'bandpass'; bp.Q.value = .8; lp.type = 'lowpass'; lp.frequency.value = 3200;
+  const inh = k === IN, peak = inh ? .16 : .2, a = Math.min(.6, t * .35);
+  bp.frequency.setValueAtTime(inh ? 700 : 1300, now);
+  bp.frequency.linearRampToValueAtTime(inh ? 1500 : 600, now + t);
+  g.gain.setValueAtTime(0, now);
+  g.gain.linearRampToValueAtTime(peak, now + a);
+  g.gain.setValueAtTime(peak, now + Math.max(a, t * .6));
+  g.gain.linearRampToValueAtTime(0, now + t);
+  s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(ac.destination);
+  s.start(now); s.stop(now + t + .05);
+  breath = { s, g };
+}
+
 // ---------- 畫面 ----------
 const screens = { setup: $('setup'), run: $('run'), done: $('done') };
 function show(mode) {
@@ -259,7 +322,7 @@ function renderSetup() {
 // ---------- 流程 ----------
 function clearPhase() { phaseTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); phaseTimers = []; }
 function clearAll() {
-  clearPhase(); cancelAnimationFrame(raf);
+  clearPhase(); cancelAnimationFrame(raf); stopBreath();
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
@@ -287,6 +350,8 @@ function setDot(el, x, y, dur) {
 function run(i) {
   const ex = EX[cur], seq = seqOf(ex), secs = secsOf(ex), [bi, label] = seq[i], t = secs[bi];
   clearPhase();
+  const k = ex.base[bi][0];
+  if (ex.id === 'belly') { stopBreath(); if (t) drumFx(k === IN); } else breathFx(k, t);
   if (i === 0) waveStart = performance.now();
   const el = dotEl(ex);
   if (el) {
@@ -312,6 +377,7 @@ function updateTotal() {
 function start() {
   clearAll();
   const ex = EX[cur], total = state.minutes * 60, end = Date.now() + total * 1000;
+  ctx(); // 在按下按鈕時就啟用音效，手機瀏覽器才不會擋
   if (state.music !== 'none' && !audio) playMusic(state.music);
 
   $('animBox').hidden = ex.id !== 'box';
