@@ -186,10 +186,33 @@ function stopMusic(immediate) {
 // ---------- 節拍音效（即時合成） ----------
 let ac = null, noiseBuf = null, breath = null;
 function ctx() {
-  if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
-  if (ac.state === 'suspended') ac.resume();
+  if (!ac) {
+    // iPhone 靜音模式下仍要播放音效（Safari 17+）
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    ac = new (window.AudioContext || window.webkitAudioContext)();
+    // 在點擊當下播一段無聲，解鎖手機上的音效
+    const s = ac.createBufferSource();
+    s.buffer = ac.createBuffer(1, 1, ac.sampleRate);
+    s.connect(ac.destination); s.start(0);
+  }
+  if (ac.state === 'suspended' || ac.state === 'interrupted') ac.resume();
   return ac;
 }
+
+// 較舊的 iPhone 在靜音模式會把合成音效靜音，播放一段無聲音檔可以避免
+const keepAlive = (() => {
+  const n = 4000, buf = new Uint8Array(44 + n), v = new DataView(buf.buffer);
+  const str = (o, s) => { for (let i = 0; i < s.length; i++) buf[o + i] = s.charCodeAt(i); };
+  str(0, 'RIFF'); v.setUint32(4, 36 + n, true); str(8, 'WAVEfmt ');
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+  v.setUint32(24, 8000, true); v.setUint32(28, 8000, true); v.setUint16(32, 1, true); v.setUint16(34, 8, true);
+  str(36, 'data'); v.setUint32(40, n, true); buf.fill(128, 44);
+  let bin = ''; buf.forEach(b => { bin += String.fromCharCode(b); });
+  const a = new Audio('data:audio/wav;base64,' + btoa(bin));
+  a.loop = true;
+  a.setAttribute('playsinline', '');
+  return a;
+})();
 function noise() {
   if (!noiseBuf) {
     noiseBuf = ac.createBuffer(1, ac.sampleRate * 3, ac.sampleRate);
@@ -234,7 +257,7 @@ function breathFx(k, t) {
   ctx();
   const now = ac.currentTime, s = noise(), bp = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), g = ac.createGain();
   bp.type = 'bandpass'; bp.Q.value = .8; lp.type = 'lowpass'; lp.frequency.value = 3200;
-  const inh = k === IN, peak = inh ? .16 : .2, a = Math.min(.6, t * .35);
+  const inh = k === IN, peak = inh ? .4 : .5, a = Math.min(.6, t * .35);
   bp.frequency.setValueAtTime(inh ? 700 : 1300, now);
   bp.frequency.linearRampToValueAtTime(inh ? 1500 : 600, now + t);
   g.gain.setValueAtTime(0, now);
@@ -322,7 +345,7 @@ function renderSetup() {
 // ---------- 流程 ----------
 function clearPhase() { phaseTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); phaseTimers = []; }
 function clearAll() {
-  clearPhase(); cancelAnimationFrame(raf); stopBreath();
+  clearPhase(); cancelAnimationFrame(raf); stopBreath(); keepAlive.pause();
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
@@ -378,6 +401,7 @@ function start() {
   clearAll();
   const ex = EX[cur], total = state.minutes * 60, end = Date.now() + total * 1000;
   ctx(); // 在按下按鈕時就啟用音效，手機瀏覽器才不會擋
+  keepAlive.play().catch(() => {});
   if (state.music !== 'none' && !audio) playMusic(state.music);
 
   $('animBox').hidden = ex.id !== 'box';
