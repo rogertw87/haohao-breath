@@ -33,7 +33,9 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
+// 非洲鼓：等 audio/drums.mp3 放上來後，把 ['drums', '非洲鼓'] 加回選項
 const MUSIC = [['none', '無'], ['handpan', '手碟']];
+const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3' };
 const KEY = 'haohao-breath-settings';
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -159,12 +161,12 @@ function tick() {
   raf = requestAnimationFrame(tick);
 }
 
-// ---------- 背景音樂（手碟，練習開始時淡入） ----------
+// ---------- 背景音樂（手碟、非洲鼓，練習開始時淡入） ----------
 let audio = null, fadeIv = 0;
 function playMusic(kind) {
   stopMusic(true);
-  if (kind !== 'handpan') return;
-  const au = new Audio('audio/handpan.mp3');
+  if (!MUSIC_FILES[kind]) return;
+  const au = new Audio(MUSIC_FILES[kind]);
   au.loop = true; au.volume = 0; au.play().catch(() => {});
   audio = au;
   let v = 0;
