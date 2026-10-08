@@ -33,8 +33,7 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
-// 非洲鼓：等 audio/drums.mp3 放上來後，把 ['drums', '非洲鼓'] 加回選項
-const MUSIC = [['none', '無'], ['handpan', '手碟']];
+const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓']];
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3' };
 const KEY = 'haohao-breath-settings';
 
