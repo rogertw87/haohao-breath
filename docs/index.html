@@ -4,13 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>好好呼吸</title>
+<script>try{if((JSON.parse(localStorage.getItem('haohao-breath-settings'))||{}).theme==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=5">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 <main class="home">
+  <button class="theme-toggle" id="themeToggle" aria-label="切換深淺色"><svg viewBox="0 0 24 24"><path id="themeIcon"></path></svg></button>
   <div class="home-inner">
     <h1 class="title">好好呼吸</h1>
     <div class="list" id="list"></div>
@@ -82,7 +84,7 @@
 
       <!-- 呼氣練習：人物動畫 -->
       <svg class="anim" id="animFig" hidden width="300" height="270" viewBox="0 0 400 360">
-        <g data-k="body"><path d="M58 380 L60 360 C 66 316, 110 296, 160 290 L240 290 C 290 296, 334 316, 340 360 L342 380 Z" fill="#d3e6ec"></path><path d="M170 292 C 180 306, 220 306, 230 292" fill="none" stroke="#3f8fa6" stroke-width="3" stroke-linecap="round"></path></g>
+        <g data-k="body"><path d="M58 380 L60 360 C 66 316, 110 296, 160 290 L240 290 C 290 296, 334 316, 340 360 L342 380 Z" class="fig-body"></path><path class="fig-collar" d="M170 292 C 180 306, 220 306, 230 292" fill="none" stroke-width="3" stroke-linecap="round"></path></g>
         <g data-k="head">
           <rect x="176" y="250" width="48" height="46" rx="14" fill="#E9B893"></rect>
           <ellipse cx="108" cy="168" rx="16" ry="24" fill="#EDBE99"></ellipse>
@@ -109,9 +111,9 @@
       <div class="anim anim-wave" id="animWave" hidden>
         <div class="wave-box">
           <svg class="wave-svg" width="300" height="160" viewBox="0 0 300 160">
-            <line x1="0" y1="80" x2="300" y2="80" stroke="#dceaee" stroke-width="1" stroke-dasharray="3 5"></line>
-            <g id="waveG" transform="translate(150 0)"><path id="wavePath" fill="none" stroke="#cfe2e8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g>
-            <line x1="150" y1="0" x2="150" y2="160" stroke="#dceaee" stroke-width="1"></line>
+            <line class="wave-guide" x1="0" y1="80" x2="300" y2="80" stroke-width="1" stroke-dasharray="3 5"></line>
+            <g id="waveG" transform="translate(150 0)"><path id="wavePath" class="wave-line" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g>
+            <line class="wave-guide" x1="150" y1="0" x2="150" y2="160" stroke-width="1"></line>
           </svg>
           <div class="dot" id="waveDot" style="transform:translate(150px,140px)"></div>
         </div>
@@ -143,6 +145,6 @@
   </div>
 </section>
 
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

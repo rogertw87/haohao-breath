@@ -43,7 +43,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { custom: {}, minutes: 3, music: 'none', vol: 0.5 },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5 },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -52,8 +52,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol })); } catch (e) {}
+  const { custom, minutes, music, vol, theme } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme })); } catch (e) {}
 }
 
 // ---------- 節奏計算 ----------
@@ -113,7 +113,7 @@ for (let k = 0; k < 6; k++) {
   $('figDots').appendChild(d);
   const p = document.createElementNS(SVGNS, 'circle');
   p.setAttribute('data-k', 'puff'); p.setAttribute('r', '3'); p.setAttribute('fill', 'none');
-  p.setAttribute('stroke', '#1f6f86'); p.setAttribute('stroke-width', '2.5'); p.setAttribute('opacity', '0');
+  p.setAttribute('class', 'fig-puff'); p.setAttribute('stroke-width', '2.5'); p.setAttribute('opacity', '0');
   $('figPuffs').appendChild(p);
 }
 function drawFig(phase, prog, now) {
@@ -289,7 +289,7 @@ function renderHome() {
     if (ICON_IMGS[ex.id]) {
       icon.innerHTML = '<img src="' + ICON_IMGS[ex.id] + '" alt="">';
     } else {
-      icon.innerHTML = '<svg viewBox="0 0 32 32"><path d="' + ICONS[ex.id] + '" fill="none" stroke="#1f6f86" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+      icon.innerHTML = '<svg viewBox="0 0 32 32"><path d="' + ICONS[ex.id] + '" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
     }
     const name = document.createElement('span');
     name.className = 'row-name';
@@ -454,4 +454,19 @@ $('minutes').addEventListener('input', e => {
   save(); renderSetup();
 });
 
+// ---------- 深淺色 ----------
+const MOON = 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z';
+const SUN = 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4';
+function applyTheme() {
+  const dark = state.theme === 'dark';
+  if (dark) document.documentElement.dataset.theme = 'dark';
+  else delete document.documentElement.dataset.theme;
+  $('themeIcon').setAttribute('d', dark ? SUN : MOON);
+}
+$('themeToggle').addEventListener('click', () => {
+  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+  save(); applyTheme();
+});
+
+applyTheme();
 renderHome();
