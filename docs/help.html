@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>如何使用 · 好好呼吸</title>
+<script>try{if((JSON.parse(localStorage.getItem('haohao-breath-settings'))||{}).theme==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root { --h0: #ffffff; --h1: #eef4f5; --h2: #15303a; --h3: #2f6475; --h7: #d9e8ec; --h13: #4a6872; }
+:root[data-theme="dark"] { --h0: #0d1b22; --h1: #152a33; --h2: #e6f1f4; --h3: #8fc3d3; --h7: #25404b; --h13: #a3bec7; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--h0); font-family: 'Noto Sans TC', sans-serif; color: var(--h2); -webkit-font-smoothing: antialiased; }
+a { color: var(--h3); text-underline-offset: 3px; }
+a:hover { color: var(--h2); }
+
+header { border-bottom: 1px solid var(--h7); }
+.bar { max-width: 720px; margin: 0 auto; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }
+.brand { font-size: 18px; font-weight: 500; letter-spacing: .3em; text-decoration: none; color: var(--h3); }
+.bar-right { display: flex; align-items: center; gap: 8px; }
+.bar-label { font-size: 14px; color: var(--h13); }
+.theme-btn {
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--h7); background: transparent; color: var(--h3);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0;
+}
+.theme-btn svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+
+article { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; box-sizing: border-box; line-height: 1.8; font-size: 16px; }
+.crumbs { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; color: var(--h13); margin-bottom: 28px; }
+.crumbs a { color: var(--h13); }
+h1 { margin: 0 0 12px; font-size: 32px; font-weight: 700; line-height: 1.35; text-wrap: pretty; }
+h2 { margin: 0 0 12px; font-size: 22px; font-weight: 700; scroll-margin-top: 24px; }
+.updated { margin: 0 0 32px; font-size: 13px; color: var(--h13); }
+.lead { margin: 0 0 28px; text-wrap: pretty; }
+.box { background: var(--h1); border-radius: 16px; padding: 20px 24px; margin-bottom: 44px; }
+.toc-title { margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+.toc { display: flex; flex-direction: column; gap: 4px; font-size: 15px; }
+.steps { margin: 0 0 44px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; }
+.steps.tight { margin-bottom: 20px; }
+.box .steps { margin: 0; padding-left: 20px; }
+p.para { margin: 0 0 20px; }
+p.para.gap { margin-bottom: 44px; }
+.ex-list { display: flex; flex-direction: column; border-top: 1px solid var(--h7); margin-bottom: 44px; }
+.ex { display: grid; grid-template-columns: minmax(0, 9em) minmax(0, 1fr); gap: 4px 20px; padding: 16px 0; border-bottom: 1px solid var(--h7); }
+.ex-name { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; font-weight: 500; }
+.tag { font-size: 12px; font-weight: 400; padding: 0 8px; border-radius: 999px; border: 1px solid var(--h7); color: var(--h13); }
+.ex-body { display: flex; flex-direction: column; gap: 2px; }
+.ex-body span { text-wrap: pretty; }
+.ex-anim { font-size: 14px; color: var(--h13); }
+.note { border: 1px solid var(--h7); border-radius: 16px; padding: 16px 20px; margin-bottom: 44px; font-size: 15px; }
+.note b { font-weight: 500; }
+.faq { display: flex; flex-direction: column; border-top: 1px solid var(--h7); margin-bottom: 56px; }
+.faq-item { border-bottom: 1px solid var(--h7); }
+.faq-q {
+  width: 100%; min-height: 56px; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 12px 0; border: none; background: none; font: inherit; font-size: 16px; font-weight: 500;
+  color: var(--h2); text-align: left; cursor: pointer;
+}
+.faq-sign { font-size: 20px; font-weight: 400; color: var(--h3); }
+.faq-a { margin: 0 0 16px; color: var(--h13); text-wrap: pretty; }
+.end { border-top: 1px solid var(--h7); padding-top: 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.cta {
+  display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 14px;
+  background: var(--h2); color: var(--h0); text-decoration: none; font-size: 15px; font-weight: 500;
+}
+.cta:hover { color: var(--h0); }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <a class="brand" href="./">好好呼吸</a>
+    <div class="bar-right">
+      <span class="bar-label">說明中心</span>
+      <button class="theme-btn" id="themeBtn" aria-label="切換深淺色"><svg viewBox="0 0 24 24"><path id="themeIcon"></path></svg></button>
+    </div>
+  </div>
+</header>
+
+<article>
+  <nav class="crumbs"><a href="./">好好呼吸</a><span>›</span><span>說明中心</span><span>›</span><span>開始使用</span></nav>
+  <h1>如何使用</h1>
+  <p class="updated">更新於 2026 年 10 月 9 日</p>
+  <p class="lead">好好呼吸是一個免費的呼吸練習網站。選一種練習、設定節奏和時間，跟著畫面上的動畫與聲音呼吸即可。這篇文章說明每個步驟和各練習的做法。</p>
+
+  <div class="box">
+    <p class="toc-title">本文內容</p>
+    <div class="toc">
+      <a href="#start">開始一次練習</a>
+      <a href="#exercises">各練習的做法</a>
+      <a href="#settings">調整秒數與時間</a>
+      <a href="#sound">音樂與提示聲</a>
+      <a href="#theme">深色模式</a>
+      <a href="#safety">安全提醒</a>
+      <a href="#faq">常見問題</a>
+    </div>
+  </div>
+
+  <h2 id="start">開始一次練習</h2>
+  <ol class="steps">
+    <li>在首頁點選想做的練習。</li>
+    <li>在設定頁調整每段呼吸的秒數，以及總練習長度。</li>
+    <li>選擇背景音樂（無、手碟或非洲鼓）。</li>
+    <li>按「開始」，跟著畫面上的動畫吸氣、停住、吐氣。</li>
+    <li>時間到會自動結束，也可以隨時按返回離開。</li>
+  </ol>
+
+  <h2 id="exercises">各練習的做法</h2>
+  <p class="para">每種練習都有自己的節奏和動畫。</p>
+  <div class="ex-list">
+    <div class="ex"><div class="ex-name">方塊呼吸</div><div class="ex-body"><span>吸氣、停住、吐氣、停住，四段等長。預設各 4 秒。</span><span class="ex-anim">圓點沿著正方形邊框移動，每走完一邊換一段。</span></div></div>
+    <div class="ex"><div class="ex-name">4-7-8 放鬆呼吸</div><div class="ex-body"><span>吸氣 4 秒、停住 7 秒、吐氣 8 秒，節奏固定。</span><span class="ex-anim">波形圖顯示目前位置。</span></div></div>
+    <div class="ex"><div class="ex-name">諧振式呼吸</div><div class="ex-body"><span>緩慢地吸氣與吐氣，依每分鐘次數調整快慢。</span><span class="ex-anim">波形圖顯示目前位置，鼓聲提示換氣。</span></div></div>
+    <div class="ex"><div class="ex-name">鼻孔交替呼吸</div><div class="ex-body"><span>用手指按住一側鼻孔，左右輪流吸氣與吐氣。</span><span class="ex-anim">圓點沿著ㄇ字形路徑移動，左右兩側標示鼻孔。</span></div></div>
+    <div class="ex"><div class="ex-name">呼氣練習</div><div class="ex-body"><span>用鼻子吸氣，再把嘴唇噘成圓形慢慢吐氣，吐氣約為吸氣的兩倍長。</span><span class="ex-anim">畫面中的人物會跟著吐氣。</span></div></div>
+    <div class="ex"><div class="ex-name">鯨豚式呼吸<span class="tag">設計中</span></div><div class="ex-body"><span>吸氣與吐氣等長，每分鐘約 5.5 次。</span><span class="ex-anim">練習畫面設計中。</span></div></div>
+    <div class="ex"><div class="ex-name">冰人呼吸<span class="tag">設計中</span></div><div class="ex-body"><span>深吸、放鬆吐氣連續 30 次，接著吐氣後閉氣，再深吸一口閉氣後吐氣。</span><span class="ex-anim">練習畫面設計中。</span></div></div>
+  </div>
+
+  <h2 id="settings">調整秒數與時間</h2>
+  <ul class="steps tight">
+    <li>每段呼吸可用「−」「＋」調整，範圍 0～60 秒。</li>
+    <li>總練習長度用滑桿選擇，範圍 1～30 分鐘。</li>
+    <li>諧振式呼吸改為調整每分鐘呼吸次數，最低 1 次。</li>
+    <li>4-7-8 放鬆呼吸的節奏固定，無法調整。</li>
+  </ul>
+  <div class="note"><b>設定會自動儲存。</b>下次打開同一個練習，會沿用上次的秒數、時間和音樂。</div>
+
+  <h2 id="sound">音樂與提示聲</h2>
+  <ul class="steps">
+    <li>背景音樂有手碟和非洲鼓兩種，按「開始」後才會播放。</li>
+    <li>諧振式呼吸用清脆的鼓聲提示換氣時機；其他練習用呼吸氣流聲提示。</li>
+    <li>網站沒有音量調整，請用手機或電腦的音量鍵控制。</li>
+  </ul>
+
+  <h2 id="theme">深色模式</h2>
+  <p class="para gap">點首頁右上角的「⋯」選單，選「深色模式」即可切換為深色，再選「淺色模式」切回。選擇會記住，說明中心也會跟著套用。</p>
+
+  <h2 id="safety">安全提醒</h2>
+  <div class="box">
+    <ul class="steps">
+      <li>請坐著或躺著練習，不要在開車、游泳或泡澡時練習。</li>
+      <li>感到頭暈、手腳發麻或不舒服時，請立刻停下，恢復平常的呼吸。</li>
+      <li>包含停住呼吸的練習（方塊呼吸、4-7-8、冰人呼吸），初學者可先把停住的秒數調短。</li>
+      <li>懷孕、有心臟、血壓或呼吸道疾病者，練習前請先詢問醫師。</li>
+    </ul>
+  </div>
+
+  <h2 id="faq">常見問題</h2>
+  <div class="faq">
+    <div class="faq-item"><button class="faq-q" aria-expanded="false"><span>為什麼按了開始沒有聲音？</span><span class="faq-sign">+</span></button><p class="faq-a" hidden>請確認手機沒有開啟靜音，並檢查裝置音量。背景音樂要在設定頁選了手碟或非洲鼓才會播放。</p></div>
+    <div class="faq-item"><button class="faq-q" aria-expanded="false"><span>哪個練習適合新手？</span><span class="faq-sign">+</span></button><p class="faq-a" hidden>可以從方塊呼吸或諧振式呼吸開始，節奏簡單，也能把秒數調短。</p></div>
+    <div class="faq-item"><button class="faq-q" aria-expanded="false"><span>練習中可以暫停嗎？</span><span class="faq-sign">+</span></button><p class="faq-a" hidden>可以按返回結束這次練習，設定會保留，下次直接開始即可。</p></div>
+  </div>
+
+  <div class="end">
+    <a class="cta" href="./">回到首頁開始練習</a>
+  </div>
+</article>
+
+<script>
+(() => {
+  const KEY = 'haohao-breath-settings';
+  const MOON = 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z';
+  const SUN = 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } };
+  let theme = load().theme === 'dark' ? 'dark' : 'light';
+  const apply = () => {
+    if (theme === 'dark') document.documentElement.dataset.theme = 'dark';
+    else delete document.documentElement.dataset.theme;
+    document.getElementById('themeIcon').setAttribute('d', theme === 'dark' ? SUN : MOON);
+  };
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    // 與首頁共用同一份設定，只改 theme
+    try { const o = load(); o.theme = theme; localStorage.setItem(KEY, JSON.stringify(o)); } catch (e) {}
+    apply();
+  });
+  document.querySelectorAll('.faq-q').forEach(q => q.addEventListener('click', () => {
+    const a = q.nextElementSibling, open = a.hidden;
+    a.hidden = !open;
+    q.setAttribute('aria-expanded', open);
+    q.querySelector('.faq-sign').textContent = open ? '−' : '+';
+  }));
+  apply();
+})();
+</script>
+</body>
+</html>

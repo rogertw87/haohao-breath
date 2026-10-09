@@ -8,11 +8,17 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=6">
+<link rel="stylesheet" href="styles.css?v=7">
 </head>
 <body>
 <main class="home">
-  <button class="theme-toggle" id="themeToggle" aria-label="切換深淺色"><svg viewBox="0 0 24 24"><path id="themeIcon"></path></svg></button>
+  <div class="menu" id="menu">
+    <button class="menu-btn" id="menuBtn" aria-label="選單" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></button>
+    <div class="menu-pop" id="menuPop" hidden>
+      <button class="menu-item" id="themeToggle"><svg viewBox="0 0 24 24"><path id="themeIcon"></path></svg><span id="themeLabel">深色模式</span></button>
+      <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
+    </div>
+  </div>
   <div class="home-inner">
     <h1 class="title">好好呼吸</h1>
     <div class="list" id="list"></div>
@@ -145,6 +151,6 @@
   </div>
 </section>
 
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

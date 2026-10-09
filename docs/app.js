@@ -462,11 +462,21 @@ function applyTheme() {
   if (dark) document.documentElement.dataset.theme = 'dark';
   else delete document.documentElement.dataset.theme;
   $('themeIcon').setAttribute('d', dark ? SUN : MOON);
+  $('themeLabel').textContent = dark ? '淺色模式' : '深色模式';
 }
 $('themeToggle').addEventListener('click', () => {
   state.theme = state.theme === 'dark' ? 'light' : 'dark';
   save(); applyTheme();
 });
+
+// ---------- 首頁右上角選單 ----------
+function setMenu(open) {
+  $('menuPop').hidden = !open;
+  $('menuBtn').setAttribute('aria-expanded', open);
+}
+$('menuBtn').addEventListener('click', () => setMenu($('menuPop').hidden));
+document.addEventListener('click', e => { if (!e.target.closest('#menu')) setMenu(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 
 applyTheme();
 renderHome();
