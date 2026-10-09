@@ -33,8 +33,9 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
+// 水下：等 audio/underwater.mp3 放上來後，把 ['underwater', '水下'] 加回選項
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓']];
-const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3' };
+const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3' };
 const KEY = 'haohao-breath-settings';
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -258,23 +259,32 @@ function drumFx(high) {
   s.connect(hp); hp.connect(ng); ng.connect(ac.destination);
   s.start(now); s.stop(now + .04);
 }
-// 其他練習：吸氣、吐氣時播放呼吸聲，停住時安靜
-function breathFx(k, t) {
-  stopBreath();
-  if (k === HOLD || !t) return;
+// 其他練習：每段開頭播放提示音（吸氣、停住、吐氣各一個音檔）
+const cueBufs = {};
+let cueSrc = null;
+function loadCues() {
   ctx();
-  const now = ac.currentTime, s = noise(), bp = ac.createBiquadFilter(), lp = ac.createBiquadFilter(), g = ac.createGain();
-  bp.type = 'bandpass'; bp.Q.value = .8; lp.type = 'lowpass'; lp.frequency.value = 3200;
-  const inh = k === IN, peak = inh ? .4 : .5, a = Math.min(.6, t * .35);
-  bp.frequency.setValueAtTime(inh ? 700 : 1300, now);
-  bp.frequency.linearRampToValueAtTime(inh ? 1500 : 600, now + t);
-  g.gain.setValueAtTime(0, now);
-  g.gain.linearRampToValueAtTime(peak, now + a);
-  g.gain.setValueAtTime(peak, now + Math.max(a, t * .6));
-  g.gain.linearRampToValueAtTime(0, now + t);
-  s.connect(bp); bp.connect(lp); lp.connect(g); g.connect(ac.destination);
-  s.start(now); s.stop(now + t + .05);
-  breath = { s, g };
+  ['in', 'out', 'hold'].forEach(key => {
+    if (!cueBufs[key]) cueBufs[key] = fetch('audio/cue-' + key + '.wav')
+      .then(r => r.arrayBuffer()).then(a => ac.decodeAudioData(a)).catch(() => null);
+  });
+}
+function cueFx(k) {
+  loadCues();
+  const key = k === IN ? 'in' : k === OUT ? 'out' : 'hold';
+  cueBufs[key].then(b => {
+    if (!b) return;
+    const s = ac.createBufferSource(), g = ac.createGain();
+    g.gain.value = .6; s.buffer = b;
+    s.connect(g); g.connect(ac.destination); s.start();
+    cueSrc = { s, g };
+  });
+}
+function stopCue() {
+  const c = cueSrc; if (!c) return;
+  cueSrc = null;
+  const t = ac.currentTime;
+  try { c.g.gain.setTargetAtTime(0, t, .08); c.s.stop(t + .4); } catch (e) {}
 }
 
 // ---------- 畫面 ----------
@@ -353,7 +363,7 @@ function renderSetup() {
 // ---------- 流程 ----------
 function clearPhase() { phaseTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); phaseTimers = []; }
 function clearAll() {
-  clearPhase(); cancelAnimationFrame(raf); stopBreath(); keepAlive.pause();
+  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause();
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
@@ -382,7 +392,8 @@ function run(i) {
   const ex = EX[cur], seq = seqOf(ex), secs = secsOf(ex), [bi, label] = seq[i], t = secs[bi];
   clearPhase();
   const k = ex.base[bi][0];
-  if (ex.id === 'belly') { stopBreath(); if (t) drumFx(k === IN); } else breathFx(k, t);
+  stopBreath();
+  if (t) { if (ex.id === 'belly') drumFx(k === IN); else cueFx(k); }
   if (i === 0) waveStart = performance.now();
   const el = dotEl(ex);
   if (el) {
@@ -409,6 +420,7 @@ function start() {
   clearAll();
   const ex = EX[cur], total = state.minutes * 60, end = Date.now() + total * 1000;
   ctx(); // 在按下按鈕時就啟用音效，手機瀏覽器才不會擋
+  loadCues();
   keepAlive.play().catch(() => {});
   if (state.music !== 'none' && !audio) playMusic(state.music);
 
