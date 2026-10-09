@@ -228,7 +228,14 @@ function stopBreath() {
   const b = breath; if (!b) return;
   breath = null;
   const t = ac.currentTime;
-  try { b.g.gain.cancelScheduledValues(t); b.g.gain.setTargetAtTime(0, t, .08); b.s.stop(t + .5); } catch (e) {}
+  try {
+    // 從目前音量淡出，避免直接跳回預定值造成「啪」一聲
+    const gn = b.g.gain;
+    if (gn.cancelAndHoldAtTime) gn.cancelAndHoldAtTime(t);
+    else { const v = gn.value; gn.cancelScheduledValues(t); gn.setValueAtTime(v, t); }
+    gn.setTargetAtTime(0, t, .08);
+    b.s.stop(t + .5);
+  } catch (e) {}
 }
 // 諧振式呼吸：每段開頭敲一下鼓（吸氣高音、吐氣低音）
 function drumFx(high) {
