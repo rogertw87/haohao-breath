@@ -33,8 +33,7 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
-// 水下：等 audio/underwater.mp3 放上來後，把 ['underwater', '水下'] 加回選項
-const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓']];
+const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下']];
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3' };
 const KEY = 'haohao-breath-settings';
 
