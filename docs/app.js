@@ -33,8 +33,9 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
+// 持咒：等 audio/chant.mp3 放上來後，把 ['chant', '持咒'] 加回選項
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚']];
-const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3' };
+const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3' };
 const KEY = 'haohao-breath-settings';
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -417,7 +418,9 @@ function updateTotal() {
 
 function start() {
   clearAll();
-  const ex = EX[cur], total = state.minutes * 60, end = Date.now() + total * 1000;
+  // 按下開始後先等 2.5 秒（讓音樂先進來、準備好），再開始第一段
+  const LEAD = 2500;
+  const ex = EX[cur], total = state.minutes * 60, end = Date.now() + LEAD + total * 1000;
   ctx(); // 在按下按鈕時就啟用音效，手機瀏覽器才不會擋
   loadCues();
   keepAlive.play().catch(() => {});
@@ -446,9 +449,9 @@ function start() {
 
   waveStart = null;
   raf = requestAnimationFrame(tick);
-  timers.push(setTimeout(() => run(0), 60));
-  timers.push(setInterval(() => { totalLeft = (end - Date.now()) / 1000; updateTotal(); }, 1000));
-  timers.push(setTimeout(() => { clearAll(); stopMusic(); show('done'); }, total * 1000));
+  timers.push(setTimeout(() => run(0), LEAD));
+  timers.push(setInterval(() => { totalLeft = Math.min(total, (end - Date.now()) / 1000); updateTotal(); }, 1000));
+  timers.push(setTimeout(() => { clearAll(); stopMusic(); show('done'); }, LEAD + total * 1000));
 }
 
 function stop() {
