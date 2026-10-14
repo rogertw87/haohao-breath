@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=21">
+<link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
 <main class="home">
@@ -160,6 +160,122 @@
   </div>
 </section>
 
-<script src="app.js?v=21"></script>
+<!-- 冰人呼吸：設定頁 -->
+<section class="screen" id="whSetup" hidden>
+  <div class="setup-inner">
+    <button class="back" data-action="close">← 返回</button>
+    <h2 class="ex-name">冰人呼吸</h2>
+    <p class="desc wh-desc">這是 Wim Hof 推廣的呼吸法，由多輪快速深呼吸與閉氣組成。很多人練完覺得精神變好、比較清醒。</p>
+    <button class="wh-safety-btn" data-action="wh-safety"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3ZM12 10v4.5M12 17.5h.01"></path></svg><span>安全須知</span></button>
+
+    <span class="section-title music-title">練習流程</span>
+    <div class="panel wh-flow">
+      <div class="wh-flow-row">
+        <div class="wh-flow-step"><span class="wh-flow-name">換氣</span><span class="wh-flow-val mono"><span id="whBreaths"></span> 次</span></div>
+        <span class="wh-flow-arrow">→</span>
+        <div class="wh-flow-step"><span class="wh-flow-name">閉氣</span><span class="wh-flow-val" id="whHoldDesc"></span></div>
+        <span class="wh-flow-arrow">→</span>
+        <div class="wh-flow-step"><span class="wh-flow-name">恢復呼吸</span><span class="wh-flow-val mono">15 秒</span></div>
+      </div>
+      <div class="wh-flow-rounds">重複 <span id="whRounds"></span> 輪</div>
+    </div>
+
+    <button class="wh-adjust" data-action="wh-open" aria-expanded="false"><span>調整設定</span><span class="wh-adjust-sign" id="whOpenSign">＋</span></button>
+    <div class="wh-settings" id="whSettings" hidden>
+      <div class="panel rows" id="whRows"></div>
+      <div class="wh-group">
+        <span class="section-title wh-group-title">閉氣模式</span>
+        <div class="wh-modes" id="whModes"></div>
+        <p class="wh-note" id="whModeNote"></p>
+      </div>
+      <div class="wh-group">
+        <div class="panel rows" id="whToggles"></div>
+        <p class="wh-note">iPhone 的瀏覽器不支援震動，會改用聲音提示。</p>
+      </div>
+    </div>
+
+    <div class="start-bar">
+      <button class="btn btn-primary" data-action="wh-start">開始</button>
+    </div>
+  </div>
+</section>
+
+<!-- 冰人呼吸：換氣與恢復呼吸 -->
+<section class="screen screen-center" id="whRun" hidden>
+  <div class="run-inner">
+    <div class="run-head"><span class="run-name">冰人呼吸</span><span class="wh-round" data-bind="whRound"></span></div>
+    <div class="stage">
+      <div class="wh-circle">
+        <div class="wh-ring"></div>
+        <div class="wh-fill" id="whCirc"></div>
+        <div class="wh-count"><span class="wh-big" id="whBig"></span><span class="wh-small" id="whSmall"></span></div>
+      </div>
+      <div class="wh-text"><span class="wh-label" id="whLabel"></span><span class="wh-hint" id="whHint"></span></div>
+    </div>
+    <button class="resume-tip" data-action="resume" hidden>聲音已暫停，點一下繼續</button>
+    <div class="wh-actions">
+      <button class="wh-btn" id="whPauseBtn" data-action="wh-pause">暫停</button>
+      <button class="wh-btn wh-btn-primary" id="whResumeBtn" data-action="wh-resume" hidden>繼續</button>
+      <button class="wh-btn" data-action="wh-stop">結束</button>
+    </div>
+  </div>
+</section>
+
+<!-- 冰人呼吸：吐氣後閉氣（深色畫面） -->
+<section class="screen screen-center wh-hold" id="whHold" hidden>
+  <div class="run-inner">
+    <div class="wh-hold-head"><span class="wh-round" data-bind="whRound"></span></div>
+    <div class="wh-hold-body">
+      <span class="wh-hold-tag">吐氣後閉氣</span>
+      <span class="wh-hold-time" id="whHoldTime">0:00</span>
+      <span class="wh-hold-target" id="whTarget" hidden></span>
+    </div>
+    <button class="resume-tip" data-action="resume" hidden>聲音已暫停，點一下繼續</button>
+    <button class="wh-breathe-in" data-action="wh-in">需要吸氣了</button>
+    <button class="wh-hold-stop" data-action="wh-stop">結束</button>
+  </div>
+</section>
+
+<!-- 冰人呼吸：完成 -->
+<section class="screen screen-center" id="whDone" hidden>
+  <div class="run-inner">
+    <div class="done-body wh-done-body">
+      <span class="done-tag">完成</span>
+      <div class="wh-results" id="whResultsBox">
+        <span class="wh-results-title">閉氣時間</span>
+        <div id="whResults"></div>
+      </div>
+      <span class="wh-done-note">這不是比賽，不需要硬撐。</span>
+    </div>
+    <div class="done-actions">
+      <button class="btn btn-primary" data-action="wh-start">再練一次</button>
+      <button class="btn btn-secondary" data-action="close">返回</button>
+    </div>
+  </div>
+</section>
+
+<!-- 冰人呼吸：安全須知 -->
+<div class="wh-sheet-bg" id="whSafety" hidden>
+  <div class="wh-sheet" role="dialog" aria-modal="true" aria-labelledby="whSafetyTitle">
+    <h3 id="whSafetyTitle">練習前請先閱讀</h3>
+    <ul>
+      <li><strong>絕對不要在水中、泡澡、游泳、開車，或站著時練習。</strong></li>
+      <li>請坐著或躺著，在安全的地方練習。</li>
+      <li>手腳發麻、頭暈、刺痛是常見反應；如果感到不舒服，請停止並恢復正常呼吸。</li>
+      <li>孕婦、癲癇、心臟或血管相關疾病、高血壓，或有其他健康狀況的人，請先詢問醫師。</li>
+      <li>不要硬撐閉氣時間。</li>
+    </ul>
+    <div id="whAckBox">
+      <label class="wh-check"><input type="checkbox" id="whChk"><span>我了解</span></label>
+      <div class="wh-sheet-actions">
+        <button class="wh-btn" data-action="close">返回</button>
+        <button class="wh-btn wh-btn-primary" id="whAckBtn" data-action="wh-ack" disabled>繼續</button>
+      </div>
+    </div>
+    <button class="wh-btn wh-btn-primary" id="whSafetyClose" data-action="wh-safety-close" hidden>關閉</button>
+  </div>
+</div>
+
+<script src="app.js?v=22"></script>
 </body>
 </html>

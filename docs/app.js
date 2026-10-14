@@ -13,14 +13,12 @@ const EX = [
   { id: 'nostril', name: '鼻孔交替呼吸', desc: '左右鼻孔輪流吸氣與吐氣。',
     base: [[IN, 4, '吸氣'], [HOLD, 4, '閉氣'], [OUT, 4, '吐氣'], [HOLD, 4, '閉氣']],
     seq: [[0, '左鼻吸氣'], [1, '閉氣'], [2, '右鼻吐氣'], [3, '閉氣'], [0, '右鼻吸氣'], [1, '閉氣'], [2, '左鼻吐氣'], [3, '閉氣']] },
+  // 冰人呼吸有自己的設定、練習與完成畫面（見下方「冰人呼吸」）
+  { id: 'wimhof', name: '冰人呼吸', own: true },
   { id: 'pursed', name: '呼氣練習', desc: '用鼻子吸氣，再把嘴唇噘成圓形，慢慢吐氣。吐氣約為吸氣的兩倍長。',
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 6, '吐氣', '圓唇慢吐']] },
   { id: 'res', name: '鯨豚式呼吸', wip: true, desc: '吸氣與吐氣等長，每分鐘約 5.5 次。',
     base: [[IN, 5.5, '吸氣'], [OUT, 5.5, '吐氣']] },
-  { id: 'wimhof', name: '冰人呼吸', wip: true,
-    desc: '深吸、放鬆吐氣連續 30 次，接著吐氣後閉氣，再深吸一口閉氣後吐氣。請坐著或躺著練習，不要在水中或開車時進行。',
-    base: [[IN, 2, '深吸', '吸'], [OUT, 1, '放鬆吐氣', '吐'], [HOLD, 60, '吐氣後閉氣', '閉氣'], [IN, 2, '恢復吸氣', '深吸一口'], [HOLD, 15, '吸氣後閉氣', '閉氣'], [OUT, 2, '吐氣']],
-    seq: [...Array.from({ length: 30 }, (_, i) => [[0, '吸 ' + (i + 1)], [1, '吐']]).flat(), [2, '吐氣後閉氣'], [3, '深吸一口'], [4, '閉氣'], [5, '吐氣']] },
 ];
 
 // 首頁小圖示：線條 path（32×32）或圖檔
@@ -36,6 +34,8 @@ const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3' };
+// 音檔頭尾本身有淡入淡出的背景音樂：循環時跳過開頭與結尾（秒），兩個播放器無縫接替
+const LOOPCUT = { campfire: [1.2, 1.8] };
 const KEY = 'haohao-breath-settings';
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
@@ -44,7 +44,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5 },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [] },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -53,8 +53,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist })); } catch (e) {}
 }
 
 // ---------- 節奏計算 ----------
@@ -164,7 +164,7 @@ function tick() {
 }
 
 // ---------- 背景音樂（手碟、非洲鼓，練習開始時淡入） ----------
-let audio = null, fadeIv = 0;
+let audio = null, fadeIv = 0, loopIv = 0, loopPair = [];
 function playMusic(kind) {
   stopMusic(true);
   if (!MUSIC_FILES[kind]) return;
@@ -177,11 +177,29 @@ function playMusic(kind) {
   au.loop = true; au.volume = 0; au.play().catch(() => {});
   audio = au;
   let v = 0;
-  fadeIv = setInterval(() => { v = Math.min(1, v + .05); au.volume = v * state.vol; if (v >= 1) clearInterval(fadeIv); }, 60);
+  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * state.vol; if (v >= 1) clearInterval(fadeIv); }, 60);
+  const cut = LOOPCUT[kind];
+  if (cut) {
+    // 快播到結尾淡出前，換另一個播放器從淡入之後接著播
+    au.loop = false;
+    const B = new Audio();
+    B.addEventListener('pause', () => { if (audio === B) pauseAllAudio(); });
+    loopPair = [au, B];
+    loopIv = setInterval(() => {
+      const a = audio;
+      if (a !== au && a !== B) return;
+      if (!B.src && au.currentSrc) B.src = au.currentSrc;
+      if (!a.duration || a.paused || a.currentTime < a.duration - cut[1]) return;
+      const nx = a === au ? B : au;
+      nx.currentTime = cut[0]; nx.volume = a.volume;
+      audio = nx; nx.play().catch(() => {}); a.pause();
+    }, 40);
+  }
 }
 function stopMusic(immediate) {
-  clearInterval(fadeIv);
+  clearInterval(fadeIv); clearInterval(loopIv);
   const au = audio; audio = null;
+  loopPair.forEach(a => { if (a !== au) a.pause(); }); loopPair = [];
   if (!au) return;
   if (immediate) { au.pause(); return; }
   const from = au.volume, t0 = performance.now();
@@ -213,7 +231,8 @@ function ctx() {
 // ---------- 背景音樂與提示音保持一致 ----------
 // 練習中只要其中一個被系統停掉，另一個也跟著停；回到網頁時兩個一起恢復
 let syncPaused = false;
-const practicing = () => !screens.run.hidden;
+const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden;
+const showResumeTip = on => document.querySelectorAll('.resume-tip').forEach(b => { b.hidden = !on; });
 function pauseAllAudio() {
   if (!practicing() || syncPaused) return;
   syncPaused = true;
@@ -221,7 +240,7 @@ function pauseAllAudio() {
   if (audio && !audio.paused) audio.pause();
   if (ac && ac.state === 'running') ac.suspend();
   keepAlive.pause();
-  $('resumeTip').hidden = false;
+  showResumeTip(true);
 }
 const audioStopped = () => (ac && ac.state !== 'running') || (audio && audio.paused);
 let resumeCheck = 0;
@@ -229,7 +248,7 @@ function resumeAllAudio() {
   clearTimeout(resumeCheck);
   if (!practicing()) { syncPaused = false; return; }
   syncPaused = false;
-  $('resumeTip').hidden = true;
+  showResumeTip(false);
   if (ac && ac.state !== 'running') ac.resume().catch(() => {});
   if (audio && audio.paused) audio.play().catch(() => {});
   keepAlive.play().catch(() => {});
@@ -312,14 +331,14 @@ function loadCues() {
       .then(r => r.arrayBuffer()).then(a => ac.decodeAudioData(a)).catch(() => null);
   });
 }
-function cueFx(k) {
+function cueFx(k, gain) {
   if (syncPaused) return;
   loadCues();
   const key = k === IN ? 'in' : k === OUT ? 'out' : 'hold';
   cueBufs[key].then(b => {
     if (!b) return;
     const s = ac.createBufferSource(), g = ac.createGain();
-    g.gain.value = .6; s.buffer = b;
+    g.gain.value = gain || .6; s.buffer = b;
     s.connect(g); g.connect(ac.destination); s.start();
     cueSrc = { s, g };
   });
@@ -332,7 +351,7 @@ function stopCue() {
 }
 
 // ---------- 畫面 ----------
-const screens = { setup: $('setup'), run: $('run'), done: $('done') };
+const screens = { setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone') };
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
@@ -407,21 +426,23 @@ function renderSetup() {
 // ---------- 流程 ----------
 function clearPhase() { phaseTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); phaseTimers = []; }
 function clearAll() {
-  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause(); syncPaused = false; clearTimeout(resumeCheck); $('resumeTip').hidden = true;
+  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause(); syncPaused = false; clearTimeout(resumeCheck); showResumeTip(false);
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
 function open(i) {
   clearAll(); stopMusic(true);
   cur = i;
+  if (EX[i].own) { whOpen(); return; }
   renderSetup();
   show('setup');
   screens.setup.scrollTop = 0;
 }
 function close() {
-  clearAll(); stopMusic();
+  clearAll(); stopMusic(); releaseWake();
   cur = null;
   show(null);
+  $('whSafety').hidden = true;
 }
 
 function dotEl(ex) { return ex.id === 'box' ? $('boxDot') : ex.id === 'nostril' ? $('nDot') : null; }
@@ -504,6 +525,270 @@ function stop() {
   show('setup');
 }
 
+// ---------- 冰人呼吸 ----------
+// 換氣（快速深呼吸）→ 吐氣後閉氣（自己決定何時吸氣）→ 深吸一口憋 15 秒 → 吐氣，重複數輪
+const WH_DEF = { breaths: 30, rounds: 3, mode: 'free', sound: true, vibe: true };
+const WH_PACE = [1.7, 1.3];        // 每口吸、吐秒數
+const WH_VIDEO = [60, 90, 120];    // 「跟隨影片節奏」每輪閉氣目標
+const fmtUp = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+const whCfg = () => Object.assign({}, WH_DEF, state.wh || {});
+const wh = { phase: null, round: 1, now: 1, holds: [], t0: 0, paused: false };
+let wakeLock = null;
+
+function whSet(k, v) { state.wh = { ...whCfg(), [k]: v }; save(); whRenderSetup(); }
+function whRenderSetup() {
+  const c = whCfg();
+  $('whBreaths').textContent = c.breaths;
+  $('whRounds').textContent = c.rounds;
+  $('whHoldDesc').textContent = c.mode === 'video' ? '1:00 起' : '自己決定';
+  const rows = [
+    ['呼吸次數', c.breaths + ' 次', () => whSet('breaths', Math.max(20, c.breaths - 5)), () => whSet('breaths', Math.min(40, c.breaths + 5))],
+    ['輪數', c.rounds + ' 輪', () => whSet('rounds', Math.max(1, c.rounds - 1)), () => whSet('rounds', Math.min(5, c.rounds + 1))],
+  ];
+  $('whRows').innerHTML = '';
+  rows.forEach(([label, val, dec, inc]) => {
+    const row = document.createElement('div');
+    row.className = 'phase-row';
+    row.innerHTML = '<span class="phase-row-label"></span><div class="stepper"><button class="step" aria-label="減少">−</button><span class="step-val"></span><button class="step" aria-label="增加">+</button></div>';
+    row.querySelector('.phase-row-label').textContent = label;
+    row.querySelector('.step-val').textContent = val;
+    const [d, i] = row.querySelectorAll('.step');
+    d.addEventListener('click', dec); i.addEventListener('click', inc);
+    $('whRows').appendChild(row);
+  });
+  $('whModes').innerHTML = '';
+  [['free', '自由模式'], ['video', '跟隨影片節奏']].forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + (c.mode === k ? ' on' : '');
+    b.textContent = l;
+    b.addEventListener('click', () => whSet('mode', k));
+    $('whModes').appendChild(b);
+  });
+  $('whModeNote').textContent = c.mode === 'video'
+    ? '每輪閉氣依序為 1:00、1:30、2:00，時間到會提示吸氣。不舒服就提早吸氣。'
+    : '閉氣時碼表往上數，不設目標。想吸氣時按下按鈕即可。';
+  $('whToggles').innerHTML = '';
+  [['sound', '聲音'], ['vibe', '震動']].forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'wh-toggle' + (c[k] ? ' on' : '');
+    b.setAttribute('role', 'switch'); b.setAttribute('aria-checked', c[k]);
+    b.innerHTML = '<span></span><span class="wh-switch"></span>';
+    b.firstChild.textContent = l;
+    b.addEventListener('click', () => whSet(k, !c[k]));
+    $('whToggles').appendChild(b);
+  });
+}
+function whOpen() {
+  whRenderSetup();
+  show('whSetup');
+  screens.whSetup.scrollTop = 0;
+  if (!state.whAck) whSafety(true);
+}
+function whSafety(on) {
+  $('whSafety').hidden = !on;
+  $('whChk').checked = false; $('whAckBtn').disabled = true;
+  $('whAckBox').hidden = !!state.whAck;
+  $('whSafetyClose').hidden = !state.whAck;
+}
+$('whChk').addEventListener('change', e => { $('whAckBtn').disabled = !e.target.checked; });
+
+// 聲音與震動
+const whSound = () => whCfg().sound && !syncPaused;
+function buzz(p) { if (whCfg().vibe && navigator.vibrate) try { navigator.vibrate(p); } catch (e) {} }
+function tone(f, d, v, type) {
+  if (!whSound()) return;
+  ctx();
+  const now = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+  o.type = type || 'sine'; o.frequency.value = f;
+  g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(v, now + .01); g.gain.exponentialRampToValueAtTime(.0001, now + d);
+  o.connect(g); g.connect(ac.destination); o.start(now); o.stop(now + d + .05);
+}
+function bell(f) { [[1, .14, 2.6], [2.76, .04, 1.5], [5.4, .015, .8]].forEach(([m, v, d]) => tone(f * m, d, v)); }
+function whCue(k) { if (whSound()) cueFx(k, .35); }
+// 人聲呼吸錄音（audio/breath-in.mp3、breath-out.mp3）；錄音音量小，載入時自動放大。沒有檔案時改用輕柔的短音
+const breathBufs = {};
+function loadBreath(b) {
+  return breathBufs[b] || (breathBufs[b] = fetch('audio/breath-' + b + '.mp3')
+    .then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(a => new Promise((ok, no) => ac.decodeAudioData(a, ok, no)))
+    .then(buf => {
+      let pk = 0;
+      for (let c = 0; c < buf.numberOfChannels; c++) { const d = buf.getChannelData(c); for (let i = 0; i < d.length; i++) { const v = Math.abs(d[i]); if (v > pk) pk = v; } }
+      buf.norm = pk > 0 ? Math.min(80, .6 / pk) : 1;
+      return buf;
+    }).catch(() => null));
+}
+function breathCue(k) {
+  if (!whSound()) return;
+  const run = wh.run;
+  loadBreath(k === IN ? 'in' : 'out').then(buf => {
+    if (wh.run !== run || !whSound()) return;
+    if (!buf) { tone(k === IN ? 392 : 330, .35, .05); return; }
+    const now = ac.currentTime, s = ac.createBufferSource(), g = ac.createGain(), gv = .8 * buf.norm;
+    s.buffer = buf;
+    g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(gv, now + .03);
+    // 吸氣錄音在最後一刻才結束，加一段柔和收尾，避免聽起來被切斷
+    if (k === IN) { const e = now + buf.duration; g.gain.setValueAtTime(gv, e - .45); g.gain.exponentialRampToValueAtTime(gv * .02, e); }
+    s.connect(g); g.connect(ac.destination); s.start(now, k === IN ? 0 : .15);
+  });
+}
+
+// 練習中螢幕不要自動變暗
+function lockWake() { try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(l => { wakeLock = l; }).catch(() => {}); } catch (e) {} }
+function releaseWake() { try { if (wakeLock) wakeLock.release(); } catch (e) {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => { if (!document.hidden && wh.phase && (!$('whRun').hidden || !$('whHold').hidden)) lockWake(); });
+
+// 呼吸圓圈
+function circ(sc, dur, ease) {
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const el = $('whCirc');
+    el.style.transition = dur ? 'transform ' + dur + 's ' + ease : 'none';
+    el.style.transform = 'scale(' + sc + ')';
+  }));
+}
+function whAt(fn, abs) { phaseTimers.push(setTimeout(fn, Math.max(0, abs - performance.now()))); }
+function whText(big, small, label, hint) {
+  $('whBig').textContent = big; $('whSmall').textContent = small;
+  $('whLabel').textContent = label; $('whHint').textContent = hint;
+}
+function whRoundText() { bind('whRound', '第 ' + wh.round + ' 輪 / 共 ' + whCfg().rounds + ' 輪'); }
+function whPausedUi(on) {
+  wh.paused = on;
+  $('whPauseBtn').hidden = on; $('whResumeBtn').hidden = !on;
+}
+
+function whStart() {
+  clearAll(); stopMusic(true);
+  $('whSafety').hidden = true;
+  ctx(); loadCues(); loadBreath('in'); loadBreath('out');
+  keepAlive.play().catch(() => {});
+  lockWake();
+  wh.holds = []; wh.run = {};
+  whPausedUi(false);
+  whBetween(1);
+}
+function whBetween(r) {
+  clearPhase();
+  wh.phase = 'between'; wh.round = r; whRoundText();
+  show('whRun');
+  whText('', '', '第 ' + r + ' 輪', '準備開始換氣');
+  circ(.35, .6, 'ease');
+  whAt(() => whBreathe(1), performance.now() + 2500);
+}
+function whBreathe(n) {
+  clearPhase();
+  const c = whCfg(), [ti, te] = WH_PACE;
+  wh.phase = 'breathe';
+  const step = (i, t0) => {
+    wh.now = i;
+    whText(String(i), '/ ' + c.breaths, '吸飽', c.breaths - i < 3 ? '最後幾口，準備吐氣後停住' : '');
+    circ(1, ti, 'cubic-bezier(.3,.1,.4,1)');
+    if (i === c.breaths) bell(523.25);
+    breathCue(IN);
+    whAt(() => { $('whLabel').textContent = '放鬆吐出'; circ(.35, te, 'cubic-bezier(.5,0,.8,.6)'); breathCue(OUT); }, t0 + ti * 1000);
+    const t1 = t0 + (ti + te) * 1000;
+    whAt(() => (i < c.breaths ? step(i + 1, t1) : whHold()), t1);
+  };
+  step(n, performance.now());
+}
+function whHold() {
+  clearPhase();
+  const tgt = whCfg().mode === 'video' ? WH_VIDEO[Math.min(wh.round, 3) - 1] : 0;
+  wh.phase = 'hold'; wh.t0 = performance.now();
+  $('whHoldTime').textContent = '0:00';
+  $('whTarget').hidden = !tgt;
+  $('whTarget').textContent = tgt ? fmtUp(tgt) + ' 時提示吸氣，不舒服就提早吸氣' : '';
+  show('whHold');
+  buzz(60); whCue(HOLD);
+  let k = 1;
+  phaseTimers.push(setInterval(() => {
+    const e = (performance.now() - wh.t0) / 1000;
+    $('whHoldTime').textContent = fmtUp(e);
+    if (e >= 30 * k) { k++; tone(660, .5, .05); } // 每 30 秒輕響一聲
+    if (tgt && e >= tgt) whBreatheIn();
+  }, 250));
+}
+function whBreatheIn() {
+  if (wh.phase !== 'hold') return;
+  wh.holds.push((performance.now() - wh.t0) / 1000);
+  whRecover();
+}
+function whRecover() {
+  clearPhase();
+  wh.phase = 'recover';
+  show('whRun');
+  whText('15', '', '深吸一口氣，憋住', '');
+  circ(1, 1.6, 'ease-out'); whCue(IN); buzz(60);
+  const T = performance.now();
+  for (let s = 1; s <= 15; s++) whAt(() => {
+    const left = 15 - s;
+    if (left > 0) { $('whBig').textContent = left; if (left <= 3) { tone(880, .12, .12, 'triangle'); buzz(80); } }
+    else whRest();
+  }, T + s * 1000);
+}
+function whRest() {
+  clearPhase();
+  wh.phase = 'rest';
+  whText('', '', '吐氣', '放鬆，準備下一輪');
+  circ(.35, 3, 'ease-in-out'); whCue(OUT);
+  whAt(() => { bell(392); if (wh.round < whCfg().rounds) whBetween(wh.round + 1); else whDone(); }, performance.now() + 4000);
+}
+function whDone() {
+  clearAll(); releaseWake();
+  wh.phase = null; wh.run = null;
+  const h = wh.holds.slice();
+  if (h.length) { state.whHist = [...(state.whHist || []), { d: Date.now(), h: h.map(x => Math.round(x)) }].slice(-50); save(); }
+  $('whResultsBox').hidden = !h.length;
+  $('whResults').innerHTML = '';
+  h.forEach((x, i) => {
+    const row = document.createElement('div');
+    row.className = 'wh-result';
+    row.innerHTML = '<span></span><span></span>';
+    row.children[0].textContent = '第 ' + (i + 1) + ' 輪';
+    row.children[1].textContent = fmtUp(x);
+    $('whResults').appendChild(row);
+  });
+  show('whDone');
+}
+function whStop() {
+  stopCue();
+  if (wh.holds.length) { whDone(); return; }
+  clearAll(); releaseWake();
+  wh.phase = null; wh.run = null;
+  whRenderSetup(); show('whSetup');
+}
+function whPause() {
+  clearPhase(); stopCue();
+  circ(.35, .4, 'ease');
+  whPausedUi(true);
+  whText('', '', '已暫停', '按「繼續」接著練習');
+}
+function whResume() {
+  whPausedUi(false);
+  const p = wh.phase, r = wh.round;
+  if (p === 'breathe') whBreathe(wh.now || 1);
+  else if (p === 'recover') whRecover();
+  else if (p === 'between') whBetween(r);
+  else if (r < whCfg().rounds) whBetween(r + 1);
+  else whDone();
+}
+function whAction(a) {
+  if (a === 'start') whStart();
+  else if (a === 'stop') whStop();
+  else if (a === 'pause') whPause();
+  else if (a === 'resume') whResume();
+  else if (a === 'in') whBreatheIn();
+  else if (a === 'safety') whSafety(true);
+  else if (a === 'safety-close') $('whSafety').hidden = true;
+  else if (a === 'ack') { if ($('whChk').checked) { state.whAck = true; save(); $('whSafety').hidden = true; } }
+  else if (a === 'open') {
+    const on = $('whSettings').hidden;
+    $('whSettings').hidden = !on;
+    $('whOpenSign').textContent = on ? '－' : '＋';
+    document.querySelector('[data-action="wh-open"]').setAttribute('aria-expanded', on);
+  }
+}
+
 // ---------- 事件 ----------
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-action]');
@@ -513,6 +798,7 @@ document.addEventListener('click', e => {
   else if (a === 'start') start();
   else if (a === 'stop') stop();
   else if (a === 'resume') resumeAllAudio();
+  else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
