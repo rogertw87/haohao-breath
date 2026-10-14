@@ -11,8 +11,8 @@ const EX = [
   { id: 'belly', name: '諧振式呼吸', bpm: 6, desc: '吸氣與吐氣等長，依每分鐘次數調整節奏。',
     base: [[IN, 4, '吸氣', '腹部吸氣'], [OUT, 6, '吐氣', '慢慢吐氣']] },
   { id: 'nostril', name: '鼻孔交替呼吸', desc: '左右鼻孔輪流吸氣與吐氣。',
-    base: [[IN, 4, '吸氣'], [HOLD, 4, '停住'], [OUT, 4, '吐氣']],
-    seq: [[0, '左鼻吸氣'], [1, '停住'], [2, '右鼻吐氣'], [0, '右鼻吸氣'], [1, '停住'], [2, '左鼻吐氣']] },
+    base: [[IN, 4, '吸氣'], [HOLD, 4, '閉氣'], [OUT, 4, '吐氣'], [HOLD, 4, '閉氣']],
+    seq: [[0, '左鼻吸氣'], [1, '閉氣'], [2, '右鼻吐氣'], [3, '閉氣'], [0, '右鼻吸氣'], [1, '閉氣'], [2, '左鼻吐氣'], [3, '閉氣']] },
   { id: 'pursed', name: '呼氣練習', desc: '用鼻子吸氣，再把嘴唇噘成圓形，慢慢吐氣。吐氣約為吸氣的兩倍長。',
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 6, '吐氣', '圓唇慢吐']] },
   { id: 'res', name: '鯨豚式呼吸', wip: true, desc: '吸氣與吐氣等長，每分鐘約 5.5 次。',
@@ -62,7 +62,9 @@ const bpmOf = ex => { const c = state.custom[ex.id]; return c && c.length === 1 
 function secsOf(ex) {
   if (ex.fixed) return ex.base.map(b => b[1]);
   if (ex.bpm) { const h = 30 / bpmOf(ex); return [h, h]; }
-  return state.custom[ex.id] || ex.base.map(b => b[1]);
+  const c = state.custom[ex.id];
+  // 練習的段數改過的話（例如鼻孔交替呼吸多了一段閉氣），舊的自訂秒數就不再適用
+  return c && c.length === ex.base.length ? c : ex.base.map(b => b[1]);
 }
 const seqOf = ex => ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]);
 const cycleOf = ex => { const s = secsOf(ex); return seqOf(ex).reduce((a, [bi]) => a + s[bi], 0); };
@@ -441,7 +443,7 @@ function run(i) {
   if (el) {
     const by = ex.id === 'nostril' ? 218 : 216;
     const BL = [0, by], TL = [0, 0], TR = [216, 0], BR = [216, by];
-    const nc = ex.id === 'nostril' ? [TL, TR, BR, TR, TL, BL][i] : [TL, TR, BR, BL][i % 4];
+    const nc = ex.id === 'nostril' ? [TL, TR, BR, BR, TR, TL, BL, BL][i] : [TL, TR, BR, BL][i % 4];
     if (i === 0) setDot(el, BL[0], BL[1], 0); // 每輪從左下角出發
     setDot(el, nc[0], nc[1], t);
   }
