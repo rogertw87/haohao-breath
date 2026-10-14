@@ -168,7 +168,10 @@ function playMusic(kind) {
   if (!MUSIC_FILES[kind]) return;
   const srcs = [].concat(MUSIC_FILES[kind]);
   const au = new Audio(srcs.shift());
-  au.onerror = () => { if (srcs.length && audio === au) { au.src = srcs.shift(); au.play().catch(() => {}); } };
+  let switching = false;
+  au.onerror = () => { if (srcs.length && audio === au) { switching = true; au.src = srcs.shift(); au.play().catch(() => {}).finally(() => { switching = false; }); } };
+  // 被系統停掉（例如切去看影片）時，提示音也一起停
+  au.addEventListener('pause', () => { if (audio === au && !switching && !au.error) pauseAllAudio(); });
   au.loop = true; au.volume = 0; au.play().catch(() => {});
   audio = au;
   let v = 0;
@@ -194,6 +197,8 @@ function ctx() {
     // iPhone 靜音模式下仍要播放音效（Safari 17+）
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     ac = new (window.AudioContext || window.webkitAudioContext)();
+    // 提示音被系統中斷時，背景音樂也一起停
+    ac.onstatechange = () => { if (ac.state !== 'running' && practicing() && !syncPaused) pauseAllAudio(); };
     // 在點擊當下播一段無聲，解鎖手機上的音效
     const s = ac.createBufferSource();
     s.buffer = ac.createBuffer(1, 1, ac.sampleRate);
@@ -202,6 +207,30 @@ function ctx() {
   if (ac.state === 'suspended' || ac.state === 'interrupted') ac.resume();
   return ac;
 }
+
+// ---------- 背景音樂與提示音保持一致 ----------
+// 練習中只要其中一個被系統停掉，另一個也跟著停；回到網頁時兩個一起恢復
+let syncPaused = false;
+const practicing = () => !screens.run.hidden;
+function pauseAllAudio() {
+  if (!practicing() || syncPaused) return;
+  syncPaused = true;
+  stopCue();
+  if (audio && !audio.paused) audio.pause();
+  if (ac && ac.state === 'running') ac.suspend();
+  keepAlive.pause();
+}
+function resumeAllAudio() {
+  const was = syncPaused;
+  syncPaused = false;
+  if (!practicing()) return;
+  if (ac && ac.state !== 'running') ac.resume();
+  if (audio && audio.paused) audio.play().catch(() => {});
+  if (was) keepAlive.play().catch(() => {});
+}
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && practicing() && (syncPaused || (ac && ac.state !== 'running') || (audio && audio.paused))) resumeAllAudio();
+});
 
 // 較舊的 iPhone 在靜音模式會把合成音效靜音，播放一段無聲音檔可以避免
 const keepAlive = (() => {
@@ -242,6 +271,7 @@ function stopBreath() {
 }
 // 諧振式呼吸：每段開頭敲一下鼓（吸氣高音、吐氣低音）
 function drumFx(high) {
+  if (syncPaused) return; // 暫停中不要排入聲音，否則恢復時會一次全部響起
   ctx();
   const now = ac.currentTime, f0 = high ? 520 : 390;
   [[1, .32, .22], [1.5, .12, .12], [2.4, .06, .07]].forEach(([m, v, d]) => {
@@ -272,6 +302,7 @@ function loadCues() {
   });
 }
 function cueFx(k) {
+  if (syncPaused) return;
   loadCues();
   const key = k === IN ? 'in' : k === OUT ? 'out' : 'hold';
   cueBufs[key].then(b => {
@@ -365,7 +396,7 @@ function renderSetup() {
 // ---------- 流程 ----------
 function clearPhase() { phaseTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); phaseTimers = []; }
 function clearAll() {
-  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause();
+  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause(); syncPaused = false;
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
