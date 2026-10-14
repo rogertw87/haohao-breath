@@ -33,9 +33,10 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
+// 營火：等 audio/campfire.mp3 放上來後，把 ['campfire', '營火'] 加回選項
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
-const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2' };
+const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3' };
 const KEY = 'haohao-breath-settings';
 
 const fmt = s => { s = Math.max(0, Math.ceil(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
