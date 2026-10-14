@@ -34,6 +34,7 @@ const ICONS = {
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒']];
+// 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2' };
 const KEY = 'haohao-breath-settings';
 
@@ -165,7 +166,9 @@ let audio = null, fadeIv = 0;
 function playMusic(kind) {
   stopMusic(true);
   if (!MUSIC_FILES[kind]) return;
-  const au = new Audio(MUSIC_FILES[kind]);
+  const srcs = [].concat(MUSIC_FILES[kind]);
+  const au = new Audio(srcs.shift());
+  au.onerror = () => { if (srcs.length && audio === au) { au.src = srcs.shift(); au.play().catch(() => {}); } };
   au.loop = true; au.volume = 0; au.play().catch(() => {});
   audio = au;
   let v = 0;
