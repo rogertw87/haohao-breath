@@ -219,18 +219,27 @@ function pauseAllAudio() {
   if (audio && !audio.paused) audio.pause();
   if (ac && ac.state === 'running') ac.suspend();
   keepAlive.pause();
+  $('resumeTip').hidden = false;
 }
+const audioStopped = () => (ac && ac.state !== 'running') || (audio && audio.paused);
+let resumeCheck = 0;
 function resumeAllAudio() {
-  const was = syncPaused;
+  clearTimeout(resumeCheck);
+  if (!practicing()) { syncPaused = false; return; }
   syncPaused = false;
-  if (!practicing()) return;
-  if (ac && ac.state !== 'running') ac.resume();
+  $('resumeTip').hidden = true;
+  if (ac && ac.state !== 'running') ac.resume().catch(() => {});
   if (audio && audio.paused) audio.play().catch(() => {});
-  if (was) keepAlive.play().catch(() => {});
+  keepAlive.play().catch(() => {});
+  // iPhone 不允許網頁自己恢復聲音，失敗的話顯示「點一下繼續」
+  resumeCheck = setTimeout(() => { if (practicing() && audioStopped()) { syncPaused = false; pauseAllAudio(); } }, 800);
 }
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden && practicing() && (syncPaused || (ac && ac.state !== 'running') || (audio && audio.paused))) resumeAllAudio();
-});
+function onReturn() {
+  if (!document.hidden && practicing() && (syncPaused || audioStopped())) resumeAllAudio();
+}
+document.addEventListener('visibilitychange', onReturn);
+window.addEventListener('pageshow', onReturn);
+window.addEventListener('focus', onReturn);
 
 // 較舊的 iPhone 在靜音模式會把合成音效靜音，播放一段無聲音檔可以避免
 const keepAlive = (() => {
@@ -396,7 +405,7 @@ function renderSetup() {
 // ---------- 流程 ----------
 function clearPhase() { phaseTimers.forEach(t => { clearTimeout(t); clearInterval(t); }); phaseTimers = []; }
 function clearAll() {
-  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause(); syncPaused = false;
+  clearPhase(); cancelAnimationFrame(raf); stopBreath(); stopCue(); keepAlive.pause(); syncPaused = false; clearTimeout(resumeCheck); $('resumeTip').hidden = true;
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
@@ -501,6 +510,7 @@ document.addEventListener('click', e => {
   if (a === 'close') close();
   else if (a === 'start') start();
   else if (a === 'stop') stop();
+  else if (a === 'resume') resumeAllAudio();
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {

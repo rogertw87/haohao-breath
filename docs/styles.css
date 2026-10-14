@@ -219,3 +219,10 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .done-time { font: 300 56px/1 var(--mono); }
 .done-name { font-size: 15px; color: var(--muted); }
 .done-actions { display: flex; flex-direction: column; gap: 10px; }
+
+/* 聲音被系統暫停後，點一下恢復 */
+.resume-tip {
+  align-self: center; margin-bottom: 14px; height: 44px; padding: 0 20px; border: none; border-radius: 22px;
+  background: var(--dot); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer;
+  box-shadow: 0 0 0 6px rgba(90,170,192,.25);
+}
