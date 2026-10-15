@@ -44,7 +44,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [] },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -53,8 +53,36 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log })); } catch (e) {}
+}
+
+// ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
+function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+const todayLog = () => (state.log && state.log.date === today() ? state.log.items : {});
+function logDone(id, sec) {
+  const items = { ...todayLog() }, c = items[id] || { n: 0, sec: 0 };
+  items[id] = { n: c.n + 1, sec: c.sec + sec };
+  state.log = { date: today(), items };
+  save();
+}
+const mins = sec => Math.max(1, Math.round(sec / 60));
+function renderToday() {
+  const it = todayLog(), rows = EX.filter(e => it[e.id]).map(e => ({ name: e.name, n: it[e.id].n, sec: it[e.id].sec }));
+  const n = rows.reduce((a, r) => a + r.n, 0), sec = rows.reduce((a, r) => a + r.sec, 0);
+  $('today').hidden = !n;
+  if (!n) return;
+  $('todayMin').textContent = mins(sec) + ' 分鐘';
+  $('todayN').textContent = '完成 ' + n + ' 次';
+  $('todayRows').innerHTML = '';
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'today-row';
+    row.innerHTML = '<span></span><span></span>';
+    row.children[0].textContent = r.name;
+    row.children[1].textContent = r.n + ' 次 · ' + mins(r.sec) + ' 分鐘';
+    $('todayRows').appendChild(row);
+  });
 }
 
 // ---------- 節奏計算 ----------
@@ -363,7 +391,7 @@ function renderHome() {
   list.innerHTML = '';
   EX.forEach((ex, i) => {
     const row = document.createElement('button');
-    row.className = 'row';
+    row.className = 'row' + (ex.wip ? ' row-wip' : '');
     const icon = document.createElement('div');
     icon.className = 'row-icon';
     if (ICON_IMGS[ex.id]) {
@@ -374,8 +402,17 @@ function renderHome() {
     const name = document.createElement('span');
     name.className = 'row-name';
     name.textContent = ex.label || ex.name;
-    row.append(icon, name);
-    row.addEventListener('click', () => open(i));
+    const main = document.createElement('div');
+    main.className = 'row-main';
+    main.append(icon, name);
+    row.append(main);
+    if (ex.wip) {
+      // 還沒做好的練習：灰掉、標示「未上架」，不能點
+      row.setAttribute('aria-disabled', 'true');
+      const tag = document.createElement('span');
+      tag.className = 'row-tag'; tag.textContent = '未上架';
+      row.append(tag);
+    } else row.addEventListener('click', () => open(i));
     list.appendChild(row);
   });
 }
@@ -441,6 +478,7 @@ function open(i) {
 function close() {
   clearAll(); stopMusic(); releaseWake();
   cur = null;
+  renderToday();
   show(null);
   $('whSafety').hidden = true;
 }
@@ -516,7 +554,7 @@ function start() {
   raf = requestAnimationFrame(tick);
   timers.push(setTimeout(() => run(0), LEAD));
   timers.push(setInterval(() => { totalLeft = Math.min(total, (end - Date.now()) / 1000); updateTotal(); }, 1000));
-  timers.push(setTimeout(() => { clearAll(); stopMusic(); show('done'); }, LEAD + total * 1000));
+  timers.push(setTimeout(() => { clearAll(); stopMusic(); logDone(ex.id, total); show('done'); }, LEAD + total * 1000));
 }
 
 function stop() {
@@ -663,7 +701,7 @@ function whStart() {
   ctx(); loadCues(); loadBreath('in'); loadBreath('out');
   keepAlive.play().catch(() => {});
   lockWake();
-  wh.holds = []; wh.run = {};
+  wh.holds = []; wh.run = {}; wh.start = performance.now();
   whPausedUi(false);
   whBetween(1);
 }
@@ -731,7 +769,11 @@ function whRest() {
   wh.phase = 'rest';
   whText('', '', '吐氣', '放鬆，準備下一輪');
   circ(.35, 3, 'ease-in-out'); whCue(OUT);
-  whAt(() => { bell(392); if (wh.round < whCfg().rounds) whBetween(wh.round + 1); else whDone(); }, performance.now() + 4000);
+  whAt(() => {
+    bell(392);
+    if (wh.round < whCfg().rounds) whBetween(wh.round + 1);
+    else { logDone('wimhof', (performance.now() - wh.start) / 1000); whDone(); } // 全部輪數練完才算一次
+  }, performance.now() + 4000);
 }
 function whDone() {
   clearAll(); releaseWake();
@@ -832,3 +874,4 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(fals
 
 applyTheme();
 renderHome();
+renderToday();
