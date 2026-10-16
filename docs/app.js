@@ -17,6 +17,8 @@ const EX = [
   { id: 'wimhof', name: '冰人呼吸', own: true },
   { id: 'pursed', name: '呼氣練習', desc: '用鼻子吸氣，再把嘴唇噘成圓形，慢慢吐氣。吐氣約為吸氣的兩倍長。',
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 6, '吐氣', '圓唇慢吐']] },
+  { id: 'rebirth', name: '重生呼吸', wip: true, desc: '吸氣與吐氣相連，中間不停頓，像畫圓一樣持續呼吸。吸氣時主動吸滿，吐氣時放鬆讓氣自然流出。',
+    base: [[IN, 3, '吸氣', '主動吸滿'], [OUT, 3, '吐氣', '放鬆吐氣']] },
   { id: 'res', name: '鯨豚式呼吸', wip: true, desc: '吸氣與吐氣等長，每分鐘約 5.5 次。',
     base: [[IN, 5.5, '吸氣'], [OUT, 5.5, '吐氣']] },
 ];
@@ -27,11 +29,13 @@ const ICONS = {
   478: 'M4 24C8 24 9 9 13 9H19C24 9 25 24 28 24',
   belly: 'M3 16C7 6 11 6 16 16S25 26 29 16',
   nostril: 'M5 16a11 8.5 0 1 0 22 0a11 8.5 0 1 0-22 0M10 16a2.2 3.4 0 1 0 4.4 0a2.2 3.4 0 1 0-4.4 0M17.6 16a2.2 3.4 0 1 0 4.4 0a2.2 3.4 0 1 0-4.4 0',
+  rebirth: 'M26 16A10 10 0 1 1 22.5 8.4M22.5 3.5V8.4H27.4',
   wimhof: 'M16 4V28M5.6 10L26.4 22M5.6 22L26.4 10M13 6.5L16 9L19 6.5M13 25.5L16 23L19 25.5M7.5 7.7L8.2 11.5L4.5 12.9M24.5 24.3L23.8 20.5L27.5 19.1M27.5 12.9L23.8 11.5L24.5 7.7M4.5 19.1L8.2 20.5L7.5 24.3',
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火']];
+// 「雷雨」（rainforest）等收到 audio/rainforest.mp3 後再加進上面的清單：['rainforest', '雷雨']
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3' };
 // 音檔頭尾本身有淡入淡出的背景音樂：循環時跳過開頭與結尾（秒），兩個播放器無縫接替
