@@ -15,7 +15,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=25">
+<link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body>
 <main class="home">
@@ -52,6 +52,14 @@
 
     <div class="setup-body" id="setupBody">
       <p class="desc" data-bind="desc"></p>
+
+      <div id="nModeBox" hidden>
+        <span class="section-title music-title">練習方式</span>
+        <div class="n-modes" id="nModes">
+          <button class="music-opt" data-action="nmode" data-mode="3">三段（吸・閉・吐）</button>
+          <button class="music-opt" data-action="nmode" data-mode="4">四段（吸・閉・吐・閉）</button>
+        </div>
+      </div>
 
       <div id="adjust">
         <div class="section-head">
@@ -283,7 +291,7 @@
   </div>
 </div>
 
-<script src="app.js?v=25"></script>
+<script src="app.js?v=26"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

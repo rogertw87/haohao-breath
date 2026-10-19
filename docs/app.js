@@ -47,7 +47,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3' },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -56,8 +56,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
@@ -97,7 +97,9 @@ function secsOf(ex) {
   // 練習的段數改過的話（例如鼻孔交替呼吸多了一段閉氣），舊的自訂秒數就不再適用
   return c && c.length === ex.base.length ? c : ex.base.map(b => b[1]);
 }
-const seqOf = ex => ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]);
+// 鼻孔交替呼吸可選三段（吸・閉・吐）或四段（吸・閉・吐・閉）；三段時略過吐氣後的閉氣
+const n3 = ex => ex.id === 'nostril' && state.nMode !== '4';
+const seqOf = ex => (n3(ex) ? ex.seq.filter(([bi]) => bi !== 3) : ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]));
 const cycleOf = ex => { const s = secsOf(ex); return seqOf(ex).reduce((a, [bi]) => a + s[bi], 0); };
 
 function adj(ex, i, d) {
@@ -108,7 +110,7 @@ function adj(ex, i, d) {
     const s = secsOf(ex).slice();
     const n = d > 0 ? Math.floor(s[i]) + 1 : Math.ceil(s[i]) - 1;
     s[i] = Math.min(60, Math.max(0, n));
-    if (s.every(v => v === 0)) return; // 不能全部都是 0
+    if (s.slice(0, n3(ex) ? 3 : s.length).every(v => v === 0)) return; // 用到的段不能全部都是 0
     state.custom = { ...state.custom, [ex.id]: s };
   }
   save();
@@ -433,7 +435,9 @@ function renderSetup() {
   $('rhythmTitle').textContent = ex.bpm ? '呼吸次數' : '每段秒數';
   const rows = ex.bpm
     ? [{ label: '每分鐘', val: bpmOf(ex) + ' 次', i: 0 }]
-    : ex.base.map((b, i) => ({ label: b[2], val: fmtS(secs[i]), i }));
+    : (n3(ex) ? ex.base.slice(0, 3) : ex.base).map((b, i) => ({ label: b[2], val: fmtS(secs[i]), i }));
+  $('nModeBox').hidden = ex.id !== 'nostril';
+  document.querySelectorAll('#nModes .music-opt').forEach(b => b.classList.toggle('on', b.dataset.mode === (state.nMode === '4' ? '4' : '3')));
   $('phaseRows').innerHTML = '';
   rows.forEach(r => {
     const row = document.createElement('div');
@@ -505,7 +509,7 @@ function run(i) {
   if (el) {
     const by = ex.id === 'nostril' ? 218 : 216;
     const BL = [0, by], TL = [0, 0], TR = [216, 0], BR = [216, by];
-    const nc = ex.id === 'nostril' ? [TL, TR, BR, BR, TR, TL, BL, BL][i] : [TL, TR, BR, BL][i % 4];
+    const nc = ex.id === 'nostril' ? (n3(ex) ? [TL, TR, BR, TR, TL, BL] : [TL, TR, BR, BR, TR, TL, BL, BL])[i] : [TL, TR, BR, BL][i % 4];
     if (i === 0) setDot(el, BL[0], BL[1], 0); // 每輪從左下角出發
     setDot(el, nc[0], nc[1], t);
   }
@@ -844,6 +848,7 @@ document.addEventListener('click', e => {
   else if (a === 'stop') stop();
   else if (a === 'resume') resumeAllAudio();
   else if (a.startsWith('wh-')) whAction(a.slice(3));
+  else if (a === 'nmode') { state.nMode = b.dataset.mode; save(); renderSetup(); }
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
