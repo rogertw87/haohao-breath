@@ -17,8 +17,9 @@ const EX = [
   { id: 'wimhof', name: '冰人呼吸', own: true },
   { id: 'pursed', name: '呼氣練習', desc: '用鼻子吸氣，再把嘴唇噘成圓形，慢慢吐氣。吐氣約為吸氣的兩倍長。',
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 6, '吐氣', '圓唇慢吐']] },
-  { id: 'rebirth', name: '重生呼吸', wip: true, desc: '吸氣與吐氣相連，中間不停頓，像畫圓一樣持續呼吸。吸氣時主動吸滿，吐氣時放鬆讓氣自然流出。',
-    base: [[IN, 3, '吸氣', '主動吸滿'], [OUT, 3, '吐氣', '放鬆吐氣']] },
+  // 重生呼吸：數次短促的小呼吸＋一次深呼吸；base 第 5 欄是吸氣的深度（波形高度，1 = 吸滿）
+  { id: 'rebirth', name: '重生呼吸', wip: true, desc: '吸氣與吐氣都用鼻子，相連不停頓。先做數次短促的小呼吸，再接一次較大的深呼吸，依序循環。',
+    base: [[IN, 1.5, '小吸氣', '小吸', .55], [OUT, 1.5, '小吐氣', '小吐'], [IN, 4, '大吸氣', '大吸氣'], [OUT, 4, '大吐氣', '大吐氣']] },
   { id: 'res', name: '鯨豚式呼吸', wip: true, desc: '吸氣與吐氣等長，每分鐘約 5.5 次。',
     base: [[IN, 5.5, '吸氣'], [OUT, 5.5, '吐氣']] },
 ];
@@ -34,8 +35,10 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
-const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火'], ['rainforest', '雷雨']];
+const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
+// 依序輪播的背景音樂：播完接下一個，最後一個播完回到第一個
+const MUSIC_LISTS = { cat: ['audio/cat1.mp3', 'audio/cat2.mp3', 'audio/cat3.mp3'] };
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3', rainforest: 'audio/rainforest.mp3' };
 // 音檔頭尾本身有淡入淡出的背景音樂：循環時跳過開頭與結尾（秒），兩個播放器無縫接替
 const LOOPCUT = { campfire: [1.2, 1.8] };
@@ -47,7 +50,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3' },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4' },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -56,8 +59,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
@@ -90,7 +93,10 @@ function renderToday() {
 
 // ---------- 節奏計算 ----------
 const bpmOf = ex => { const c = state.custom[ex.id]; return c && c.length === 1 ? c[0] : ex.bpm; };
+// 重生呼吸設定的是「小呼吸」「大呼吸」各一吸一吐的總秒數
+const rbOf = () => { const c = state.custom.rebirth; return c && c.length === 2 ? c : [1.5, 4]; };
 function secsOf(ex) {
+  if (ex.id === 'rebirth') { const [a, b] = rbOf(); return [a / 2, a / 2, b / 2, b / 2]; }
   if (ex.fixed) return ex.base.map(b => b[1]);
   if (ex.bpm) { const h = 30 / bpmOf(ex); return [h, h]; }
   const c = state.custom[ex.id];
@@ -99,11 +105,20 @@ function secsOf(ex) {
 }
 // 鼻孔交替呼吸可選三段（吸・閉・吐）或四段（吸・閉・吐・閉）；三段時略過吐氣後的閉氣
 const n3 = ex => ex.id === 'nostril' && state.nMode !== '4';
-const seqOf = ex => (n3(ex) ? ex.seq.filter(([bi]) => bi !== 3) : ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]));
+function rbSeq() {
+  const q = [];
+  for (let j = 1; j <= (state.rMode === '9' ? 9 : 4); j++) q.push([0, '小吸 ' + j], [1, '小吐 ' + j]);
+  return q.concat([[2, '大吸氣'], [3, '大吐氣']]);
+}
+const seqOf = ex => ex.id === 'rebirth' ? rbSeq() : (n3(ex) ? ex.seq.filter(([bi]) => bi !== 3) : ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]));
 const cycleOf = ex => { const s = secsOf(ex); return seqOf(ex).reduce((a, [bi]) => a + s[bi], 0); };
 
 function adj(ex, i, d) {
-  if (ex.bpm) {
+  if (ex.id === 'rebirth') {
+    const c = rbOf().slice();
+    c[i] = Math.min(20, Math.max(1, c[i] + d * .5));
+    state.custom = { ...state.custom, rebirth: c };
+  } else if (ex.bpm) {
     const n = Math.min(12, Math.max(1, bpmOf(ex) + d));
     state.custom = { ...state.custom, [ex.id]: [n] };
   } else {
@@ -121,7 +136,7 @@ function adj(ex, i, d) {
 function waveSegs(ex) {
   const secs = secsOf(ex); let t = 0, lv = 0; const segs = [];
   seqOf(ex).forEach(([bi]) => {
-    const k = ex.base[bi][0], d = secs[bi], to = k === IN ? 1 : k === OUT ? 0 : lv;
+    const k = ex.base[bi][0], d = secs[bi], to = k === IN ? (ex.base[bi][4] || 1) : k === OUT ? 0 : lv;
     segs.push({ t0: t, t1: t + d, from: lv, to }); t += d; lv = to;
   });
   return { T: t, segs, W: Math.max(300, t * 16) };
@@ -200,6 +215,7 @@ function tick() {
 let audio = null, fadeIv = 0, loopIv = 0, loopPair = [];
 function playMusic(kind) {
   stopMusic(true);
+  if (MUSIC_LISTS[kind]) { playList(MUSIC_LISTS[kind]); return; }
   if (!MUSIC_FILES[kind]) return;
   const srcs = [].concat(MUSIC_FILES[kind]);
   const au = new Audio(srcs.shift());
@@ -228,6 +244,18 @@ function playMusic(kind) {
       audio = nx; nx.play().catch(() => {}); a.pause();
     }, 40);
   }
+}
+function playList(list) {
+  let k = 0;
+  const au = new Audio(list[0]);
+  const next = () => { if (audio !== au) return; k = (k + 1) % list.length; au.src = list[k]; au.play().catch(() => {}); };
+  au.onended = next; au.onerror = next;
+  // 播完一首時也會觸發 pause，那不算被系統停掉
+  au.addEventListener('pause', () => { if (audio === au && !au.ended && !au.error) pauseAllAudio(); });
+  au.volume = 0; au.play().catch(() => {});
+  audio = au;
+  let v = 0;
+  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * state.vol; if (v >= 1) clearInterval(fadeIv); }, 60);
 }
 function stopMusic(immediate) {
   clearInterval(fadeIv); clearInterval(loopIv);
@@ -422,6 +450,10 @@ function renderHome() {
   });
 }
 
+const MODES = {
+  nostril: { key: 'nMode', def: '3', opts: [['3', '三段（吸・閉・吐）'], ['4', '四段（吸・閉・吐・閉）']] },
+  rebirth: { key: 'rMode', def: '4', opts: [['4', '四小一大'], ['9', '九小一大']] },
+};
 function renderSetup() {
   const ex = EX[cur], secs = secsOf(ex), cycle = cycleOf(ex);
   bind('name', ex.name);
@@ -433,11 +465,22 @@ function renderSetup() {
 
   $('adjust').hidden = !!ex.fixed;
   $('rhythmTitle').textContent = ex.bpm ? '呼吸次數' : '每段秒數';
-  const rows = ex.bpm
+  const rows = ex.id === 'rebirth'
+    ? [['小呼吸（一吸一吐）', 0], ['大呼吸（一吸一吐）', 1]].map(([label, i]) => ({ label, val: fmtS(rbOf()[i]), i }))
+    : ex.bpm
     ? [{ label: '每分鐘', val: bpmOf(ex) + ' 次', i: 0 }]
     : (n3(ex) ? ex.base.slice(0, 3) : ex.base).map((b, i) => ({ label: b[2], val: fmtS(secs[i]), i }));
-  $('nModeBox').hidden = ex.id !== 'nostril';
-  document.querySelectorAll('#nModes .music-opt').forEach(b => b.classList.toggle('on', b.dataset.mode === (state.nMode === '4' ? '4' : '3')));
+  // 練習方式：鼻孔交替呼吸（三段／四段）、重生呼吸（四小一大／九小一大）
+  const modes = MODES[ex.id];
+  $('nModeBox').hidden = !modes;
+  $('nModes').innerHTML = '';
+  if (modes) modes.opts.forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + ((state[modes.key] || modes.def) === k ? ' on' : '');
+    b.textContent = l;
+    b.addEventListener('click', () => { state[modes.key] = k; save(); renderSetup(); });
+    $('nModes').appendChild(b);
+  });
   $('phaseRows').innerHTML = '';
   rows.forEach(r => {
     const row = document.createElement('div');
@@ -848,7 +891,6 @@ document.addEventListener('click', e => {
   else if (a === 'stop') stop();
   else if (a === 'resume') resumeAllAudio();
   else if (a.startsWith('wh-')) whAction(a.slice(3));
-  else if (a === 'nmode') { state.nMode = b.dataset.mode; save(); renderSetup(); }
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
