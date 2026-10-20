@@ -890,6 +890,7 @@ document.addEventListener('click', e => {
   else if (a === 'start') start();
   else if (a === 'stop') stop();
   else if (a === 'resume') resumeAllAudio();
+  else if (a.startsWith('install-')) installAction(a.slice(8), e);
   else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
@@ -897,6 +898,52 @@ $('minutes').addEventListener('input', e => {
   state.minutes = Math.min(30, Math.max(1, +e.target.value));
   save(); renderSetup();
 });
+
+// ---------- 加到手機桌面 ----------
+let installEvt = null; // Android／電腦 Chrome 可以直接跳出安裝視窗
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; });
+window.addEventListener('appinstalled', () => { installEvt = null; $('installSheet').hidden = true; });
+function platform() {
+  const u = navigator.userAgent || '';
+  if (/Line\//i.test(u) || /FBAN|FBAV|Instagram/i.test(u)) return 'inapp';
+  if (/iPhone|iPad|iPod/i.test(u) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+  if (/Android/i.test(u)) return 'android';
+  return 'desktop';
+}
+const isStandalone = () => { try { return matchMedia('(display-mode: standalone)').matches || navigator.standalone === true; } catch (e) { return false; } };
+function installInfo() {
+  const p = platform();
+  if (p === 'inapp') return ['目前在 LINE 或其他 App 裡開啟', ['點右上角或右下角的「⋯」或分享按鈕', '選「用預設瀏覽器開啟」或「在 Safari／Chrome 中開啟」', '在瀏覽器裡再點一次選單的「加到手機桌面」']];
+  if (p === 'ios') return ['iPhone／iPad（請用 Safari 開啟）', ['點畫面下方（或網址列旁）的分享按鈕：方框加向上箭頭', '往下滑，點「加入主畫面」', '點右上角「新增」，桌面就會出現好好呼吸的圖示']];
+  if (p === 'android') return ['Android（建議用 Chrome 開啟）', installEvt ? ['點下方「立即加入」', '在跳出的視窗點「安裝」或「新增」'] : ['點右上角的「⋮」選單', '點「加到主畫面」或「安裝應用程式」', '點「新增」，桌面就會出現好好呼吸的圖示']];
+  return ['電腦瀏覽器', installEvt ? ['點下方「立即加入」'] : ['手機打開這個網址後，再點選單的「加到手機桌面」', '電腦版 Chrome／Edge 可點網址列右側的安裝圖示']];
+}
+function installAction(a, e) {
+  if (a === 'open') {
+    setMenu(false);
+    const [title, steps] = installInfo();
+    $('installTitle').textContent = title;
+    $('installSteps').innerHTML = '';
+    steps.forEach((t, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = '<span class="install-n"></span><span></span>';
+      li.children[0].textContent = i + 1; li.children[1].textContent = t;
+      $('installSteps').appendChild(li);
+    });
+    $('installGo').hidden = !installEvt;
+    $('installSheet').hidden = false;
+  } else if (a === 'close') {
+    // 點視窗內容不關閉，只有點背景或「知道了」才關
+    if (e.target.closest('.sheet') && !e.target.closest('.install-ok')) return;
+    $('installSheet').hidden = true;
+  } else if (a === 'prompt' && installEvt) {
+    const ev = installEvt; installEvt = null;
+    ev.prompt();
+    ev.userChoice.finally(() => { $('installSheet').hidden = true; });
+  }
+}
+// 已經從桌面圖示打開的話，就不顯示這個選項
+$('installItem').hidden = isStandalone();
 
 // ---------- 深淺色 ----------
 const MOON = 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z';

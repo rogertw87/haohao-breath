@@ -348,3 +348,27 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .wh-check { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 4px; font-size: 15px; cursor: pointer; }
 .wh-check input { width: 22px; height: 22px; margin: 0; accent-color: #1f6f86; }
 .wh-sheet-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; }
+
+/* ---------- 加到手機桌面 ---------- */
+.sheet-bg {
+  position: fixed; inset: 0; z-index: 20; background: rgba(21,48,58,.4);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.install {
+  width: 100%; max-width: 480px; box-sizing: border-box; padding: 28px 24px 32px; border-radius: 24px 24px 0 0;
+  background: var(--page); color: var(--ink); display: flex; flex-direction: column; gap: 20px;
+}
+.install-head { display: flex; align-items: center; gap: 14px; }
+.install-head img { width: 52px; height: 52px; border-radius: 12px; }
+.install-head div { display: flex; flex-direction: column; gap: 2px; }
+.install-name { font-size: 18px; font-weight: 500; }
+.install-sub { font-size: 14px; color: var(--muted); }
+.install-title { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+.install-steps { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.install-steps li { display: flex; gap: 12px; align-items: flex-start; font-size: 16px; line-height: 1.6; text-wrap: pretty; }
+.install-n {
+  flex: none; width: 26px; height: 26px; margin-top: 1px; border-radius: 50%; background: var(--screen);
+  color: var(--accent); font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center;
+}
+.install-go { min-height: 52px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 500; cursor: pointer; }
+.install-ok { min-height: 48px; border: 1px solid var(--line); border-radius: 16px; background: none; color: var(--ink); font-size: 15px; cursor: pointer; }

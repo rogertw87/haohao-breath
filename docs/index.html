@@ -12,10 +12,14 @@
 <link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="apple-touch-icon" href="icons/favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="好好呼吸">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=27">
+<link rel="stylesheet" href="styles.css?v=28">
 </head>
 <body>
 <main class="home">
@@ -25,6 +29,7 @@
       <button class="menu-item" id="themeToggle"><svg viewBox="0 0 24 24"><path id="themeIcon"></path></svg><span id="themeLabel">深色模式</span></button>
       <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
       <a class="menu-item" href="thanks.html"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"></path></svg><span>感謝</span></a>
+      <button class="menu-item" id="installItem" data-action="install-open"><svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM12 8v7M8.8 11.8 12 15l3.2-3.2"></path></svg><span>加到手機桌面</span></button>
     </div>
   </div>
   <div class="home-inner">
@@ -172,6 +177,17 @@
   </div>
 </section>
 
+<!-- 加到手機桌面 -->
+<div class="sheet-bg" id="installSheet" data-action="install-close" hidden>
+  <div class="sheet install" role="dialog" aria-modal="true" aria-labelledby="installHead">
+    <div class="install-head"><img src="icons/favicon.png" alt=""><div><span class="install-name" id="installHead">加到手機桌面</span><span class="install-sub">之後點桌面圖示就能直接打開，像 App 一樣。</span></div></div>
+    <span class="install-title" id="installTitle"></span>
+    <ol class="install-steps" id="installSteps"></ol>
+    <button class="install-go" id="installGo" data-action="install-prompt" hidden>立即加入</button>
+    <button class="install-ok" data-action="install-close">知道了</button>
+  </div>
+</div>
+
 <!-- 冰人呼吸：設定頁 -->
 <section class="screen" id="whSetup" hidden>
   <div class="setup-inner">
@@ -288,7 +304,7 @@
   </div>
 </div>
 
-<script src="app.js?v=27"></script>
+<script src="app.js?v=28"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
