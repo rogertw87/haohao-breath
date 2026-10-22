@@ -35,10 +35,14 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
-const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪']];
+const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪'], ['shurangama', '楞嚴咒心']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
 // 依序輪播的背景音樂：播完接下一個，最後一個播完回到第一個
-const MUSIC_LISTS = { cat: ['audio/cat1.mp3', 'audio/cat2.mp3', 'audio/cat3.mp3'] };
+const MUSIC_LISTS = {
+  cat: ['audio/cat1.mp3', 'audio/cat2.mp3', 'audio/cat3.mp3'],
+  // 楞嚴咒心：唐密唸法（shurangama2）連續 5 遍，再接一般唸法（shurangama1）5 遍
+  shurangama: [...Array(5).fill('audio/shurangama2.mp3'), ...Array(5).fill('audio/shurangama1.mp3')],
+};
 const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3', rainforest: 'audio/rainforest.mp3' };
 // 音檔頭尾本身有淡入淡出的背景音樂：循環時跳過開頭與結尾（秒），兩個播放器無縫接替
 const LOOPCUT = { campfire: [1.2, 1.8] };
@@ -248,7 +252,13 @@ function playMusic(kind) {
 function playList(list) {
   let k = 0;
   const au = new Audio(list[0]);
-  const next = () => { if (audio !== au) return; k = (k + 1) % list.length; au.src = list[k]; au.play().catch(() => {}); };
+  const next = () => {
+    if (audio !== au) return;
+    k = (k + 1) % list.length;
+    // 下一首是同一個檔案就從頭重播，不必重新載入
+    if (au.src.endsWith(list[k])) au.currentTime = 0; else au.src = list[k];
+    au.play().catch(() => {});
+  };
   au.onended = next; au.onerror = next;
   // 播完一首時也會觸發 pause，那不算被系統停掉
   au.addEventListener('pause', () => { if (audio === au && !au.ended && !au.error) pauseAllAudio(); });
