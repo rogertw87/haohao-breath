@@ -220,6 +220,7 @@ let audio = null, fadeIv = 0, loopIv = 0, loopPair = [];
 function playMusic(kind) {
   stopMusic(true);
   if (MUSIC_LISTS[kind]) { playList(MUSIC_LISTS[kind]); return; }
+  if (kind.startsWith('mine:')) { if (myUrls[kind.slice(5)]) playList([myUrls[kind.slice(5)]]); return; }
   if (!MUSIC_FILES[kind]) return;
   const srcs = [].concat(MUSIC_FILES[kind]);
   const au = new Audio(srcs.shift());
@@ -280,6 +281,60 @@ function stopMusic(immediate) {
     if (p >= 1) { clearInterval(iv); au.pause(); }
   }, 30);
 }
+
+// ---------- 我的錄音（使用者自己上傳，只存在這台裝置的瀏覽器裡，不會上傳到網站） ----------
+const MINE_MAX = 10, MINE_MB = 60;
+let mine = [];        // [{ id, name }]
+const myUrls = {};    // id → 播放用的網址
+const stripExt = n => String(n || '').replace(/\.[^.]+$/, '') || '錄音';
+function idb(mode, fn) {
+  return new Promise((ok, no) => {
+    const r = indexedDB.open('haohao-mine', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('f');
+    r.onerror = () => no(r.error);
+    r.onsuccess = () => {
+      const tx = r.result.transaction('f', mode), q = fn(tx.objectStore('f'));
+      tx.oncomplete = () => ok(q && q.result);
+      tx.onerror = () => no(tx.error);
+    };
+  });
+}
+function loadMine() {
+  const keys = [], vals = [];
+  return idb('readonly', st => {
+    const c = st.openCursor();
+    c.onsuccess = () => { const cur = c.result; if (cur) { keys.push(cur.key); vals.push(cur.value); cur.continue(); } };
+  }).then(() => {
+    mine = [];
+    keys.forEach((k, i) => {
+      const v = vals[i];
+      if (v && v.blob) { myUrls[k] = URL.createObjectURL(v.blob); mine.push({ id: String(k), name: stripExt(v.name) }); }
+    });
+  }).catch(() => {}).then(() => {
+    // 選的錄音已經不在了（例如清除過瀏覽器資料），改回「無」
+    if (state.music.startsWith('mine:') && !myUrls[state.music.slice(5)]) { state.music = 'none'; save(); }
+    if (cur != null && !screens.setup.hidden) renderSetup();
+  });
+}
+function addMine(f) {
+  if (f.size > MINE_MB * 1024 * 1024) { alert('檔案太大，請選 ' + MINE_MB + 'MB 以下的錄音。'); return; }
+  const id = Date.now().toString(36);
+  idb('readwrite', st => st.put({ blob: f, name: f.name }, id)).then(() => {
+    myUrls[id] = URL.createObjectURL(f);
+    mine.push({ id, name: stripExt(f.name) });
+    state.music = 'mine:' + id; save(); renderSetup();
+  }).catch(() => alert('無法儲存這個檔案，請換一個試試。'));
+}
+function delMine(m) {
+  if (!confirm('要刪除「' + m.name + '」嗎？')) return;
+  idb('readwrite', st => st.delete(m.id)).catch(() => {});
+  if (myUrls[m.id]) URL.revokeObjectURL(myUrls[m.id]);
+  delete myUrls[m.id];
+  mine = mine.filter(x => x.id !== m.id);
+  if (state.music === 'mine:' + m.id) { state.music = 'none'; save(); }
+  renderSetup();
+}
+$('mineFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) addMine(f); });
 
 // ---------- 節拍音效（即時合成） ----------
 let ac = null, noiseBuf = null, breath = null;
@@ -510,12 +565,30 @@ function renderSetup() {
 
   $('minutes').value = state.minutes;
   $('music').innerHTML = '';
-  MUSIC.forEach(([k, l]) => {
+  const opts = MUSIC.concat(mine.map(m => ['mine:' + m.id, m.name]));
+  opts.forEach(([k, l]) => {
     const b = document.createElement('button');
     b.className = 'music-opt' + (k === state.music ? ' on' : '');
-    b.textContent = l;
+    b.textContent = l; b.title = l;
     b.addEventListener('click', () => { state.music = k; save(); renderSetup(); });
     $('music').appendChild(b);
+  });
+  if (mine.length < MINE_MAX) {
+    const b = document.createElement('button');
+    b.className = 'music-opt';
+    b.textContent = '＋ 上傳錄音';
+    b.addEventListener('click', () => $('mineFile').click());
+    $('music').appendChild(b);
+  }
+  $('mineBox').hidden = !mine.length;
+  $('mineRows').innerHTML = '';
+  mine.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'mine-row';
+    row.innerHTML = '<span></span><button>刪除</button>';
+    row.firstChild.textContent = m.name;
+    row.lastChild.addEventListener('click', () => delMine(m));
+    $('mineRows').appendChild(row);
   });
   $('musicHint').hidden = state.music === 'none';
 }
@@ -982,3 +1055,4 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(fals
 applyTheme();
 renderHome();
 renderToday();
+loadMine();
