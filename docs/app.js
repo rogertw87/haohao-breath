@@ -575,7 +575,7 @@ function renderSetup() {
   });
   if (mine.length < MINE_MAX) {
     const b = document.createElement('button');
-    b.className = 'music-opt';
+    b.className = 'music-opt music-upload';
     b.textContent = '＋ 上傳錄音';
     b.addEventListener('click', () => $('mineFile').click());
     $('music').appendChild(b);
@@ -1028,20 +1028,17 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 深淺色 ----------
-const MOON = 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z';
-const SUN = 'M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4';
+// ---------- 配色（首頁選單裡選淺色或深色） ----------
 function applyTheme() {
   const dark = state.theme === 'dark';
   if (dark) document.documentElement.dataset.theme = 'dark';
   else delete document.documentElement.dataset.theme;
-  $('themeIcon').setAttribute('d', dark ? SUN : MOON);
-  $('themeLabel').textContent = dark ? '淺色模式' : '深色模式';
+  document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === (dark ? 'dark' : 'light')));
 }
-$('themeToggle').addEventListener('click', () => {
-  state.theme = state.theme === 'dark' ? 'light' : 'dark';
+document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => {
+  state.theme = b.dataset.themePick;
   save(); applyTheme();
-});
+}));
 
 // ---------- 首頁右上角選單 ----------
 function setMenu(open) {
