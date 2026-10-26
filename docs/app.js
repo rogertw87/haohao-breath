@@ -1028,12 +1028,38 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 配色（首頁選單裡選淺色或深色） ----------
+// ---------- 配色（首頁選單：淺色、深色、夜空；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night'];
+// 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
+let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
+  const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
+  const ax=-60,ay=H*.92,bx=W+60,by=H*.08,dx=bx-ax,dy=by-ay,len=Math.hypot(dx,dy),nx=-dy/len,ny=dx/len,band=t=>[ax+dx*t,ay+dy*t];
+  const blob=(px,py,rad,col)=>{const g=x.createRadialGradient(px,py,0,px,py,rad);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=g;x.fillRect(px-rad,py-rad,rad*2,rad*2);};
+  const hs=(i,j,s)=>{let h=(Math.imul(i,374761393)+Math.imul(j,668265263)+Math.imul(s,982451653))|0;h=Math.imul(h^(h>>>13),1274126177);return ((h^(h>>>16))>>>0)/4294967295;};
+  const vn=(X,Y,s)=>{const i=Math.floor(X),j=Math.floor(Y),fx=X-i,fy=Y-j,u=fx*fx*(3-2*fx),v=fy*fy*(3-2*fy),a=hs(i,j,s),b=hs(i+1,j,s),c2=hs(i,j+1,s),d=hs(i+1,j+1,s);return a+(b-a)*u+(c2-a)*v+(a-b-c2+d)*u*v;};
+  const fbm=(X,Y,s)=>{let t=0,am=.5,f=1;for(let o=0;o<5;o++){t+=am*vn(X*f,Y*f,s+o);f*=2.03;am*=.5;}return t;};
+  const GW=240,GH=Math.round(GW*H/W),gc=document.createElement('canvas');gc.width=GW;gc.height=GH;const gx=gc.getContext('2d'),im=gx.createImageData(GW,GH),MI=new Float32Array(GW*GH);
+  for(let gy=0;gy<GH;gy++)for(let gp=0;gp<GW;gp++){const px=gp/GW*W,py=gy/GH*H,rx=px-ax,ry=py-ay,t=(rx*dx+ry*dy)/(len*len),d0=rx*nx+ry*ny;
+    const d=d0-(fbm(t*3,7.3,40)-.5)*70,core=Math.exp(-Math.pow((t-.6)/.16,2)),wid=50+45*core;
+    const prof=Math.exp(-(d*d)/(2*wid*wid)),along=.4+.6*Math.exp(-Math.pow((t-.55)/.35,2)),n=fbm(px/70,py/70,1),n2=fbm(px/20,py/20,9);
+    let I=prof*along*Math.pow(n,2.2)*2.2*(.55+.9*n2)+core*Math.exp(-(d*d)/(2*30*30))*1.1*Math.pow(n,1.5)*1.6;
+    const dn=fbm(px/40+3,py/40,20),lane=Math.exp(-Math.pow((d-4-(dn-.5)*50)/(16+22*core),2)),dust=Math.min(1,Math.max(0,(dn-.3)*2.2))*lane*Math.min(1,.35+t*1.4);
+    I*=1-.95*dust;I*=1-Math.max(0,fbm(px/12,py/12,30)-.5)*prof*1.3;MI[gy*GW+gp]=I;
+    const w=core,o=(gy*GW+gp)*4,v=Math.min(1,I);im.data[o]=Math.min(255,(150+110*w)*v);im.data[o+1]=Math.min(255,(165+50*w)*v);im.data[o+2]=Math.min(255,(235-75*w)*v);im.data[o+3]=255;}
+  gx.putImageData(im,0,0);x.globalCompositeOperation='lighter';x.imageSmoothingEnabled=true;x.globalAlpha=.38;x.filter='blur(1.5px)';x.drawImage(gc,0,0,W,H);x.filter='none';x.globalAlpha=.2;x.drawImage(gc,0,0,W,H);x.globalAlpha=1;x.globalCompositeOperation='source-over';
+  const MIat=(px,py)=>MI[Math.min(GH-1,Math.max(0,Math.floor(py/H*GH)))*GW+Math.min(GW-1,Math.max(0,Math.floor(px/W*GW)))];
+  const star=(px,py,m)=>{const tc=R(),col=tc<.12?'170,195,255':tc<.25?'205,220,255':tc<.85?'255,255,255':tc<.95?'255,236,200':'255,205,160',rad=.22+m*1.05,a=Math.min(1,.18+m*.9);x.fillStyle='rgba('+col+','+a.toFixed(2)+')';x.beginPath();x.arc(px,py,rad,0,Math.PI*2);x.fill();
+    if(m>.8){blob(px,py,3+m*5,'rgba('+col+','+(0.25*m).toFixed(2)+')');if(m>.93){x.strokeStyle='rgba('+col+',.22)';x.lineWidth=.4;x.beginPath();x.moveTo(px-7,py);x.lineTo(px+7,py);x.moveTo(px,py-7);x.lineTo(px,py+7);x.stroke();}}};
+  for(let j=0;j<1700;j++)star(R()*W,R()*H,Math.pow(R(),3.2));
+  for(let j=0,m=0;j<400000&&m<26000;j++){const px=R()*W,py=R()*H;if(R()<Math.min(1,MIat(px,py)*1.6)){const a=.12+R()*.3,cc=R();x.fillStyle=cc<.3?'rgba(200,212,255,'+a.toFixed(2)+')':cc<.85?'rgba(255,255,255,'+a.toFixed(2)+')':'rgba(255,225,190,'+a.toFixed(2)+')';const z=R()<.8?.5:.8;x.fillRect(px,py,z,z);m++;}}
+  for(let j=0,m=0;j<80000&&m<4000;j++){const px=R()*W,py=R()*H;if(R()<Math.min(1,MIat(px,py)*1.4)){star(px,py,Math.pow(R(),5)*.6);m++;}}
+  for(let j=0;j<22;j++)star(R()*W,R()*H*.9,.85+R()*.15);
+  _starUrl='url('+c.toDataURL('image/jpeg',.9)+')';}catch(e){_starUrl='none';}return _starUrl;};
 function applyTheme() {
-  const dark = state.theme === 'dark';
-  if (dark) document.documentElement.dataset.theme = 'dark';
-  else delete document.documentElement.dataset.theme;
-  document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === (dark ? 'dark' : 'light')));
+  const t = THEMES.includes(state.theme) ? state.theme : 'light', root = document.documentElement;
+  if (t === 'light') delete root.dataset.theme; else root.dataset.theme = t;
+  if (t === 'night') root.style.setProperty('--sky', starTex()); else root.style.removeProperty('--sky');
+  document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
 }
 document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => {
   state.theme = b.dataset.themePick;

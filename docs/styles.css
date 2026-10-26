@@ -87,15 +87,15 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   border: none; background: none; font-size: 14px; color: var(--ink); text-decoration: none;
   cursor: pointer; box-sizing: border-box;
 }
-.menu-item:hover { background: var(--screen); }
+.menu-item:hover { background: color-mix(in srgb, var(--screen) 50%, transparent); }
 .menu-theme { min-width: 210px; box-sizing: border-box; padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
 .menu-theme-title { font-size: 12px; color: var(--muted); }
-.menu-theme-opts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+.menu-theme-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .menu-theme-opt {
   min-height: 36px; padding: 0 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
   color: var(--ink); font-size: 13px; cursor: pointer; white-space: nowrap;
 }
-.menu-theme-opt.on { background: var(--ink); color: var(--screen); border-color: var(--ink); }
+.menu-theme-opt.on { background: var(--sel, var(--ink)); color: var(--selfg, var(--screen)); border-color: var(--sel, var(--ink)); }
 .menu-item svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--accent); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .home-inner { padding: 56px 20px 40px; box-sizing: border-box; }
 .title {
@@ -108,7 +108,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   padding: 26px 8px; border: none; border-bottom: 1px solid var(--line);
   background: none; text-align: left; cursor: pointer; width: 100%;
 }
-.row:hover { background: var(--soft); }
+.row:hover { background: color-mix(in srgb, var(--soft) 50%, transparent); }
 .row { justify-content: space-between; gap: 16px; }
 .row-main { display: flex; align-items: center; gap: 18px; min-width: 0; }
 .row-wip { cursor: default; opacity: .45; filter: grayscale(1); }
@@ -193,7 +193,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   padding: 0 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .music-upload { background: #fbeee0; color: #9a5a1c; border-color: #e9c9a3; }
-.music-opt.on { background: var(--ink); color: var(--screen); border-color: var(--ink); }
+.music-opt.on { background: var(--sel, var(--ink)); color: var(--selfg, var(--screen)); border-color: var(--sel, var(--ink)); }
 .start-bar {
   position: sticky; bottom: 0; margin-top: auto; padding: 28px 0 32px;
   background: linear-gradient(var(--fade), var(--screen) 30%);
@@ -391,3 +391,40 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   flex: none; min-height: 36px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--line);
   background: none; color: var(--muted); font-size: 13px; cursor: pointer;
 }
+
+/* ---------- 其他配色（首頁選單「配色」） ---------- */
+:root[data-theme="night"] { /* 夜空 */
+  --page: #0a0d24;
+  --screen: #000000;
+  --ink: #eef0fb;
+  --ink-2: #c9cff5;
+  --accent: #e6c36a;
+  --accent-2: #8fa2f0;
+  --line-2: #2a3266;
+  --line: #232a58;
+  --soft-2: #12173f;
+  --chip: #141a3c;
+  --soft: #0a0d24;
+  --line-3: #141a3c;
+  --muted-2: #a9afd2;
+  --muted: #c0c5e3;
+  --track: #6a5d2f;
+  --guide: #12173f;
+  --figure: #141a3c;
+  --fade: rgba(5,7,26,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #10143a;
+  --sel: #e6c36a;
+  --selfg: #141a3a;
+  --img-filter: brightness(1.9);
+}
+/* 夜空：首頁與各畫面底下鋪一張星空圖（程式畫出，存在 --sky） */
+.home { isolation: isolate; }
+.home::before {
+  content: ''; display: none; position: fixed; top: 0; bottom: 0; left: 50%; width: 100%; max-width: 480px;
+  transform: translateX(-50%); z-index: -1; pointer-events: none;
+  background: #000 var(--sky, none) center / cover;
+}
+:root[data-theme="night"] .home::before { display: block; }
+.screen { background-image: var(--sky, none); background-size: cover; background-position: center; }
+.wh-hold { background-image: none; }

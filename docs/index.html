@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>好好呼吸</title>
 <meta name="description" content="好好呼吸是一個免費的呼吸練習網站：方塊呼吸、4-7-8、諧振式呼吸、鼻孔交替呼吸等，跟著動畫與聲音一起練習。">
-<script>try{if((JSON.parse(localStorage.getItem('haohao-breath-settings'))||{}).theme==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
+<script>try{var t=(JSON.parse(localStorage.getItem('haohao-breath-settings'))||{}).theme;if(t&&t!=='light')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="144x144" href="icons/favicon-144.png">
 <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96.png">
@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=32">
+<link rel="stylesheet" href="styles.css?v=33">
 </head>
 <body>
 <main class="home">
@@ -31,6 +31,7 @@
         <div class="menu-theme-opts">
           <button class="menu-theme-opt" data-theme-pick="light">淺色</button>
           <button class="menu-theme-opt" data-theme-pick="dark">深色</button>
+          <button class="menu-theme-opt" data-theme-pick="night">夜空</button>
         </div>
       </div>
       <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
@@ -315,7 +316,7 @@
   </div>
 </div>
 
-<script src="app.js?v=32"></script>
+<script src="app.js?v=33"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
