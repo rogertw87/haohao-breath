@@ -35,7 +35,7 @@ const ICONS = {
 };
 const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
 
-const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['underwater', '水下'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '持咒'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪'], ['shurangama', '楞嚴咒心']];
+const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '藥師真言'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪呼嚕'], ['shurangama', '楞嚴咒心']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
 // 依序輪播的背景音樂：播完接下一個，最後一個播完回到第一個
 const MUSIC_LISTS = {
@@ -43,7 +43,7 @@ const MUSIC_LISTS = {
   // 楞嚴咒心：唐密唸法（shurangama2）連續 5 遍，再接一般唸法（shurangama1）5 遍
   shurangama: [...Array(5).fill('audio/shurangama2.mp3'), ...Array(5).fill('audio/shurangama1.mp3')],
 };
-const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', underwater: 'audio/underwater.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3', rainforest: 'audio/rainforest.mp3' };
+const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3', rainforest: 'audio/rainforest.mp3' };
 // 音檔頭尾本身有淡入淡出的背景音樂：循環時跳過開頭與結尾（秒），兩個播放器無縫接替
 const LOOPCUT = { campfire: [1.2, 1.8] };
 const KEY = 'haohao-breath-settings';
@@ -311,8 +311,9 @@ function loadMine() {
       if (v && v.blob) { myUrls[k] = URL.createObjectURL(v.blob); mine.push({ id: String(k), name: stripExt(v.name) }); }
     });
   }).catch(() => {}).then(() => {
-    // 選的錄音已經不在了（例如清除過瀏覽器資料），改回「無」
-    if (state.music.startsWith('mine:') && !myUrls[state.music.slice(5)]) { state.music = 'none'; save(); }
+    // 選的錄音已經不在了（例如清除過瀏覽器資料），或那首音樂已下架（例如水下），改回「無」
+    const gone = state.music.startsWith('mine:') ? !myUrls[state.music.slice(5)] : !MUSIC.some(([k]) => k === state.music);
+    if (gone) { state.music = 'none'; save(); }
     if (cur != null && !screens.setup.hidden) renderSetup();
   });
 }
@@ -1028,7 +1029,7 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 配色（首頁選單：淺色、深色、夜空；顏色在 styles.css） ----------
+// ---------- 主題（首頁選單：淺色、深色、夜空；顏色在 styles.css） ----------
 const THEMES = ['light', 'dark', 'night'];
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;

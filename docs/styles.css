@@ -138,7 +138,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .row-name { font-size: 28px; font-weight: 300; letter-spacing: .04em; color: var(--ink); }
 
 /* ---------- 共用全螢幕 ---------- */
-.screen { position: fixed; inset: 0; z-index: 2; background: var(--screen); overflow-y: auto; }
+.screen { position: fixed; inset: 0; z-index: 2; background: var(--screen); overflow-y: auto; overflow-x: hidden; }
 .screen-center { display: flex; justify-content: center; overflow: hidden; }
 
 /* ---------- 設定頁 ---------- */
