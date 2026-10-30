@@ -1029,20 +1029,6 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 從螢幕左緣往右滑 = 返回首頁（只在設定／完成頁，練習中不觸發） ----------
-let edge = null;
-document.addEventListener('touchstart', e => {
-  const t = e.touches[0];
-  edge = t && t.clientX < 32 && cur != null && !practicing() ? { x: t.clientX, y: t.clientY, t: Date.now() } : null;
-}, { passive: true });
-document.addEventListener('touchend', e => {
-  const a = edge; edge = null;
-  const t = e.changedTouches[0];
-  if (!a || !t) return;
-  const dx = t.clientX - a.x, dy = Math.abs(t.clientY - a.y);
-  if (dx > 70 && dy < dx * .6 && Date.now() - a.t < 800) close();
-}, { passive: true });
-
 // ---------- 主題（首頁選單：淺色、深色、夜空；顏色在 styles.css） ----------
 const THEMES = ['light', 'dark', 'night'];
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
