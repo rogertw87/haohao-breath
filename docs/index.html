@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=34">
+<link rel="stylesheet" href="styles.css?v=37">
 </head>
 <body>
 <main class="home">
@@ -220,6 +220,10 @@
       <div class="wh-flow-rounds">重複 <span id="whRounds"></span> 輪</div>
     </div>
 
+    <span class="section-title music-title">背景音樂</span>
+    <div class="music-grid" id="whMusic"></div>
+    <p class="wh-music-hint">練習時音樂會自動調小，讓呼吸提示音聽得清楚。建議選沒有明顯節拍的音樂。</p>
+
     <button class="wh-adjust" data-action="wh-open" aria-expanded="false"><span>調整設定</span><span class="wh-adjust-sign" id="whOpenSign">＋</span></button>
     <div class="wh-settings" id="whSettings" hidden>
       <div class="panel rows" id="whRows"></div>
@@ -316,7 +320,7 @@
   </div>
 </div>
 
-<script src="app.js?v=36"></script>
+<script src="app.js?v=37"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

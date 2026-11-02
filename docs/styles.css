@@ -428,3 +428,4 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 :root[data-theme="night"] .home::before { display: block; }
 .screen { background-image: var(--sky, none); background-size: cover; background-position: center; }
 .wh-hold { background-image: none; }
+.wh-music-hint { margin: 12px 4px 24px; font-size: 12px; line-height: 1.6; color: var(--muted-2); }

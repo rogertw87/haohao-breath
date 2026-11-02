@@ -217,6 +217,8 @@ function tick() {
 
 // ---------- 背景音樂（手碟、非洲鼓，練習開始時淡入） ----------
 let audio = null, fadeIv = 0, loopIv = 0, loopPair = [];
+let duck = 1; // 冰人呼吸時背景音樂調小（WH_DUCK），讓呼吸提示音聽得清楚
+const musicVol = () => state.vol * duck;
 function playMusic(kind) {
   stopMusic(true);
   if (MUSIC_LISTS[kind]) { playList(MUSIC_LISTS[kind]); return; }
@@ -231,7 +233,7 @@ function playMusic(kind) {
   au.loop = true; au.volume = 0; au.play().catch(() => {});
   audio = au;
   let v = 0;
-  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * state.vol; if (v >= 1) clearInterval(fadeIv); }, 60);
+  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * musicVol(); if (v >= 1) clearInterval(fadeIv); }, 60);
   const cut = LOOPCUT[kind];
   if (cut) {
     // 快播到結尾淡出前，換另一個播放器從淡入之後接著播
@@ -266,7 +268,7 @@ function playList(list) {
   au.volume = 0; au.play().catch(() => {});
   audio = au;
   let v = 0;
-  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * state.vol; if (v >= 1) clearInterval(fadeIv); }, 60);
+  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * musicVol(); if (v >= 1) clearInterval(fadeIv); }, 60);
 }
 function stopMusic(immediate) {
   clearInterval(fadeIv); clearInterval(loopIv);
@@ -312,9 +314,11 @@ function loadMine() {
     });
   }).catch(() => {}).then(() => {
     // 選的錄音已經不在了（例如清除過瀏覽器資料），或那首音樂已下架（例如水下），改回「無」
-    const gone = state.music.startsWith('mine:') ? !myUrls[state.music.slice(5)] : !MUSIC.some(([k]) => k === state.music);
-    if (gone) { state.music = 'none'; save(); }
+    const gone = m => m.startsWith('mine:') ? !myUrls[m.slice(5)] : !MUSIC.some(([k]) => k === m);
+    if (gone(state.music)) { state.music = 'none'; save(); }
+    if (state.wh && state.wh.music && gone(state.wh.music)) { state.wh = { ...state.wh, music: 'none' }; save(); }
     if (cur != null && !screens.setup.hidden) renderSetup();
+    if (cur != null && !screens.whSetup.hidden) whRenderSetup();
   });
 }
 function addMine(f) {
@@ -323,6 +327,8 @@ function addMine(f) {
   idb('readwrite', st => st.put({ blob: f, name: f.name }, id)).then(() => {
     myUrls[id] = URL.createObjectURL(f);
     mine.push({ id, name: stripExt(f.name) });
+    // 在冰人呼吸設定頁上傳的，就選為冰人呼吸的背景音樂
+    if (cur != null && EX[cur].own) { whSet('music', 'mine:' + id); return; }
     state.music = 'mine:' + id; save(); renderSetup();
   }).catch(() => alert('無法儲存這個檔案，請換一個試試。'));
 }
@@ -333,6 +339,7 @@ function delMine(m) {
   delete myUrls[m.id];
   mine = mine.filter(x => x.id !== m.id);
   if (state.music === 'mine:' + m.id) { state.music = 'none'; save(); }
+  if (state.wh && state.wh.music === 'mine:' + m.id) { state.wh = { ...state.wh, music: 'none' }; save(); }
   renderSetup();
 }
 $('mineFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) addMine(f); });
@@ -520,6 +527,24 @@ const MODES = {
   nostril: { key: 'nMode', def: '3', opts: [['3', '三段（吸・閉・吐）'], ['4', '四段（吸・閉・吐・閉）']] },
   rebirth: { key: 'rMode', def: '4', opts: [['4', '四小一大'], ['9', '九小一大']] },
 };
+// 背景音樂選項（一般練習和冰人呼吸共用）：內建音樂、我的錄音、「＋ 上傳錄音」
+function musicGrid(box, current, pick) {
+  box.innerHTML = '';
+  MUSIC.concat(mine.map(m => ['mine:' + m.id, m.name])).forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + (k === current ? ' on' : '');
+    b.textContent = l; b.title = l;
+    b.addEventListener('click', () => pick(k));
+    box.appendChild(b);
+  });
+  if (mine.length < MINE_MAX) {
+    const b = document.createElement('button');
+    b.className = 'music-opt music-upload';
+    b.textContent = '＋ 上傳錄音';
+    b.addEventListener('click', () => $('mineFile').click());
+    box.appendChild(b);
+  }
+}
 function renderSetup() {
   const ex = EX[cur], secs = secsOf(ex), cycle = cycleOf(ex);
   bind('name', ex.name);
@@ -566,21 +591,7 @@ function renderSetup() {
 
   $('minutes').value = state.minutes;
   $('music').innerHTML = '';
-  const opts = MUSIC.concat(mine.map(m => ['mine:' + m.id, m.name]));
-  opts.forEach(([k, l]) => {
-    const b = document.createElement('button');
-    b.className = 'music-opt' + (k === state.music ? ' on' : '');
-    b.textContent = l; b.title = l;
-    b.addEventListener('click', () => { state.music = k; save(); renderSetup(); });
-    $('music').appendChild(b);
-  });
-  if (mine.length < MINE_MAX) {
-    const b = document.createElement('button');
-    b.className = 'music-opt music-upload';
-    b.textContent = '＋ 上傳錄音';
-    b.addEventListener('click', () => $('mineFile').click());
-    $('music').appendChild(b);
-  }
+  musicGrid($('music'), state.music, k => { state.music = k; save(); renderSetup(); });
   $('mineBox').hidden = !mine.length;
   $('mineRows').innerHTML = '';
   mine.forEach(m => {
@@ -610,7 +621,7 @@ function open(i) {
   screens.setup.scrollTop = 0;
 }
 function close() {
-  clearAll(); stopMusic(); releaseWake();
+  clearAll(); stopMusic(); releaseWake(); duck = 1;
   cur = null;
   renderToday();
   show(null);
@@ -657,6 +668,7 @@ function start() {
   clearAll();
   // 按下開始後先等 2.5 秒（讓音樂先進來、準備好），再開始第一段
   const LEAD = 2500;
+  duck = 1;
   const ex = EX[cur], total = state.minutes * 60, end = Date.now() + LEAD + total * 1000;
   ctx(); // 在按下按鈕時就啟用音效，手機瀏覽器才不會擋
   loadCues();
@@ -701,7 +713,8 @@ function stop() {
 // 換氣（快速深呼吸）→ 吐氣後閉氣（自己決定何時吸氣）→ 深吸一口憋 15 秒 → 吐氣，重複數輪
 const WH_DEF = { breaths: 30, rounds: 3, mode: 'free', sound: true, vibe: true };
 const WH_PACE = [1.7, 1.3];        // 每口吸、吐秒數
-const WH_VIDEO = [60, 90, 120];    // 「跟隨影片節奏」每輪閉氣目標
+const WH_VIDEO = [60, 90, 120];
+const WH_DUCK = .6;                // 冰人呼吸時背景音樂的音量比例    // 「跟隨影片節奏」每輪閉氣目標
 const fmtUp = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 const whCfg = () => Object.assign({}, WH_DEF, state.wh || {});
 const wh = { phase: null, round: 1, now: 1, holds: [], t0: 0, paused: false };
@@ -715,7 +728,7 @@ function whRenderSetup() {
   $('whHoldDesc').textContent = c.mode === 'video' ? '1:00 起' : '自己決定';
   const rows = [
     ['呼吸次數', c.breaths + ' 次', () => whSet('breaths', Math.max(20, c.breaths - 5)), () => whSet('breaths', Math.min(40, c.breaths + 5))],
-    ['輪數', c.rounds + ' 輪', () => whSet('rounds', Math.max(1, c.rounds - 1)), () => whSet('rounds', Math.min(5, c.rounds + 1))],
+    ['輪數', c.rounds + ' 輪', () => whSet('rounds', Math.max(1, c.rounds - 1)), () => whSet('rounds', Math.min(10, c.rounds + 1))],
   ];
   $('whRows').innerHTML = '';
   rows.forEach(([label, val, dec, inc]) => {
@@ -739,6 +752,7 @@ function whRenderSetup() {
   $('whModeNote').textContent = c.mode === 'video'
     ? '每輪閉氣依序為 1:00、1:30、2:00，時間到會提示吸氣。不舒服就提早吸氣。'
     : '閉氣時碼表往上數，不設目標。想吸氣時按下按鈕即可。';
+  musicGrid($('whMusic'), c.music || 'none', k => whSet('music', k));
   $('whToggles').innerHTML = '';
   [['sound', '聲音'], ['vibe', '震動']].forEach(([k, l]) => {
     const b = document.createElement('button');
@@ -836,6 +850,9 @@ function whStart() {
   keepAlive.play().catch(() => {});
   lockWake();
   wh.holds = []; wh.run = {}; wh.start = performance.now();
+  duck = WH_DUCK;
+  const wm = whCfg().music || 'none';
+  if (wm !== 'none') playMusic(wm);
   whPausedUi(false);
   whBetween(1);
 }
@@ -910,7 +927,7 @@ function whRest() {
   }, performance.now() + 4000);
 }
 function whDone() {
-  clearAll(); releaseWake();
+  clearAll(); releaseWake(); stopMusic(); duck = 1;
   wh.phase = null; wh.run = null;
   const h = wh.holds.slice();
   if (h.length) { state.whHist = [...(state.whHist || []), { d: Date.now(), h: h.map(x => Math.round(x)) }].slice(-50); save(); }
@@ -929,7 +946,7 @@ function whDone() {
 function whStop() {
   stopCue();
   if (wh.holds.length) { whDone(); return; }
-  clearAll(); releaseWake();
+  clearAll(); releaseWake(); stopMusic(); duck = 1;
   wh.phase = null; wh.run = null;
   whRenderSetup(); show('whSetup');
 }
