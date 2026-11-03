@@ -429,3 +429,70 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .screen { background-image: var(--sky, none); background-size: cover; background-position: center; }
 .wh-hold { background-image: none; }
 .wh-music-hint { margin: 12px 4px 24px; font-size: 12px; line-height: 1.6; color: var(--muted-2); }
+
+/* ---------- 勳章 ---------- */
+.badges { z-index: 4; }
+.badges-inner { max-width: 480px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; gap: 18px; padding: 44px 20px 40px; box-sizing: border-box; }
+.badges .back { padding: 8px 4px; }
+.badges-title { margin: 0 4px 4px; }
+.bcard { background: var(--card); border: 1px solid var(--line); border-radius: 24px; padding: 22px 18px; display: flex; flex-direction: column; gap: 20px; }
+.bsmall { font-size: 12px; color: var(--muted-2); }
+.bstreak { display: flex; flex-direction: column; gap: 4px; }
+.bstreak .bsmall { font-size: 13px; }
+.bstreak-row { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.bcur { font: 300 48px var(--mono); line-height: 1; }
+.bcur-unit { font: 400 18px "Noto Sans TC", sans-serif; margin-left: 6px; }
+.bbest { font-size: 14px; color: var(--muted); }
+.bweek-box { display: flex; flex-direction: column; gap: 10px; }
+.bweek { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; text-align: center; }
+.bday { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; color: var(--muted-2); }
+.bdot {
+  width: 28px; height: 28px; box-sizing: border-box; border-radius: 50%; border: 1.5px solid var(--line);
+  display: flex; align-items: center; justify-content: center; font-size: 11px; color: var(--muted-2);
+}
+.bdot-1 { background: var(--dot); border: none; }
+.bdot-2 { border: 1.5px dashed var(--track); }
+.bdot-3 { border: 1.5px solid var(--dot); }
+.bdot-5 { opacity: .5; }
+.bgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bstreaks { gap: 18px 8px; padding-top: 18px; border-top: 1px solid var(--line-3); }
+.bitem { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.bring-box, .aw-rings { position: relative; display: flex; align-items: center; justify-content: center; }
+.bring-box { width: 66px; height: 66px; margin-bottom: 4px; }
+.ring { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 50%; }
+.bname { font-size: 14px; font-weight: 500; color: var(--muted-2); }
+.bitem.on .bname { color: var(--ink); }
+.bstatus { font: 400 11px var(--mono); color: var(--muted-2); min-height: 14px; }
+.bstamp-card { padding-bottom: 26px; gap: 22px; }
+.bstamp-head { display: flex; justify-content: space-between; align-items: baseline; }
+.bstamp-title { font-size: 18px; font-weight: 500; letter-spacing: .1em; color: var(--ink-2); }
+.bstamp-n { font: 400 14px var(--mono); color: var(--muted-2); }
+.bstamps { gap: 22px 8px; }
+.bstamps .bitem { gap: 8px; }
+.bstamps .bsmall { line-height: 1.4; }
+.bstamp {
+  width: 70px; height: 70px; box-sizing: border-box; border-radius: 50%; border: 1.5px dashed var(--track); color: var(--track);
+  display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl;
+  font: 700 18px "Noto Serif TC", serif; letter-spacing: .06em;
+}
+.bstamp.square { border-radius: 16px; }
+.bstamp.on { border: 2.5px solid #c0432c; color: #c0432c; box-shadow: inset 0 0 0 3px var(--card), inset 0 0 0 4.5px #c0432c; }
+.bnote { margin: 4px 6px 0; font-size: 12px; line-height: 1.7; color: var(--muted-2); text-wrap: pretty; }
+
+.award-bg { position: fixed; inset: 0; z-index: 6; background: rgba(6,16,21,.55); display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+.award {
+  width: 100%; max-width: 360px; box-sizing: border-box; background: var(--page); color: var(--ink); border-radius: 28px;
+  padding: 36px 24px 24px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center;
+}
+.aw-rings { width: 140px; height: 140px; margin-bottom: 6px; }
+.aw-small { font-size: 13px; color: var(--muted-2); }
+.aw-stamp {
+  width: 120px; height: 120px; box-sizing: border-box; border-radius: 50%; border: 3px solid #c0432c;
+  box-shadow: inset 0 0 0 4px var(--page), inset 0 0 0 6px #c0432c; color: #c0432c; transform: rotate(-7deg);
+  display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl;
+  font: 700 32px "Noto Serif TC", serif; letter-spacing: .08em; margin: 6px 0;
+}
+.aw-stamp.square { border-radius: 28px; }
+.aw-title { font-size: 24px; font-weight: 500; }
+.aw-sub { font-size: 15px; line-height: 1.6; color: var(--muted); }
+.aw-ok { align-self: stretch; min-height: 50px; margin-top: 8px; border: none; border-radius: 16px; background: var(--accent); color: #fff; font-size: 16px; font-weight: 500; cursor: pointer; }

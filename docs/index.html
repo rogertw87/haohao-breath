@@ -18,8 +18,8 @@
 <meta name="apple-mobile-web-app-title" content="好好呼吸">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=37">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=38">
 </head>
 <body>
 <main class="home">
@@ -34,6 +34,7 @@
           <button class="menu-theme-opt" data-theme-pick="night">夜空</button>
         </div>
       </div>
+      <button class="menu-item" data-action="badges-open"><svg viewBox="0 0 24 24"><path d="M8.5 3l2.6 6.4M15.5 3l-2.6 6.4M12 9.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11"></path></svg><span>勳章</span></button>
       <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
       <a class="menu-item" href="thanks.html"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"></path></svg><span>感謝</span></a>
       <button class="menu-item" id="installItem" data-action="install-open"><svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM12 8v7M8.8 11.8 12 15l3.2-3.2"></path></svg><span>加到手機桌面</span></button>
@@ -189,6 +190,36 @@
   </div>
 </section>
 
+<!-- 勳章 -->
+<section class="screen badges" id="badges" hidden>
+  <div class="badges-inner">
+    <button class="back" data-action="badges-close">← 返回</button>
+    <h2 class="ex-name badges-title">勳章</h2>
+    <div class="bcard">
+      <div class="bstreak"><span class="bsmall">目前連續</span><div class="bstreak-row"><span class="bcur"><span id="bCur"></span><span class="bcur-unit">天</span></span><span class="bbest">最長 <span id="bBest"></span> 天</span></div></div>
+      <div class="bweek-box"><div class="bweek" id="bWeek"></div><span class="bsmall" id="bRestNote"></span></div>
+      <div class="bgrid bstreaks" id="bStreaks"></div>
+    </div>
+    <div class="bcard bstamp-card">
+      <div class="bstamp-head"><span class="bstamp-title">印章</span><span class="bstamp-n"><span id="bStampN"></span> / 12</span></div>
+      <div class="bgrid bstamps" id="bStamps"></div>
+    </div>
+    <p class="bnote">完整練完一次練習就算練了一天，中途停止不算。每週（週一到週日）可以休息 1 天。紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。</p>
+  </div>
+</section>
+
+<!-- 獲得新勳章 -->
+<div class="award-bg" id="award" hidden>
+  <div class="award" role="dialog" aria-modal="true" aria-labelledby="awTitle">
+    <div class="aw-rings" id="awRingsBox"></div>
+    <span class="aw-small" id="awStampTag">新的印章</span>
+    <div class="aw-stamp" id="awStamp"></div>
+    <span class="aw-title" id="awTitle"></span>
+    <span class="aw-sub" id="awSub"></span>
+    <button class="aw-ok" data-action="award-next">收下</button>
+  </div>
+</div>
+
 <!-- 加到手機桌面 -->
 <div class="sheet-bg" id="installSheet" data-action="install-close" hidden>
   <div class="sheet install" role="dialog" aria-modal="true" aria-labelledby="installHead">
@@ -320,7 +351,7 @@
   </div>
 </div>
 
-<script src="app.js?v=37"></script>
+<script src="app.js?v=38"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

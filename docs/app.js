@@ -54,7 +54,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4' },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -63,8 +63,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
@@ -73,8 +73,137 @@ const todayLog = () => (state.log && state.log.date === today() ? state.log.item
 function logDone(id, sec) {
   const items = { ...todayLog() }, c = items[id] || { n: 0, sec: 0 };
   items[id] = { n: c.n + 1, sec: c.sec + sec };
-  state.log = { date: today(), items };
+  // 勳章：記下練習的日子、次數、時間，看有沒有拿到新的勳章
+  const b = bdg(), dt = today(), h = new Date().getHours(), prev = earned(b);
+  b.days[dt] = 1; b.n = { ...b.n, [id]: (b.n[id] || 0) + 1 }; b.total++; b.sec += sec;
+  if (id === 'wimhof') b.hold = Math.max(b.hold, 0, ...wh.holds.map(x => x || 0));
+  if (h >= 4 && h < 7) b.early = true;
+  if (h >= 22 || h < 4) b.late = true;
+  b.best = Math.max(b.best, streak(b.days));
+  const neu = earned(b).filter(k => !prev.includes(k));
+  b.got = { ...b.got }; neu.forEach(k => { b.got[k] = dt; });
+  state.log = { date: dt, items };
+  state.bdg = b;
+  awards.push(...neu);
   save();
+}
+
+// ---------- 勳章：連續天數 + 印章 ----------
+const STREAKS = [[3, '初心', '好的開始。'], [7, '一週', '你已經連續練習一週了。'], [21, '習慣', '練習正在變成習慣。'], [49, '七七', '連續練習七個星期了。'], [100, '百日', '連續練習一百天了。'], [365, '一年', '連續練習一整年了。']];
+const cnt = (id, k) => b => (b.n[id] || 0) >= k;
+const STAMPS = [
+  ['first', '初息', '第一次完成練習', b => b.total >= 1], ['box', '方塊', '方塊呼吸 10 次', cnt('box', 10)],
+  ['478', '四七八', '4-7-8 放鬆呼吸 10 次', cnt('478', 10)], ['belly', '諧振', '諧振式呼吸 10 次', cnt('belly', 10)],
+  ['nostril', '交替', '鼻孔交替呼吸 10 次', cnt('nostril', 10)], ['pursed', '呼氣', '呼氣練習 10 次', cnt('pursed', 10)],
+  ['wimhof', '冰人', '冰人呼吸 10 次', cnt('wimhof', 10)], ['hold', '屏息', '閉氣達 2 分鐘', b => b.hold >= 120],
+  ['early', '晨光', '早上 7 點前練習', b => b.early], ['late', '夜深', '晚上 10 點後練習', b => b.late],
+  ['m100', '百分', '累積 100 分鐘', b => b.sec >= 6000], ['m1000', '千分', '累積 1000 分鐘', b => b.sec >= 60000],
+];
+const ST_ROT = [-6, 4, -3, 7, -5, 3, -4, 6, -7, 2, -2, 5], ST_RED = '#c0432c', RINGC = ['#1f6f86', '#3f8fa6', '#5aaac0', '#7dbccd', '#9ccbd8', '#bcdde6'];
+const dkey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const wkey = d => { const m = new Date(d); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return dkey(m); };
+const md = k => (k ? (+k.slice(5, 7)) + '/' + (+k.slice(8, 10)) : '');
+// 連續天數勳章：中心一點，外面 n 圈同心圓（每圈間隔 step、線寬 w）
+function drawRings(box, n, dot, step, w, cols) {
+  box.innerHTML = '';
+  for (let k = n; k >= 0; k--) {
+    const el = document.createElement('div'), size = dot + 2 * k * step;
+    el.className = 'ring';
+    el.style.width = el.style.height = size + 'px';
+    if (k) el.style.border = w + 'px solid ' + cols[k - 1]; else el.style.background = cols[0];
+    box.appendChild(el);
+  }
+}
+const awards = []; // 這次練完新拿到、還沒「收下」的勳章
+// 勳章紀錄：days 練習過的日期、n 各練習完成次數、sec 累積秒數、hold 最長閉氣、got 取得日期
+function bdg() {
+  const b = state.bdg || {}, days = { ...(b.days || {}) }, l = state.log;
+  if (l && l.items && Object.keys(l.items).length) days[l.date] = 1; // 舊的「今日紀錄」也算
+  return { days, n: b.n || {}, total: b.total || 0, sec: b.sec || 0, hold: b.hold || 0, early: !!b.early, late: !!b.late, best: b.best || 0, got: b.got || {} };
+}
+const earned = b => [...STREAKS.filter(([d]) => b.best >= d).map(([d]) => 's' + d), ...STAMPS.filter(x => x[3](b)).map(x => x[0])];
+// 連續天數：只算有練的日子；每週（一到日）可休息 1 天不中斷；今天還沒練不算中斷
+function streak(days) {
+  const ks = Object.keys(days).sort();
+  if (!ks.length) return 0;
+  const first = ks[0], d = new Date(); d.setHours(12, 0, 0, 0);
+  if (!days[dkey(d)]) d.setDate(d.getDate() - 1);
+  let n = 0; const rest = {};
+  for (;;) {
+    const k = dkey(d);
+    if (k < first) break;
+    if (days[k]) n++;
+    else { const w = wkey(d); if (rest[w]) break; rest[w] = 1; }
+    d.setDate(d.getDate() - 1);
+  }
+  return n;
+}
+function renderBadges() {
+  const B = bdg(), cur = streak(B.days), t = new Date(); t.setHours(12, 0, 0, 0);
+  const tk = dkey(t), mon = new Date(t); mon.setDate(t.getDate() - ((t.getDay() + 6) % 7));
+  let rest = false;
+  $('bCur').textContent = cur;
+  $('bBest').textContent = Math.max(B.best, cur);
+  $('bWeek').innerHTML = '';
+  ['一', '二', '三', '四', '五', '六', '日'].forEach((day, i) => {
+    const d = new Date(mon); d.setDate(mon.getDate() + i);
+    const k = dkey(d), done = !!B.days[k];
+    // 1 有練、2 休息日、3 今天、4 過去沒練、5 未來
+    const st = done ? 1 : k === tk ? 3 : k < tk ? (rest ? 4 : (rest = true, 2)) : 5;
+    const el = document.createElement('div');
+    el.className = 'bday';
+    el.innerHTML = '<span></span><div class="bdot bdot-' + st + '"></div>';
+    el.firstChild.textContent = day;
+    el.lastChild.textContent = st === 2 ? '休' : st === 3 ? '今' : '';
+    $('bWeek').appendChild(el);
+  });
+  $('bRestNote').textContent = rest ? '本週已經休息 1 天。' : '本週還可以休息 1 天，連續天數不會中斷。';
+  $('bStreaks').innerHTML = '';
+  STREAKS.forEach(([d, name], i) => {
+    const on = B.best >= d, next = !on && (i === 0 || B.best >= STREAKS[i - 1][0]);
+    const el = document.createElement('div');
+    el.className = 'bitem' + (on ? ' on' : '');
+    el.innerHTML = '<div class="bring-box"></div><span class="bname"></span><span class="bsmall"></span><span class="bstatus"></span>';
+    drawRings(el.firstChild, i + 1, 6, 5, 2, on ? RINGC : Array(6).fill('var(--line)'));
+    el.querySelector('.bname').textContent = name;
+    el.querySelector('.bsmall').textContent = '連續 ' + d + ' 天';
+    el.querySelector('.bstatus').textContent = on ? md(B.got['s' + d]) : next ? cur + ' / ' + d : '';
+    $('bStreaks').appendChild(el);
+  });
+  $('bStamps').innerHTML = '';
+  let n = 0;
+  STAMPS.forEach(([, name, rule, test], i) => {
+    const on = test(B); if (on) n++;
+    const el = document.createElement('div');
+    el.className = 'bitem';
+    el.innerHTML = '<div class="bstamp' + (on ? ' on' : '') + (i % 3 === 1 ? ' square' : '') + '"></div><span class="bsmall"></span>';
+    el.firstChild.textContent = name;
+    if (on) el.firstChild.style.transform = 'rotate(' + ST_ROT[i] + 'deg)';
+    el.lastChild.textContent = rule;
+    $('bStamps').appendChild(el);
+  });
+  $('bStampN').textContent = n;
+}
+// 完成畫面上，依序跳出這次拿到的勳章
+function showAward() {
+  const aw = awards[0];
+  $('award').hidden = !aw;
+  if (!aw) return;
+  const si = aw[0] === 's' ? STREAKS.findIndex(x => 's' + x[0] === aw) : -1;
+  const sp = si < 0 ? STAMPS.findIndex(x => x[0] === aw) : -1;
+  if (si < 0 && sp < 0) { awards.shift(); showAward(); return; }
+  $('awRingsBox').hidden = si < 0;
+  $('awStampTag').hidden = $('awStamp').hidden = sp < 0;
+  if (si >= 0) {
+    drawRings($('awRingsBox'), si + 1, 12, 14, 5, RINGC);
+    $('awTitle').textContent = '連續 ' + STREAKS[si][0] + ' 天';
+    $('awSub').textContent = STREAKS[si][2];
+  } else {
+    $('awStamp').textContent = STAMPS[sp][1];
+    $('awStamp').classList.toggle('square', sp % 3 === 1);
+    $('awTitle').textContent = STAMPS[sp][2];
+    $('awSub').textContent = '已經蓋在你的印章冊裡。';
+  }
 }
 const mins = sec => Math.max(1, Math.round(sec / 60));
 function renderToday() {
@@ -485,7 +614,7 @@ function stopCue() {
 }
 
 // ---------- 畫面 ----------
-const screens = { setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone') };
+const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone') };
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
@@ -700,7 +829,7 @@ function start() {
   raf = requestAnimationFrame(tick);
   timers.push(setTimeout(() => run(0), LEAD));
   timers.push(setInterval(() => { totalLeft = Math.min(total, (end - Date.now()) / 1000); updateTotal(); }, 1000));
-  timers.push(setTimeout(() => { clearAll(); stopMusic(); logDone(ex.id, total); show('done'); }, LEAD + total * 1000));
+  timers.push(setTimeout(() => { clearAll(); stopMusic(); logDone(ex.id, total); show('done'); showAward(); }, LEAD + total * 1000));
 }
 
 function stop() {
@@ -942,6 +1071,7 @@ function whDone() {
     $('whResults').appendChild(row);
   });
   show('whDone');
+  showAward();
 }
 function whStop() {
   stopCue();
@@ -991,6 +1121,9 @@ document.addEventListener('click', e => {
   else if (a === 'start') start();
   else if (a === 'stop') stop();
   else if (a === 'resume') resumeAllAudio();
+  else if (a === 'badges-open') { setMenu(false); renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
+  else if (a === 'badges-close') show(null);
+  else if (a === 'award-next') { awards.shift(); showAward(); }
   else if (a.startsWith('install-')) installAction(a.slice(8), e);
   else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
