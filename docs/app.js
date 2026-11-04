@@ -126,9 +126,10 @@ function streak(days) {
   return n;
 }
 // 銀河：第 n 天時，旋臂從外圈長到第 n 顆星的位置；核心在後段慢慢亮起，第 30 天完整（畫好的圖會快取）
+// ink=true：淺色主題用的藍綠墨色；false：深色主題用的亮色。都是透明底
 const galCache = {};
-function galaxyAt(n) {
-    const C=galCache;if(C[n]!==undefined)return C[n];
+function galaxyAt(n, ink) {
+    const C=galCache,K=n+(ink?'i':'g');if(C[K]!==undefined)return C[K];
     try{
       const Z=540,c=document.createElement('canvas');c.width=c.height=Z;const x=c.getContext('2d');
       let sd=11;const R=()=>(sd=(sd*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/1.15;
@@ -137,32 +138,35 @@ function galaxyAt(n) {
       const vis=th=>cut<0?1:Math.max(0,Math.min(1,(th-cut)/.7));
       const visR=r=>cut<0?1:Math.max(0,Math.min(1,(r-rCut)/(rCut*.15+4)));
       const p=Math.max(0,Math.min(1,n/30)),core=n>=30?1:Math.max(0,(p-.6)/.4)*.45;
-      x.fillStyle='#04060b';x.fillRect(0,0,Z,Z);
-      for(let i=0;i<520;i++){const a=(.1+R()*.6)*.7,s=R()<.93?.7:1.4;x.fillStyle='rgba('+(200+R()*55|0)+','+(205+R()*50|0)+',255,'+a.toFixed(2)+')';x.fillRect(R()*Z,R()*Z,s,s);}
+      for(let i=0;i<3120;i++)R();
       x.save();x.translate(Z/2,Z/2);x.rotate(-.42);x.scale(1,.4);
-      let g=x.createRadialGradient(0,0,0,0,0,250);g.addColorStop(0,'rgba(255,236,210,.18)');g.addColorStop(.3,'rgba(180,192,235,.08)');g.addColorStop(1,'rgba(120,140,200,0)');
+      let g=x.createRadialGradient(0,0,0,0,0,250);
+      if(ink){g.addColorStop(0,'rgba(90,170,192,.10)');g.addColorStop(.4,'rgba(90,170,192,.04)');g.addColorStop(1,'rgba(90,170,192,0)');}
+      else{g.addColorStop(0,'rgba(255,236,210,.18)');g.addColorStop(.3,'rgba(180,192,235,.08)');g.addColorStop(1,'rgba(120,140,200,0)');}
       x.globalAlpha=p;x.fillStyle=g;x.beginPath();x.arc(0,0,250,0,7);x.fill();
-      x.globalCompositeOperation='lighter';
+      x.globalCompositeOperation=ink?'source-over':'lighter';
       const arm=(j,th)=>{const r=27*Math.exp(.195*th),a=th+j*Math.PI;return [r*Math.cos(a),r*Math.sin(a),r];};
       for(let i=0;i<1600;i++){const j=i%2,t=.8+R()*10.4,[px,py,r]=arm(j,t),sc=6+r*.09,ox=G()*sc,oy=G()*sc,rd=7+R()*10,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle=r<60?'rgba(255,220,185,.016)':'rgba(140,165,255,.028)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
-      for(let i=0;i<8000;i++){const j=i%2,t=.6+R()*10.6,[px,py,r]=arm(j,t),sc=4+r*.085,a=((r<65?.05:.12)+R()*(r<65?.22:.5)).toFixed(2),s=R()<.95?.9:1.8;
-        const fs=r<65?'rgba(255,225,190,'+a+')':'rgba('+(165+R()*70|0)+','+(188+R()*55|0)+',255,'+a+')',ox=G()*sc,oy=G()*sc,v=vis(t);if(v<=0)continue;
+        x.globalAlpha=v;x.fillStyle=ink?(r<60?'rgba(200,150,95,.02)':'rgba(63,143,166,.025)'):(r<60?'rgba(255,220,185,.016)':'rgba(140,165,255,.028)');x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
+      for(let i=0;i<8000;i++){const j=i%2,t=.6+R()*10.6,[px,py,r]=arm(j,t),sc=4+r*.085,a=(ink?.18+R()*.5:(r<65?.05:.12)+R()*(r<65?.22:.5)).toFixed(2),s=ink?(R()<.93?1:1.9):(R()<.95?.9:1.8);
+        const fs=ink?(r<65?'rgba(190,135,80,'+a+')':(R()<.5?'rgba(31,111,134,'+a+')':'rgba(90,170,192,'+a+')')):r<65?'rgba(255,225,190,'+a+')':'rgba('+(165+R()*70|0)+','+(188+R()*55|0)+',255,'+a+')',ox=G()*sc,oy=G()*sc,v=vis(t);if(v<=0)continue;
         x.globalAlpha=v;x.fillStyle=fs;x.fillRect(px+ox,py+oy,s,s);}
       for(let i=0;i<2500;i++){const r=Math.pow(R(),.7)*235,a=R()*7,al=(.05+R()*.18).toFixed(2),v=visR(r);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle='rgba(210,215,240,'+al+')';x.fillRect(r*Math.cos(a),r*Math.sin(a),.8,.8);}
+        x.globalAlpha=v;x.fillStyle=(ink?'rgba(63,143,166,':'rgba(210,215,240,')+al+')';x.fillRect(r*Math.cos(a),r*Math.sin(a),.8,.8);}
       for(let i=0;i<70;i++){const j=i%2,t=2.5+R()*8,[px,py]=arm(j,t),ox=G()*6,oy=G()*6,rd=1+R()*1.6,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle='rgba(255,120,170,.35)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
-      if(core>0){g=x.createRadialGradient(0,0,0,0,0,62);g.addColorStop(0,'rgba(255,246,228,.85)');g.addColorStop(.12,'rgba(255,228,192,.45)');g.addColorStop(.45,'rgba(255,210,170,.10)');g.addColorStop(1,'rgba(255,200,160,0)');
+        x.globalAlpha=v;x.fillStyle=ink?'rgba(214,110,150,.4)':'rgba(255,120,170,.35)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
+      if(core>0){g=x.createRadialGradient(0,0,0,0,0,62);
+        if(ink){g.addColorStop(0,'rgba(214,160,100,.55)');g.addColorStop(.18,'rgba(214,160,100,.28)');g.addColorStop(.55,'rgba(214,160,100,.07)');g.addColorStop(1,'rgba(214,160,100,0)');}
+        else{g.addColorStop(0,'rgba(255,246,228,.85)');g.addColorStop(.12,'rgba(255,228,192,.45)');g.addColorStop(.45,'rgba(255,210,170,.10)');g.addColorStop(1,'rgba(255,200,160,0)');}
         x.globalAlpha=core;x.fillStyle=g;x.beginPath();x.arc(0,0,62,0,7);x.fill();}
-      x.globalCompositeOperation='source-over';
+      x.globalCompositeOperation='destination-out';
       for(let i=0;i<1000;i++){const j=i%2,t=2.3+R()*8.5-.2,[px,py,r]=arm(j,t),sc=2.5+r*.035,ox=G()*sc,oy=G()*sc,rd=2+R()*4,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle='rgba(5,5,9,.11)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
+        x.globalAlpha=v;x.fillStyle='rgba(0,0,0,.12)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
       x.restore();
-      const b64=atob(c.toDataURL('image/jpeg',.9).split(',')[1]),u8=new Uint8Array(b64.length);for(let i=0;i<b64.length;i++)u8[i]=b64.charCodeAt(i);
-      C[n]=URL.createObjectURL(new Blob([u8],{type:'image/jpeg'}));
-    }catch(e){C[n]='';}
-    return C[n];
+      const b64=atob(c.toDataURL('image/png').split(',')[1]),u8=new Uint8Array(b64.length);for(let i=0;i<b64.length;i++)u8[i]=b64.charCodeAt(i);
+      C[K]=URL.createObjectURL(new Blob([u8],{type:'image/png'}));
+    }catch(e){C[K]='';}
+    return C[K];
 
 }
 let bTab = 'gal';
@@ -173,6 +177,7 @@ function renderBadges() {
   let full = Math.floor(nd / SP), lit = nd - full * SP;
   if (lit === 0 && nd > 0) { lit = SP; full--; }
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
+  const dk = state.theme === 'dark' || state.theme === 'night';
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -182,13 +187,18 @@ function renderBadges() {
     el.className = 'bstar';
     Object.assign(el.style, {
       left: x.toFixed(2) + '%', top: y.toFixed(2) + '%', width: sz + 'px', height: sz + 'px', margin: (-sz / 2) + 'px 0 0 ' + (-sz / 2) + 'px',
-      background: on ? '#ffffff' : 'rgba(4,6,11,.35)',
-      boxShadow: last ? '0 0 0 3px rgba(4,6,11,.9),0 0 0 4.5px #ffffff,0 0 14px rgba(210,225,255,.85)' : on ? '0 0 5px 1px rgba(215,228,255,.9),0 0 14px rgba(170,190,255,.55)' : 'inset 0 0 0 1px rgba(255,255,255,.5)',
+      background: on ? (dk ? '#ffffff' : '#1f6f86') : 'transparent',
+      boxShadow: dk
+        ? (last ? '0 0 0 3px var(--screen),0 0 0 4.5px #ffffff,0 0 14px rgba(210,225,255,.85)' : on ? '0 0 5px 1px rgba(215,228,255,.9),0 0 14px rgba(170,190,255,.55)' : 'inset 0 0 0 1px rgba(255,255,255,.5)')
+        : (last ? '0 0 0 3px var(--screen),0 0 0 4.5px #1f6f86,0 0 10px rgba(90,170,192,.6)' : on ? '0 0 6px 1px rgba(90,170,192,.55)' : 'inset 0 0 0 1px var(--track)'),
     });
     $('bSpiral').appendChild(el);
   }
   $('bSpiralNote').textContent = nd ? '已經練習 ' + nd + ' 天' + (full > 0 ? '，這是第 ' + (full + 1) + ' 個銀河' : '') : '每練習一天，就亮一顆星';
-  const img = bTab === 'gal' ? galaxyAt(lit) : '';
+  const img = bTab === 'gal' ? galaxyAt(lit, !dk) : '';
+  $('bGalCore').style.background = dk
+    ? 'radial-gradient(circle closest-side,#ffffff 0,#fff6e6 8%,rgba(255,228,190,.6) 18%,rgba(255,216,172,.22) 36%,rgba(255,206,160,.06) 62%,rgba(255,206,160,0) 100%)'
+    : 'radial-gradient(circle closest-side,#fffaf0 0,rgba(255,232,196,.95) 9%,rgba(236,186,124,.55) 22%,rgba(214,160,100,.2) 42%,rgba(214,160,100,.05) 66%,rgba(214,160,100,0) 100%)';
   $('bGalImg').style.backgroundImage = img ? "url('" + img + "')" : 'none';
   // 印章
   $('bStamps').innerHTML = '';
