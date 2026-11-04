@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=38">
+<link rel="stylesheet" href="styles.css?v=39">
 </head>
 <body>
 <main class="home">
@@ -195,15 +195,27 @@
   <div class="badges-inner">
     <button class="back" data-action="badges-close">← 返回</button>
     <h2 class="ex-name badges-title">勳章</h2>
-    <div class="bcard">
-      <div class="bstreak"><span class="bsmall">目前連續</span><div class="bstreak-row"><span class="bcur"><span id="bCur"></span><span class="bcur-unit">天</span></span><span class="bbest">最長 <span id="bBest"></span> 天</span></div></div>
-      <div class="bweek-box"><div class="bweek" id="bWeek"></div><span class="bsmall" id="bRestNote"></span></div>
-      <div class="bgrid bstreaks" id="bStreaks"></div>
+    <div class="btabs" id="bTabs">
+      <button class="btab" data-action="btab" data-tab="gal">銀河<span id="bGalMeta"></span></button>
+      <button class="btab" data-action="btab" data-tab="st">印章<span id="bStMeta"></span></button>
     </div>
-    <div class="bcard bstamp-card">
-      <div class="bstamp-head"><span class="bstamp-title">印章</span><span class="bstamp-n"><span id="bStampN"></span> / 12</span></div>
-      <div class="bgrid bstamps" id="bStamps"></div>
+    <div class="bgal-wrap" id="bTabGal">
+      <div class="bgal">
+        <div class="bgal-sq">
+          <span class="bgal-note" id="bSpiralNote"></span>
+          <div class="bgal-in">
+            <div class="bgal-img" id="bGalImg"></div>
+            <div class="bgal-core"></div>
+            <div id="bSpiral"></div>
+          </div>
+        </div>
+      </div>
+      <div class="bgal-text">
+        <span class="bgal-title">一起點亮銀河</span>
+        <p>每完成一天的練習，旋臂上就會亮起一顆星，銀河也跟著往中心長一段。累積 30 天，星星亮到中心，整個銀河就完整了，接著會開始下一個銀河。</p>
+      </div>
     </div>
+    <div class="bcard bgrid bstamps" id="bStamps" hidden></div>
     <p class="bnote">完整練完一次練習就算練了一天，中途停止不算。每週（週一到週日）可以休息 1 天。紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。</p>
   </div>
 </section>
@@ -211,8 +223,7 @@
 <!-- 獲得新勳章 -->
 <div class="award-bg" id="award" hidden>
   <div class="award" role="dialog" aria-modal="true" aria-labelledby="awTitle">
-    <div class="aw-rings" id="awRingsBox"></div>
-    <span class="aw-small" id="awStampTag">新的印章</span>
+        <span class="aw-small" id="awStampTag">新的印章</span>
     <div class="aw-stamp" id="awStamp"></div>
     <span class="aw-title" id="awTitle"></span>
     <span class="aw-sub" id="awSub"></span>
@@ -351,7 +362,7 @@
   </div>
 </div>
 
-<script src="app.js?v=38"></script>
+<script src="app.js?v=39"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
