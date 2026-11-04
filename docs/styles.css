@@ -488,3 +488,24 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .bgal-title { font-size: 16px; font-weight: 500; letter-spacing: .08em; color: var(--ink-2); }
 .bgal-text p { margin: 0; font-size: 14px; line-height: 1.75; color: var(--muted); text-wrap: pretty; }
 .badges .bnote { margin-top: auto; padding-top: 8px; }
+.bj { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+.bj-pic { position: relative; width: 100%; aspect-ratio: 900 / 1257; border-radius: 20px; overflow: hidden; }
+.bj-ghost { position: absolute; inset: 0; background: url('assets/dizang.jpg') center / cover; filter: grayscale(1) blur(1.5px); opacity: .22; }
+.bj-grid { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(6, 1fr); }
+.bj-cell { position: relative; box-shadow: inset 0 0 0 .5px var(--line); }
+.bj-cell.on { box-shadow: none; }
+.bj-tile { position: absolute; inset: 0; background-image: url('assets/dizang.jpg'); background-size: 500% 600%; opacity: 0; transition: opacity .6s; }
+.bj-cell.on .bj-tile { opacity: 1; }
+.bj-tile.last { box-shadow: inset 0 0 0 2px #e8b04a; }
+.bj-cap { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.bj-note { font-size: 18px; font-weight: 500; letter-spacing: .04em; color: var(--muted); }
+.bj-sub { font-size: 13px; color: var(--muted-2); }
+.bnext { margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 14px; display: flex; align-items: center; gap: 14px; }
+.bnext-pic { flex: none; position: relative; width: 64px; height: 89px; border-radius: 10px; overflow: hidden; background: var(--line); }
+.bnext-pic div { position: absolute; inset: -2px; background: url('assets/dizang.jpg') center / cover; filter: grayscale(1) blur(1px); opacity: .5; }
+.bnext-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.bnext-tag { font-size: 12px; font-weight: 500; letter-spacing: .2em; color: #9a6a24; }
+.bnext-title { font-size: 16px; font-weight: 500; color: var(--ink-2); }
+.bnext-desc { font-size: 13px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+.bnext-left { flex: none; align-self: flex-start; padding: 4px 10px; border-radius: 999px; background: #f6ead2; color: #7a5418; font-size: 12px; font-weight: 500; white-space: nowrap; }
+.bgal-text p[hidden] { display: none; }

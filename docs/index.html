@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=40">
+<link rel="stylesheet" href="styles.css?v=41">
 </head>
 <body>
 <main class="home">
@@ -196,11 +196,18 @@
     <button class="back" data-action="badges-close">← 返回</button>
     <h2 class="ex-name badges-title">勳章</h2>
     <div class="btabs" id="bTabs">
-      <button class="btab" data-action="btab" data-tab="gal">銀河<span id="bGalMeta"></span></button>
+      <button class="btab" data-action="btab" data-tab="gal">點亮<span id="bGalMeta"></span></button>
       <button class="btab" data-action="btab" data-tab="st">印章<span id="bStMeta"></span></button>
     </div>
     <div class="bgal-wrap" id="bTabGal">
-      <div class="bgal">
+      <div class="bj" id="bStageJ" hidden>
+        <div class="bj-pic">
+          <div class="bj-ghost"></div>
+          <div class="bj-grid" id="bTiles"></div>
+        </div>
+        <div class="bj-cap"><span class="bj-note" id="bJNote"></span><span class="bj-sub" id="bJSub"></span></div>
+      </div>
+      <div class="bgal" id="bStageG">
         <div class="bgal-sq">
           <span class="bgal-note" id="bSpiralNote"></span>
           <div class="bgal-in">
@@ -212,11 +219,21 @@
       </div>
       <div class="bgal-text">
         <span class="bgal-title">一起點亮銀河</span>
-        <p>每完成一天的練習，旋臂上就會亮起一顆星，銀河也跟著往中心長一段。累積 30 天，星星亮到中心，整個銀河就完整了，接著會開始下一個銀河。</p>
+        <p>每完成一天的練習，旋臂上就會亮起一顆星，銀河也跟著往中心長一段。累積 30 天，星星亮到中心，整個銀河就完整了。</p>
+        <div class="bnext" id="bNext" hidden>
+          <div class="bnext-pic"><div></div></div>
+          <div class="bnext-text">
+            <span class="bnext-tag">下一張</span>
+            <span class="bnext-title">地藏王菩薩的畫</span>
+            <span class="bnext-desc">銀河完成後，每練習一天翻開一塊，從蓮花座往上，第 60 天整張畫完整。</span>
+          </div>
+          <span class="bnext-left" id="bNextLeft"></span>
+        </div>
+        <p id="bJText" hidden>現在正在翻開地藏王菩薩的畫，從蓮花座往上，第 60 天整張畫完整。之後再從新的銀河開始。</p>
       </div>
     </div>
     <div class="bcard bgrid bstamps" id="bStamps" hidden></div>
-    <p class="bnote">完整練完一次練習就算練了一天，中途停止不算。每週（週一到週日）可以休息 1 天。紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。</p>
+    <p class="bnote">完整練完一次練習就算練了一天，中途停止不算。紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。</p>
   </div>
 </section>
 
@@ -362,7 +379,7 @@
   </div>
 </div>
 
-<script src="app.js?v=40"></script>
+<script src="app.js?v=41"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

@@ -170,12 +170,31 @@ function galaxyAt(n, ink) {
 
 }
 let bTab = 'gal';
+// 地藏王菩薩的畫（docs/assets/dizang.jpg，900×1257）；檔案還沒放上來時，先不顯示「下一張」預告
+let dizangOk = false;
+{ const im = new Image(); im.onload = () => { dizangOk = true; if (!screens.badges.hidden) renderBadges(); }; im.src = 'assets/dizang.jpg'; }
 function renderBadges() {
   const B = bdg();
-  // 每練習一天亮一顆星，30 顆一個銀河，滿了開始下一個
-  const SP = 30, nd = Object.keys(B.days).length;
-  let full = Math.floor(nd / SP), lit = nd - full * SP;
-  if (lit === 0 && nd > 0) { lit = SP; full--; }
+  // 60 天一輪：前 30 天點亮銀河（每天一顆星），後 30 天翻開地藏王菩薩的畫（每天一塊）
+  const SP = 30, nd = Object.keys(B.days).length, stg = nd > 0 ? Math.floor((nd - 1) / SP) : 0;
+  const lit = nd - stg * SP, isJ = stg % 2 === 1, full = Math.floor(stg / 2);
+  $('bStageJ').hidden = !isJ; $('bStageG').hidden = isJ;
+  $('bNext').hidden = isJ || !dizangOk; $('bJText').hidden = !isJ;
+  $('bNextLeft').textContent = lit >= SP ? '明天開始' : '再 ' + (SP - lit) + ' 天';
+  // 畫分成 5×6 塊，從最下面一排（蓮花座）往上翻，每排先中間再往兩側
+  const JROW = [2, 1, 3, 0, 4], jRank = {};
+  { let q = 0; for (let r = 5; r >= 0; r--) for (const c of JROW) jRank[r * 5 + c] = q++; }
+  const jl = isJ ? lit : 0;
+  $('bTiles').innerHTML = '';
+  for (let i = 0; i < 30; i++) {
+    const r = Math.floor(i / 5), c = i % 5, on = jRank[i] < jl, last = jRank[i] === jl - 1;
+    const cell = document.createElement('div'), t = document.createElement('div');
+    cell.className = 'bj-cell' + (on ? ' on' : '');
+    t.className = 'bj-tile' + (last ? ' last' : '');
+    t.style.backgroundPosition = (c * 25) + '% ' + (r * 20) + '%';
+    cell.appendChild(t); $('bTiles').appendChild(cell);
+  }
+  $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
   const dk = state.theme === 'dark' || state.theme === 'night';
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
@@ -194,8 +213,8 @@ function renderBadges() {
     });
     $('bSpiral').appendChild(el);
   }
-  $('bSpiralNote').textContent = nd ? '已經練習 ' + nd + ' 天' + (full > 0 ? '，這是第 ' + (full + 1) + ' 個銀河' : '') : '每練習一天，就亮一顆星';
-  const img = bTab === 'gal' ? galaxyAt(lit, !dk) : '';
+  $('bSpiralNote').textContent = $('bJNote').textContent = nd ? '已經練習 ' + nd + ' 天' + (full > 0 && !isJ ? '，這是第 ' + (full + 1) + ' 個銀河' : '') : '每練習一天，就亮一顆星';
+  const img = bTab === 'gal' && !isJ ? galaxyAt(lit, !dk) : '';
   $('bGalCore').style.background = dk
     ? 'radial-gradient(circle closest-side,#ffffff 0,#fff6e6 8%,rgba(255,228,190,.6) 18%,rgba(255,216,172,.22) 36%,rgba(255,206,160,.06) 62%,rgba(255,206,160,0) 100%)'
     : 'radial-gradient(circle closest-side,#fffaf0 0,rgba(255,232,196,.95) 9%,rgba(236,186,124,.55) 22%,rgba(214,160,100,.2) 42%,rgba(214,160,100,.05) 66%,rgba(214,160,100,0) 100%)';
