@@ -629,20 +629,29 @@ function drumFx(high) {
   s.connect(hp); hp.connect(ng); ng.connect(ac.destination);
   s.start(now); s.stop(now + .04);
 }
-// 其他練習：每段開頭播放提示音（吸氣、停住、吐氣各一個音檔）
+// 其他練習：每段開頭播放提示音（audio/cues/ 裡吸氣、吸氣後停住、吐氣、吐氣後停住各一個音檔，
+// 已去掉開頭空白並調成一樣大聲）
 const cueBufs = {};
 let cueSrc = null;
 function loadCues() {
   ctx();
-  ['in', 'out', 'hold'].forEach(key => {
-    if (!cueBufs[key]) cueBufs[key] = fetch('audio/cue-' + key + '.wav')
+  ['in', 'hold-in', 'out', 'hold-out'].forEach(key => {
+    if (!cueBufs[key]) cueBufs[key] = fetch('audio/cues/' + key + '.wav')
       .then(r => r.arrayBuffer()).then(a => ac.decodeAudioData(a)).catch(() => null);
   });
 }
-function cueFx(k, gain) {
+// 停住要分吸氣後還是吐氣後：往前找最近一段不是停住的呼吸
+function prevKind(ex, seq, i) {
+  for (let j = 1; j < seq.length; j++) {
+    const q = ex.base[seq[(i - j + seq.length) % seq.length][0]][0];
+    if (q !== HOLD) return q;
+  }
+  return IN;
+}
+function cueFx(k, gain, prev) {
   if (syncPaused) return;
   loadCues();
-  const key = k === IN ? 'in' : k === OUT ? 'out' : 'hold';
+  const key = k === IN ? 'in' : k === OUT ? 'out' : prev === OUT ? 'hold-out' : 'hold-in';
   cueBufs[key].then(b => {
     if (!b) return;
     const s = ac.createBufferSource(), g = ac.createGain();
@@ -815,7 +824,7 @@ function run(i) {
   clearPhase();
   const k = ex.base[bi][0];
   stopBreath();
-  if (t) { if (ex.id === 'belly') drumFx(k === IN); else cueFx(k); }
+  if (t) { if (ex.id === 'belly') drumFx(k === IN); else cueFx(k, 0, k === HOLD ? prevKind(ex, seq, i) : null); }
   if (i === 0) waveStart = performance.now();
   const el = dotEl(ex);
   if (el) {
@@ -964,7 +973,7 @@ function tone(f, d, v, type) {
   o.connect(g); g.connect(ac.destination); o.start(now); o.stop(now + d + .05);
 }
 function bell(f) { [[1, .14, 2.6], [2.76, .04, 1.5], [5.4, .015, .8]].forEach(([m, v, d]) => tone(f * m, d, v)); }
-function whCue(k) { if (whSound()) cueFx(k, .35); }
+function whCue(k, prev) { if (whSound()) cueFx(k, .35, prev); }
 // 人聲呼吸錄音（audio/breath-in.mp3、breath-out.mp3）；錄音音量小，載入時自動放大。沒有檔案時改用輕柔的短音
 const breathBufs = {};
 function loadBreath(b) {
@@ -1062,7 +1071,7 @@ function whHold() {
   $('whTarget').hidden = !tgt;
   $('whTarget').textContent = tgt ? fmtUp(tgt) + ' 時提示吸氣，不舒服就提早吸氣' : '';
   show('whHold');
-  buzz(60); whCue(HOLD);
+  buzz(60); whCue(HOLD, OUT);
   let k = 1;
   phaseTimers.push(setInterval(() => {
     const e = (performance.now() - wh.t0) / 1000;
