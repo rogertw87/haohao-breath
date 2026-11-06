@@ -198,7 +198,7 @@ function renderBadges() {
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
-  const dk = state.theme === 'dark' || state.theme === 'night';
+  const dk = state.theme === 'dark' || state.theme === 'night' || state.theme === 'fire';
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -718,7 +718,7 @@ function renderHome() {
     const icon = document.createElement('div');
     icon.className = 'row-icon';
     if (ICON_IMGS[ex.id]) {
-      icon.innerHTML = '<img src="' + ICON_IMGS[ex.id] + '" alt="">';
+      icon.innerHTML = '<span class="row-img" style="-webkit-mask-image:url(' + ICON_IMGS[ex.id] + ');mask-image:url(' + ICON_IMGS[ex.id] + ')"></span>';
     } else {
       icon.innerHTML = '<svg viewBox="0 0 32 32"><path d="' + ICONS[ex.id] + '" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
     }
@@ -1278,8 +1278,8 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire'];
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -1308,13 +1308,81 @@ let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;tr
 function applyTheme() {
   const t = THEMES.includes(state.theme) ? state.theme : 'light', root = document.documentElement;
   if (t === 'light') delete root.dataset.theme; else root.dataset.theme = t;
-  if (t === 'night') root.style.setProperty('--sky', starTex()); else root.style.removeProperty('--sky');
+  if (t === 'night') root.style.setProperty('--sky', starTex());
+  else if (t === 'fire') root.style.setProperty('--sky', reducedMotion() ? "url('assets/warm/ember-v1.jpg')" : "url('assets/warm/ember-v1-plain.jpg')");
+  else root.style.removeProperty('--sky');
+  syncSparks();
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
 }
 document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => {
   state.theme = b.dataset.themePick;
   save(); applyTheme();
 }));
+
+// ---------- 營火：會飛的火星 ----------
+// 火星從下方的火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定。
+// 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；火星是同一批，換畫面時會接著飄。
+// 手機開了「減少動態效果」就不播，改用畫好火星的靜態背景。切到別的 App 時瀏覽器會自動暫停。
+function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
+const sparks = { c: null, raf: 0, last: null, p: [], acc: 0, w: 0, img: null };
+function sparkImg() {
+  if (sparks.img) return sparks.img;
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const g = c.getContext('2d'), r = g.createRadialGradient(16, 16, 0, 16, 16, 16);
+  r.addColorStop(0, 'rgba(255,236,190,1)'); r.addColorStop(.18, 'rgba(255,190,100,.95)');
+  r.addColorStop(.42, 'rgba(255,120,40,.35)'); r.addColorStop(1, 'rgba(255,90,20,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 32, 32); return sparks.img = c;
+}
+function moveSparks(dt, W, H) {
+  sparks.acc += Math.min(110, 32 * W / 360) * dt;
+  while (sparks.acc >= 1) {
+    sparks.acc -= 1;
+    sparks.p.push({ x: W / 2 + (Math.random() + Math.random() - 1) * W * .55, y: H - 10 - Math.random() * Math.min(180, H * .2),
+      vx: (Math.random() - .5) * 8, vy: -(16 + Math.random() * 30), r: 3 + Math.random() ** 3 * 7,
+      age: 0, life: 5 + Math.random() * 6, ph: Math.random() * 6.28, fl: 2 + Math.random() * 5 });
+  }
+  sparks.p = sparks.p.filter(s => {
+    s.age += dt; if (s.age > s.life || s.y < -20) return false;
+    s.ph += dt * s.fl; s.x += (s.vx + Math.sin(s.ph * .7) * 6) * dt; s.y += s.vy * dt; return true;
+  });
+}
+// 火星要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
+function sparkHost() {
+  const open = Object.values(screens).find(s => !s.hidden);
+  return open ? (open.classList.contains('wh-hold') ? null : open) : document.querySelector('.home');
+}
+function drawSparks(now) {
+  sparks.raf = requestAnimationFrame(drawSparks);
+  const host = sparkHost(), c = sparks.c;
+  if (!host) { c.hidden = true; sparks.last = null; return; }
+  if (c.parentNode !== host) host.prepend(c);
+  c.hidden = false;
+  const W = c.clientWidth, H = c.clientHeight; if (!W || !H) return;
+  if (Math.abs(W - sparks.w) > 40) { sparks.p = []; sparks.acc = 0; for (let i = 0; i < 200; i++) moveSparks(.05, W, H); }  // 一打開畫面火星就已經飄滿
+  sparks.w = W;
+  const k = Math.min(2, window.devicePixelRatio || 1), cw = Math.round(W * k), ch = Math.round(H * k);
+  if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
+  const dt = sparks.last == null ? 0 : Math.min(.05, Math.max(0, now - sparks.last) / 1000); sparks.last = now;
+  moveSparks(dt, W, H);
+  const g = c.getContext('2d'), img = sparkImg();
+  g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+  for (const s of sparks.p) {
+    const u = s.age / s.life, a = Math.max(0, (1 - u) * (u < .08 ? u / .08 : 1) * (.6 + .4 * Math.sin(s.ph)));
+    const len = 1 + Math.min(2.2, Math.abs(s.vy) / 30);   // 往上飄時拉成一小條光
+    g.globalAlpha = a; g.drawImage(img, s.x - s.r, s.y - s.r * len, s.r * 2, s.r * 2 * len);
+  }
+  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+}
+function syncSparks() {
+  const on = state.theme === 'fire' && !reducedMotion();
+  if (on && !sparks.raf) {
+    if (!sparks.c) { sparks.c = document.createElement('canvas'); sparks.c.className = 'sparks'; sparks.c.setAttribute('aria-hidden', 'true'); }
+    sparks.last = null; sparks.w = 0; sparks.raf = requestAnimationFrame(drawSparks);
+  } else if (!on && sparks.raf) {
+    cancelAnimationFrame(sparks.raf); sparks.raf = 0; sparks.p = [];
+    if (sparks.c) sparks.c.remove();
+  }
+}
 
 // ---------- 首頁右上角選單 ----------
 function setMenu(open) {
