@@ -6,6 +6,7 @@
   --accent: #1f6f86;
   --accent-2: #3f8fa6;
   --dot: #5aaac0;
+  --dot-glow: 0 0 0 6px rgba(90,170,192,.25);
   --line: #d9e8ec;
   --line-2: #cfe2e8;
   --line-3: #e6f0f3;
@@ -90,7 +91,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .menu-item:hover { background: color-mix(in srgb, var(--screen) 50%, transparent); }
 .menu-theme { min-width: 210px; box-sizing: border-box; padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
 .menu-theme-title { font-size: 12px; color: var(--muted); }
-.menu-theme-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.menu-theme-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .menu-theme-opt {
   min-height: 36px; padding: 0 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
   color: var(--ink); font-size: 13px; cursor: pointer; white-space: nowrap;
@@ -132,7 +133,12 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--chip);
   display: flex; align-items: center; justify-content: center;
 }
-.row-icon img { width: 34px; height: 34px; display: block; filter: var(--img-filter); }
+/* 圖片做的圖示（呼氣練習、鯨豚）：只取形狀，顏色跟其他圖示一樣用主題色 */
+.row-img {
+  width: 34px; height: 34px; display: block; background: var(--accent);
+  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+  -webkit-mask-position: center; mask-position: center;
+}
 .row-icon svg path { stroke: var(--accent); }
 .row-icon svg { width: 26px; height: 26px; display: block; }
 .row-name { font-size: 28px; font-weight: 300; letter-spacing: .04em; color: var(--ink); }
@@ -218,7 +224,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 
 .dot {
   position: absolute; left: -12px; top: -12px; width: 24px; height: 24px; border-radius: 50%;
-  background: var(--dot); box-shadow: 0 0 0 6px rgba(90,170,192,.25);
+  background: var(--dot); box-shadow: var(--dot-glow);
 }
 .anim-box { width: 260px; height: 260px; display: flex; align-items: center; justify-content: center; }
 .box-frame { width: 220px; height: 220px; position: relative; border: 2px solid var(--line-2); border-radius: 6px; box-sizing: border-box; }
@@ -257,7 +263,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .resume-tip {
   align-self: center; margin-bottom: 14px; height: 44px; padding: 0 20px; border: none; border-radius: 22px;
   background: var(--dot); color: #fff; font-size: 15px; font-weight: 500; cursor: pointer;
-  box-shadow: 0 0 0 6px rgba(90,170,192,.25);
+  box-shadow: var(--dot-glow);
 }
 
 /* ---------- 冰人呼吸 ---------- */
@@ -427,8 +433,41 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   background: #000 var(--sky, none) center / cover;
 }
 :root[data-theme="night"] .home::before { display: block; }
-.screen { background-image: var(--sky, none); background-size: cover; background-position: center; }
+.screen { background-image: var(--sky, none); background-size: cover; background-position: var(--sky-pos, center); }
 .wh-hold { background-image: none; }
+
+:root[data-theme="fire"] { /* 營火：深咖啡色的夜，下方透出火光，火星往上飄 */
+  --page: #1a0f0c;
+  --screen: #160c09;
+  --ink: #fbe9dc;
+  --ink-2: #ffb27a;
+  --accent: #ff8a4c;
+  --accent-2: #ffa24c;
+  --line-2: #5a3324;
+  --line: #3e241a;
+  --soft-2: #2e1912;
+  --chip: #3a2015;
+  --soft: #1a0f0c;
+  --line-3: #3a2015;
+  --muted-2: #c9a08c;
+  --muted: #dcbfac;
+  --track: #8a4a24;
+  --guide: #2e1912;
+  --figure: #3a2015;
+  --fade: rgba(22,12,9,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #28140e;
+  --sel: #ff8a4c;
+  --selfg: #1a0f0c;
+  --img-filter: brightness(1.9);
+  --dot: #ffa24c;
+  --dot-glow: 0 0 0 6px rgba(255,162,76,.22), 0 0 22px 4px rgba(255,140,60,.5);
+  --sky-pos: center bottom;
+}
+:root[data-theme="fire"] .home::before { display: block; background: var(--page) var(--sky, none) center bottom / cover; }
+/* 營火的火星：畫在畫面背景之上、文字按鈕之下 */
+.sparks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+.home > .sparks { left: 50%; max-width: 480px; transform: translateX(-50%); }
 .wh-music-hint { margin: 12px 4px 24px; font-size: 12px; line-height: 1.6; color: var(--muted-2); }
 
 /* ---------- 勳章 ---------- */
