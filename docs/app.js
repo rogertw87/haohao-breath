@@ -54,7 +54,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell' },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -63,8 +63,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
@@ -631,15 +631,47 @@ function drumFx(high) {
   s.connect(hp); hp.connect(ng); ng.connect(ac.destination);
   s.start(now); s.stop(now + .04);
 }
-// 其他練習：每段開頭播放提示音（audio/cues/ 裡吸氣、吸氣後停住、吐氣、吐氣後停住各一個音檔，
-// 已去掉開頭空白並調成一樣大聲）
+// 其他練習：每段開頭播放提示音（吸氣、吸氣後停住、吐氣、吐氣後停住）。兩組可在設定頁切換：
+// 鈴聲：audio/cues/ 四個音檔，已去掉開頭空白並調成一樣大聲
+// 舌鼓：原本的 audio/cue-in、cue-out、cue-hold.wav（鋼舌鼓高低音，兩次停住都是木魚）
+const CUESETS = [['bell', '鈴聲'], ['drum', '舌鼓']];
+const CUE_KEYS = ['in', 'hold-in', 'out', 'hold-out'];
 const cueBufs = {};
 let cueSrc = null;
+function cueUrl(set, key) {
+  return set === 'drum' ? 'audio/cue-' + (key.startsWith('hold') ? 'hold' : key) + '.wav' : 'audio/cues/' + key + '.wav';
+}
+function loadCue(key, set) {
+  const u = cueUrl(set || state.cueSet || 'bell', key);
+  return cueBufs[u] || (cueBufs[u] = fetch(u).then(r => r.arrayBuffer()).then(a => ac.decodeAudioData(a)).catch(() => null));
+}
 function loadCues() {
-  ctx();
-  ['in', 'hold-in', 'out', 'hold-out'].forEach(key => {
-    if (!cueBufs[key]) cueBufs[key] = fetch('audio/cues/' + key + '.wav')
-      .then(r => r.arrayBuffer()).then(a => ac.decodeAudioData(a)).catch(() => null);
+  ctx(); stopPreview();
+  CUE_KEYS.forEach(key => loadCue(key));
+}
+// 設定頁點選提示音時試聽一輪：吸氣、停住、吐氣、停住，每個間隔 1 秒
+let preview = [], previewTok = 0, previewEnd = 0;
+function stopPreview() {
+  previewTok++;
+  preview.forEach(s => { try { s.stop(); } catch (e) {} });
+  preview = [];
+}
+function previewCues(set) {
+  ctx(); stopPreview();
+  const tok = previewTok;
+  keepAlive.play().catch(() => {});
+  clearTimeout(previewEnd);
+  previewEnd = setTimeout(() => { if (!practicing()) keepAlive.pause(); }, 6000);
+  Promise.all(CUE_KEYS.map(key => loadCue(key, set))).then(bufs => {
+    if (tok !== previewTok) return;
+    const t0 = ac.currentTime + .05;
+    bufs.forEach((b, i) => {
+      if (!b) return;
+      const s = ac.createBufferSource(), g = ac.createGain();
+      g.gain.value = .6; s.buffer = b;
+      s.connect(g); g.connect(ac.destination); s.start(t0 + i);
+      preview.push(s);
+    });
   });
 }
 // 停住要分吸氣後還是吐氣後：往前找最近一段不是停住的呼吸
@@ -654,7 +686,7 @@ function cueFx(k, gain, prev) {
   if (syncPaused) return;
   loadCues();
   const key = k === IN ? 'in' : k === OUT ? 'out' : prev === OUT ? 'hold-out' : 'hold-in';
-  cueBufs[key].then(b => {
+  loadCue(key).then(b => {
     if (!b) return;
     const s = ac.createBufferSource(), g = ac.createGain();
     g.gain.value = gain || .6; s.buffer = b;
@@ -788,6 +820,16 @@ function renderSetup() {
     $('mineRows').appendChild(row);
   });
   $('musicHint').hidden = state.music === 'none';
+  // 提示音（諧振式呼吸用鼓聲，不顯示）
+  $('cueBox').hidden = ex.id === 'belly';
+  $('cueGrid').innerHTML = '';
+  CUESETS.forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + ((state.cueSet || 'bell') === k ? ' on' : '');
+    b.textContent = l;
+    b.addEventListener('click', () => { state.cueSet = k; save(); renderSetup(); previewCues(k); });
+    $('cueGrid').appendChild(b);
+  });
 }
 
 // ---------- 流程 ----------
