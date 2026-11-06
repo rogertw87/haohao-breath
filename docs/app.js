@@ -198,7 +198,7 @@ function renderBadges() {
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
-  const dk = state.theme === 'dark' || state.theme === 'night' || state.theme === 'fire';
+  const dk = state.theme === 'dark' || state.theme === 'night' || state.theme === 'fire' || state.theme === 'fireflies';
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -879,6 +879,7 @@ function run(i) {
     setDot(el, nc[0], nc[1], t);
   }
   if (!t) { run((i + 1) % seq.length); return; }
+  brPhase = { k, prev: k === HOLD ? prevKind(ex, seq, i) : null, t0: performance.now(), dur: t };  // 螢火蟲跟著呼吸亮暗用
   $('phaseLabel').textContent = label;
   left = t >= 1 ? Math.ceil(t) : null;
   $('countText').textContent = left == null ? '' : left;
@@ -1278,8 +1279,9 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura'];
+const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')" };  // 各畫面的背景圖
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -1310,6 +1312,7 @@ function applyTheme() {
   if (t === 'light') delete root.dataset.theme; else root.dataset.theme = t;
   if (t === 'night') root.style.setProperty('--sky', starTex());
   else if (t === 'fire') root.style.setProperty('--sky', reducedMotion() ? "url('assets/warm/ember-v1.jpg')" : "url('assets/warm/ember-v1-plain.jpg')");
+  else if (SKY[t]) root.style.setProperty('--sky', SKY[t]);
   else root.style.removeProperty('--sky');
   syncSparks();
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
@@ -1319,68 +1322,152 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
   save(); applyTheme();
 }));
 
-// ---------- 營火：會飛的火星 ----------
-// 火星從下方的火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定。
-// 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；火星是同一批，換畫面時會接著飄。
-// 手機開了「減少動態效果」就不播，改用畫好火星的靜態背景。切到別的 App 時瀏覽器會自動暫停。
+// ---------- 會動的主題背景：營火的火星、螢火蟲、櫻花瓣 ----------
+// 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
+// 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const sparks = { c: null, raf: 0, last: null, p: [], acc: 0, w: 0, img: null };
-function sparkImg() {
-  if (sparks.img) return sparks.img;
-  const c = document.createElement('canvas'); c.width = c.height = 32;
-  const g = c.getContext('2d'), r = g.createRadialGradient(16, 16, 0, 16, 16, 16);
-  r.addColorStop(0, 'rgba(255,236,190,1)'); r.addColorStop(.18, 'rgba(255,190,100,.95)');
-  r.addColorStop(.42, 'rgba(255,120,40,.35)'); r.addColorStop(1, 'rgba(255,90,20,0)');
-  g.fillStyle = r; g.fillRect(0, 0, 32, 32); return sparks.img = c;
+const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura' };
+const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
+let brPhase = null;  // 練習時目前這一段（吸氣、停住或吐氣）什麼時候開始、有多長
+// 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、停住時維持；不在練習（或冰人呼吸）就是 null
+function breathNow() {
+  if (!brPhase || screens.run.hidden || cur == null || EX[cur].id === 'wimhof') return null;
+  const u = Math.min(1, Math.max(0, (performance.now() - brPhase.t0) / (brPhase.dur * 1000)));
+  return brPhase.k === IN ? u : brPhase.k === OUT ? 1 - u : (brPhase.prev === OUT ? 0 : 1);
 }
-function moveSparks(dt, W, H) {
-  sparks.acc += Math.min(110, 32 * W / 360) * dt;
-  while (sparks.acc >= 1) {
-    sparks.acc -= 1;
-    sparks.p.push({ x: W / 2 + (Math.random() + Math.random() - 1) * W * .55, y: H - 10 - Math.random() * Math.min(180, H * .2),
-      vx: (Math.random() - .5) * 8, vy: -(16 + Math.random() * 30), r: 3 + Math.random() ** 3 * 7,
-      age: 0, life: 5 + Math.random() * 6, ph: Math.random() * 6.28, fl: 2 + Math.random() * 5 });
+// 光點、花瓣先畫好，之後每格直接貼上
+const fxImgs = {};
+function glowImg(key, n, stops) {
+  if (fxImgs[key]) return fxImgs[key];
+  const c = document.createElement('canvas'); c.width = c.height = n;
+  const g = c.getContext('2d'), r = g.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2);
+  stops.forEach(([p, col]) => r.addColorStop(p, col)); g.fillStyle = r; g.fillRect(0, 0, n, n); return fxImgs[key] = c;
+}
+const sparkImg = () => glowImg('spark', 32, [[0, 'rgba(255,236,190,1)'], [.18, 'rgba(255,190,100,.95)'], [.42, 'rgba(255,120,40,.35)'], [1, 'rgba(255,90,20,0)']]);
+const fireflyImg = () => glowImg('firefly', 64, [[0, 'rgba(255,255,220,1)'], [.12, 'rgba(226,250,140,.95)'], [.35, 'rgba(170,230,70,.35)'], [1, 'rgba(170,230,70,0)']]);
+// 櫻花瓣：前端有個小缺口，靠花心那頭比較白
+function petalImgs() {
+  if (fxImgs.petals) return fxImgs.petals;
+  const mk = (c0, c1) => {
+    const c = document.createElement('canvas'); c.width = c.height = 40; const g = c.getContext('2d');
+    g.beginPath(); g.moveTo(20, 37); g.bezierCurveTo(8, 30, 3, 16, 12, 5); g.quadraticCurveTo(16, 4, 20, 10); g.quadraticCurveTo(24, 4, 28, 5); g.bezierCurveTo(37, 16, 32, 30, 20, 37); g.closePath();
+    const r = g.createLinearGradient(20, 37, 20, 4); r.addColorStop(0, c0); r.addColorStop(1, c1); g.fillStyle = r; g.fill();
+    g.strokeStyle = 'rgba(214,110,145,.35)'; g.lineWidth = .8; g.stroke(); return c;
+  };
+  return fxImgs.petals = [mk('#fff1f5', '#f7b3c8'), mk('#ffe9f0', '#f39cb8'), mk('#fff6f8', '#f8c4d4')];
+}
+const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+// 每一種有 init（一打開就鋪滿）、move（移動）、draw（畫出來）；br 是練習時吸飽的程度，不在練習時是 null
+const FXS = {
+  // 營火：火星從下方火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定
+  sparks: {
+    init(st, W, H) { st.p = []; st.acc = 0; for (let i = 0; i < 200; i++) this.move(st, .05, W, H); },
+    move(st, dt, W, H) {
+      st.acc += Math.min(110, 32 * W / 360) * dt;
+      while (st.acc >= 1) {
+        st.acc -= 1;
+        st.p.push({ x: W / 2 + (Math.random() + Math.random() - 1) * W * .55, y: H - 10 - Math.random() * Math.min(180, H * .2),
+          vx: (Math.random() - .5) * 8, vy: -(16 + Math.random() * 30), r: 3 + Math.random() ** 3 * 7,
+          age: 0, life: 5 + Math.random() * 6, ph: Math.random() * 6.28, fl: 2 + Math.random() * 5 });
+      }
+      st.p = st.p.filter(s => {
+        s.age += dt; if (s.age > s.life || s.y < -20) return false;
+        s.ph += dt * s.fl; s.x += (s.vx + Math.sin(s.ph * .7) * 6) * dt; s.y += s.vy * dt; return true;
+      });
+    },
+    draw(st, g) {
+      const img = sparkImg(); g.globalCompositeOperation = 'lighter';
+      for (const s of st.p) {
+        const u = s.age / s.life, a = Math.max(0, (1 - u) * (u < .08 ? u / .08 : 1) * (.6 + .4 * Math.sin(s.ph)));
+        const len = 1 + Math.min(2.2, Math.abs(s.vy) / 30);   // 往上飄時拉成一小條光
+        g.globalAlpha = a; g.drawImage(img, s.x - s.r, s.y - s.r * len, s.r * 2, s.r * 2 * len);
+      }
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    }
+  },
+  // 螢火蟲：慢慢飛、各自一閃一閃；練習時一起跟著呼吸亮暗（吸飽最亮、吐完最暗）
+  fireflies: {
+    init(st, W, H) {
+      st.p = []; st.lv = 1; const n = Math.min(60, Math.round(30 * W * H / 259200));
+      for (let i = 0; i < n; i++) st.p.push({ x: Math.random() * W, y: H * (.2 + .76 * Math.pow(Math.random(), .7)), a: Math.random() * 6.28, turn: 0,
+        v: 5 + Math.random() * 9, P: 2.6 + Math.random() * 3.2, ph: Math.random(), G: 12 + Math.random() * 10 });
+    },
+    move(st, dt, W, H, t, br) {
+      st.lv += ((br == null ? 1 : .1 + .9 * br) - st.lv) * Math.min(1, dt * 3);
+      for (const f of st.p) {
+        f.turn += (Math.random() - .5) * dt * 3; f.turn *= Math.pow(.3, dt); f.a = wrapA(f.a + f.turn * dt);
+        if (f.y < H * .18) f.a += wrapA(Math.PI / 2 - f.a) * dt; if (f.y > H - 30) f.a += wrapA(-Math.PI / 2 - f.a) * dt;
+        f.x += Math.cos(f.a) * f.v * dt; f.y += Math.sin(f.a) * f.v * dt * .7 + Math.sin(t * 1.3 + f.ph * 6) * 3 * dt;
+        if (f.x < -30) f.x = W + 30; else if (f.x > W + 30) f.x = -30;
+      }
+    },
+    draw(st, g, W, H, t, br) {
+      const img = fireflyImg(); g.globalCompositeOperation = 'lighter';
+      for (const f of st.p) {
+        const u = (t / f.P + f.ph) % 1, blink = u < .4 ? Math.pow(Math.sin(Math.PI * u / .4), 2) : 0;
+        const b = br == null ? (.06 + .94 * blink) * st.lv : st.lv * (.5 + .5 * blink); if (b < .02) continue;
+        const G = f.G * (.6 + .4 * b); g.globalAlpha = Math.min(1, b); g.drawImage(img, f.x - G, f.y - G, G * 2, G * 2);
+      }
+      g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+    }
+  },
+  // 櫻花：花瓣一邊翻轉、一邊左右擺著往下飄
+  sakura: {
+    init(st, W, H) { st.p = []; const n = Math.min(50, Math.round(22 * W * H / 259200)); for (let i = 0; i < n; i++) st.p.push(this.petal(W, Math.random() * H)); },
+    petal(W, y) {
+      const R = Math.random, im = petalImgs();
+      return { x: R() * (W + 80) - 80, y, vy: 24 + R() * 20, vx: 6 + R() * 10, rot: R() * 6.28, vr: (R() - .5) * 2.4, fl: R() * 6.28, vf: 1.5 + R() * 2.5,
+        sw: R() * 6.28, fs: .6 + R() * .8, amp: 8 + R() * 16, sz: 12 + R() * 9, img: im[(R() * 3) | 0], a: .8 + R() * .2 };
+    },
+    move(st, dt, W, H) {
+      for (const p of st.p) {
+        p.y += p.vy * dt; p.x += p.vx * dt; p.rot += p.vr * dt; p.fl += p.vf * dt; p.sw += p.fs * dt;
+        if (p.y > H + 24 || p.x > W + 40) Object.assign(p, this.petal(W, -24 - Math.random() * 40));
+      }
+    },
+    draw(st, g) {
+      for (const p of st.p) {
+        g.save(); g.translate(p.x + Math.sin(p.sw) * p.amp, p.y); g.rotate(p.rot); g.scale(1, .2 + .8 * Math.abs(Math.cos(p.fl)));
+        g.globalAlpha = p.a; g.drawImage(p.img, -p.sz / 2, -p.sz / 2, p.sz, p.sz); g.restore();
+      }
+      g.globalAlpha = 1;
+    }
   }
-  sparks.p = sparks.p.filter(s => {
-    s.age += dt; if (s.age > s.life || s.y < -20) return false;
-    s.ph += dt * s.fl; s.x += (s.vx + Math.sin(s.ph * .7) * 6) * dt; s.y += s.vy * dt; return true;
-  });
-}
-// 火星要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
-function sparkHost() {
+};
+// 要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
+function fxHost() {
   const open = Object.values(screens).find(s => !s.hidden);
   return open ? (open.classList.contains('wh-hold') ? null : open) : document.querySelector('.home');
 }
-function drawSparks(now) {
-  sparks.raf = requestAnimationFrame(drawSparks);
-  const host = sparkHost(), c = sparks.c;
-  if (!host) { c.hidden = true; sparks.last = null; return; }
+function drawFx(now) {
+  fx.raf = requestAnimationFrame(drawFx);
+  const host = fxHost(), c = fx.c;
+  if (!host) { c.hidden = true; fx.last = null; return; }
   if (c.parentNode !== host) host.prepend(c);
   c.hidden = false;
   const W = c.clientWidth, H = c.clientHeight; if (!W || !H) return;
-  if (Math.abs(W - sparks.w) > 40) { sparks.p = []; sparks.acc = 0; for (let i = 0; i < 200; i++) moveSparks(.05, W, H); }  // 一打開畫面火星就已經飄滿
-  sparks.w = W;
+  const still = reducedMotion();
+  if (!fx.st || Math.abs(W - fx.w) > 40) { fx.st = {}; FXS[fx.kind].init(fx.st, W, H); fx.drawn = null; }
+  if (still && fx.drawn === host && W === fx.w && H === fx.h) return;   // 減少動態效果：畫面沒換就不重畫
+  fx.w = W; fx.h = H;
   const k = Math.min(2, window.devicePixelRatio || 1), cw = Math.round(W * k), ch = Math.round(H * k);
   if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
-  const dt = sparks.last == null ? 0 : Math.min(.05, Math.max(0, now - sparks.last) / 1000); sparks.last = now;
-  moveSparks(dt, W, H);
-  const g = c.getContext('2d'), img = sparkImg();
-  g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
-  for (const s of sparks.p) {
-    const u = s.age / s.life, a = Math.max(0, (1 - u) * (u < .08 ? u / .08 : 1) * (.6 + .4 * Math.sin(s.ph)));
-    const len = 1 + Math.min(2.2, Math.abs(s.vy) / 30);   // 往上飄時拉成一小條光
-    g.globalAlpha = a; g.drawImage(img, s.x - s.r, s.y - s.r * len, s.r * 2, s.r * 2 * len);
-  }
-  g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
+  const dt = still || fx.last == null ? 0 : Math.min(.05, Math.max(0, now - fx.last) / 1000); fx.last = now;
+  const t = now / 1000, br = breathNow(), F = FXS[fx.kind];
+  F.move(fx.st, dt, W, H, t, br);
+  const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); F.draw(fx.st, g, W, H, t, br);
+  fx.drawn = host;
 }
 function syncSparks() {
-  const on = state.theme === 'fire' && !reducedMotion();
-  if (on && !sparks.raf) {
-    if (!sparks.c) { sparks.c = document.createElement('canvas'); sparks.c.className = 'sparks'; sparks.c.setAttribute('aria-hidden', 'true'); }
-    sparks.last = null; sparks.w = 0; sparks.raf = requestAnimationFrame(drawSparks);
-  } else if (!on && sparks.raf) {
-    cancelAnimationFrame(sparks.raf); sparks.raf = 0; sparks.p = [];
-    if (sparks.c) sparks.c.remove();
+  const kind = FX_OF[state.theme], on = !!kind && !(kind === 'sparks' && reducedMotion());
+  if (on) {
+    if (!fx.c) { fx.c = document.createElement('canvas'); fx.c.className = 'sparks'; fx.c.setAttribute('aria-hidden', 'true'); }
+    if (fx.kind !== kind) { fx.kind = kind; fx.st = null; fx.last = null; }
+    if (!fx.raf) { fx.last = null; fx.raf = requestAnimationFrame(drawFx); }
+  } else {
+    if (fx.raf) cancelAnimationFrame(fx.raf);
+    fx.raf = 0; fx.st = null; fx.kind = null;
+    if (fx.c) fx.c.remove();
   }
 }
 
