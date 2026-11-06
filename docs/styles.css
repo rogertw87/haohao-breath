@@ -91,7 +91,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .menu-item:hover { background: color-mix(in srgb, var(--screen) 50%, transparent); }
 .menu-theme { min-width: 210px; box-sizing: border-box; padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
 .menu-theme-title { font-size: 12px; color: var(--muted); }
-.menu-theme-opts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.menu-theme-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .menu-theme-opt {
   min-height: 36px; padding: 0 4px; border-radius: 10px; border: 1px solid var(--line); background: var(--card);
   color: var(--ink); font-size: 13px; cursor: pointer; white-space: nowrap;
@@ -465,7 +465,65 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   --sky-pos: center bottom;
 }
 :root[data-theme="fire"] .home::before { display: block; background: var(--page) var(--sky, none) center bottom / cover; }
-/* 營火的火星：畫在畫面背景之上、文字按鈕之下 */
+:root[data-theme="fireflies"] { /* 螢火蟲：夏夜的草叢，螢火蟲一閃一閃 */
+  --page: #06100d;
+  --screen: #050d0b;
+  --ink: #eaf3dc;
+  --ink-2: #d6ef7c;
+  --accent: #bfe36a;
+  --accent-2: #dcf77a;
+  --line-2: #2a3d2e;
+  --line: #1b2b21;
+  --soft-2: #142019;
+  --chip: #1c2918;
+  --soft: #06100d;
+  --line-3: #1c2918;
+  --muted-2: #9db497;
+  --muted: #b9ccb2;
+  --track: #5f7a2c;
+  --guide: #142019;
+  --figure: #1c2918;
+  --fade: rgba(6,16,13,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #0d1a14;
+  --sel: #bfe36a;
+  --selfg: #06100d;
+  --img-filter: brightness(1.9);
+  --dot: #dcf77a;
+  --dot-glow: 0 0 0 6px rgba(220,247,122,.2), 0 0 22px 6px rgba(200,240,90,.45);
+  --sky-pos: center bottom;
+}
+:root[data-theme="fireflies"] .home::before { display: block; background: var(--page) var(--sky, none) center bottom / cover; }
+:root[data-theme="sakura"] { /* 櫻花：上方垂著櫻花枝，花瓣翻轉著飄落 */
+  --page: #fff7f9;
+  --screen: #fff5f7;
+  --ink: #3b2a30;
+  --ink-2: #c4537a;
+  --accent: #d0688c;
+  --accent-2: #e77fa3;
+  --line-2: #f0cfd9;
+  --line: #f6e1e8;
+  --soft-2: #fbe3ea;
+  --chip: #fde8ee;
+  --soft: #fff7f9;
+  --line-3: #fde8ee;
+  --muted-2: #8a6a74;
+  --muted: #6f5560;
+  --track: #e9a9bf;
+  --guide: #fbe3ea;
+  --figure: #fde8ee;
+  --fade: rgba(255,245,247,0);
+  --shadow: rgba(59,42,48,.14);
+  --card: #ffffff;
+  --sel: #c4537a;
+  --selfg: #ffffff;
+  --dot: #e77fa3;
+  --dot-glow: 0 0 0 6px rgba(231,127,163,.25);
+  --sky-pos: center top;
+}
+/* 首頁的櫻花枝比較茂密，稍微往上移，不會壓到標題 */
+:root[data-theme="sakura"] .home::before { display: block; background: var(--page) url('assets/themes2/sakura.jpg') center -18px / cover; }
+/* 火星、螢火蟲、花瓣：畫在畫面背景之上、文字按鈕之下 */
 .sparks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 .home > .sparks { left: 50%; max-width: 480px; transform: translateX(-50%); }
 .wh-music-hint { margin: 12px 4px 24px; font-size: 12px; line-height: 1.6; color: var(--muted-2); }
