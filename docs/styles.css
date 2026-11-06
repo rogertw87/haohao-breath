@@ -70,15 +70,15 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 
 /* ---------- 首頁 ---------- */
 .home { max-width: 480px; margin: 0 auto; min-height: 100vh; position: relative; background: var(--page); }
-.menu { position: absolute; top: 72px; right: 14px; z-index: 1; }
+.menu { position: absolute; top: 69px; right: 14px; z-index: 1; }
 .menu-btn {
-  width: 34px; height: 34px; padding: 0; border: none; background: none;
+  width: 40px; height: 40px; padding: 0; border: none; border-radius: 50%; background: none;
   display: flex; align-items: center; justify-content: center; cursor: pointer;
 }
-.menu-btn:hover { opacity: .7; }
-.menu-btn svg { width: 16px; height: 16px; fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; }
+.menu-btn:hover { opacity: .75; }
+.menu-btn svg { width: 22px; height: 22px; fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; }
 .menu-pop {
-  position: absolute; top: 42px; right: 0; min-width: 160px; padding: 6px 0; border-radius: 14px;
+  position: absolute; top: 48px; right: 0; min-width: 160px; padding: 6px 0; border-radius: 14px;
   border: 1px solid var(--line); background: var(--page); box-shadow: 0 8px 24px rgba(21,48,58,.12);
   display: flex; flex-direction: column;
 }
