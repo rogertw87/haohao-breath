@@ -96,9 +96,11 @@ const STAMPS = [
   ['nostril', '交替', '鼻孔交替呼吸 10 次', cnt('nostril', 10)], ['pursed', '呼氣', '呼氣練習 10 次', cnt('pursed', 10)],
   ['wimhof', '冰人', '冰人呼吸 10 次', cnt('wimhof', 10)], ['hold', '屏息', '閉氣達 2 分鐘', b => b.hold >= 120],
   ['early', '晨光', '早上 7 點前練習', b => b.early], ['late', '夜深', '晚上 10 點後練習', b => b.late],
-  ['m100', '百分', '累積 100 分鐘', b => b.sec >= 6000], ['m1000', '千分', '累積 1000 分鐘', b => b.sec >= 60000],
+  ['m100', '百分', '累積 100 分鐘', b => b.sec >= 6000], ['m300', '三百分', '累積 300 分鐘', b => b.sec >= 18000],
+  ['m500', '五百分', '累積 500 分鐘', b => b.sec >= 30000], ['m700', '七百分', '累積 700 分鐘', b => b.sec >= 42000],
+  ['m1000', '千分', '累積 1000 分鐘', b => b.sec >= 60000],
 ];
-const ST_ROT = [-6, 4, -3, 7, -5, 3, -4, 6, -7, 2, -2, 5];
+const ST_ROT = [-6, 4, -3, 7, -5, 3, -4, 6, -7, 2, -2, 5, -5, 6, -3];
 const dkey = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 const wkey = d => { const m = new Date(d); m.setDate(m.getDate() - ((m.getDay() + 6) % 7)); return dkey(m); };
 const awards = []; // 這次練完新拿到、還沒「收下」的勳章
@@ -233,7 +235,7 @@ function renderBadges() {
     $('bStamps').appendChild(el);
   });
   $('bGalMeta').textContent = nd + ' 天';
-  $('bStMeta').textContent = n + ' / 12';
+  $('bStMeta').textContent = n + ' / ' + STAMPS.length;
   $('bTabGal').hidden = bTab !== 'gal';
   $('bStamps').hidden = bTab !== 'st';
   document.querySelectorAll('.btab').forEach(b => b.classList.toggle('on', b.dataset.tab === bTab));
