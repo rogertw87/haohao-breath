@@ -54,7 +54,7 @@ const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell' },
+  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat' },
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -63,8 +63,8 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
@@ -609,11 +609,11 @@ function stopBreath() {
     b.s.stop(t + .5);
   } catch (e) {}
 }
-// 諧振式呼吸：每段開頭敲一下鼓（吸氣高音、吐氣低音）
-function drumFx(high) {
+// 諧振式呼吸：每段開頭敲一下鼓（吸氣高音、吐氣低音）；at 是要在什麼時間敲（試聽用），不給就是現在
+function drumFx(high, at) {
   if (syncPaused) return; // 暫停中不要排入聲音，否則恢復時會一次全部響起
   ctx();
-  const now = ac.currentTime, f0 = high ? 520 : 390;
+  const now = at || ac.currentTime, f0 = high ? 520 : 390;
   [[1, .32, .22], [1.5, .12, .12], [2.4, .06, .07]].forEach(([m, v, d]) => {
     const o = ac.createOscillator(), g = ac.createGain();
     o.type = m === 1 ? 'triangle' : 'sine';
@@ -635,6 +635,8 @@ function drumFx(high) {
 // 鈴聲：audio/cues/ 四個音檔，已去掉開頭空白並調成一樣大聲
 // 舌鼓：原本的 audio/cue-in、cue-out、cue-hold.wav（鋼舌鼓高低音，兩次停住都是木魚）
 const CUESETS = [['bell', '鈴聲'], ['drum', '舌鼓']];
+// 諧振式呼吸只有吸氣、吐氣，提示音另外選：鼓聲（原本的，預設）或鈴聲（和上面的鈴聲同一組）
+const BELLYCUES = [['beat', '鼓聲'], ['bell', '鈴聲']];
 const CUE_KEYS = ['in', 'hold-in', 'out', 'hold-out'];
 const cueBufs = {};
 let cueSrc = null;
@@ -648,6 +650,7 @@ function loadCue(key, set) {
 function loadCues() {
   ctx(); stopPreview();
   CUE_KEYS.forEach(key => loadCue(key));
+  if (state.bellyCue === 'bell') { loadCue('in', 'bell'); loadCue('out', 'bell'); }
 }
 // 設定頁點選提示音時試聽一輪：吸氣、停住、吐氣、停住，每個間隔 1 秒
 let preview = [], previewTok = 0, previewEnd = 0;
@@ -656,20 +659,23 @@ function stopPreview() {
   preview.forEach(s => { try { s.stop(); } catch (e) {} });
   preview = [];
 }
-function previewCues(set) {
+// 諧振式呼吸試聽吸氣、吐氣兩聲（belly 為 true）；鼓聲是即時合成的，直接排兩下
+function previewCues(set, belly) {
   ctx(); stopPreview();
   const tok = previewTok;
   keepAlive.play().catch(() => {});
   clearTimeout(previewEnd);
   previewEnd = setTimeout(() => { if (!practicing()) keepAlive.pause(); }, 6000);
-  Promise.all(CUE_KEYS.map(key => loadCue(key, set))).then(bufs => {
+  if (belly && set === 'beat') { const t0 = ac.currentTime + .05; drumFx(true, t0); drumFx(false, t0 + 1.2); return; }
+  const keys = belly ? ['in', 'out'] : CUE_KEYS, gap = belly ? 1.2 : 1;
+  Promise.all(keys.map(key => loadCue(key, set))).then(bufs => {
     if (tok !== previewTok) return;
     const t0 = ac.currentTime + .05;
     bufs.forEach((b, i) => {
       if (!b) return;
       const s = ac.createBufferSource(), g = ac.createGain();
       g.gain.value = .6; s.buffer = b;
-      s.connect(g); g.connect(ac.destination); s.start(t0 + i);
+      s.connect(g); g.connect(ac.destination); s.start(t0 + i * gap);
       preview.push(s);
     });
   });
@@ -682,11 +688,11 @@ function prevKind(ex, seq, i) {
   }
   return IN;
 }
-function cueFx(k, gain, prev) {
+function cueFx(k, gain, prev, set) {
   if (syncPaused) return;
   loadCues();
   const key = k === IN ? 'in' : k === OUT ? 'out' : prev === OUT ? 'hold-out' : 'hold-in';
-  loadCue(key).then(b => {
+  loadCue(key, set).then(b => {
     if (!b) return;
     const s = ac.createBufferSource(), g = ac.createGain();
     g.gain.value = gain || .6; s.buffer = b;
@@ -820,14 +826,15 @@ function renderSetup() {
     $('mineRows').appendChild(row);
   });
   $('musicHint').hidden = state.music === 'none';
-  // 提示音（諧振式呼吸用鼓聲，不顯示）
-  $('cueBox').hidden = ex.id === 'belly';
+  // 提示音：諧振式呼吸選鼓聲或鈴聲（自己記一組），其他練習選鈴聲或舌鼓
+  const belly = ex.id === 'belly';
   $('cueGrid').innerHTML = '';
-  CUESETS.forEach(([k, l]) => {
+  (belly ? BELLYCUES : CUESETS).forEach(([k, l]) => {
+    const cur = belly ? (state.bellyCue || 'beat') : (state.cueSet || 'bell');
     const b = document.createElement('button');
-    b.className = 'music-opt' + ((state.cueSet || 'bell') === k ? ' on' : '');
+    b.className = 'music-opt' + (cur === k ? ' on' : '');
     b.textContent = l;
-    b.addEventListener('click', () => { state.cueSet = k; save(); renderSetup(); previewCues(k); });
+    b.addEventListener('click', () => { if (belly) state.bellyCue = k; else state.cueSet = k; save(); renderSetup(); previewCues(k, belly); });
     $('cueGrid').appendChild(b);
   });
 }
@@ -868,7 +875,7 @@ function run(i) {
   clearPhase();
   const k = ex.base[bi][0];
   stopBreath();
-  if (t) { if (ex.id === 'belly') drumFx(k === IN); else cueFx(k, 0, k === HOLD ? prevKind(ex, seq, i) : null); }
+  if (t) { if (ex.id === 'belly') { if (state.bellyCue === 'bell') cueFx(k, 0, null, 'bell'); else drumFx(k === IN); } else cueFx(k, 0, k === HOLD ? prevKind(ex, seq, i) : null); }
   if (i === 0) waveStart = performance.now();
   const el = dotEl(ex);
   if (el) {
