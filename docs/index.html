@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=45">
+<link rel="stylesheet" href="styles.css?v=46">
 </head>
 <body>
 <main class="home">
@@ -133,29 +133,13 @@
         <div class="n-labels"><span>左</span><span>右</span></div>
       </div>
 
-      <!-- 呼氣練習：人物動畫 -->
-      <svg class="anim" id="animFig" hidden width="300" height="270" viewBox="0 0 400 360">
-        <g data-k="body"><path d="M58 380 L60 360 C 66 316, 110 296, 160 290 L240 290 C 290 296, 334 316, 340 360 L342 380 Z" class="fig-body"></path><path class="fig-collar" d="M170 292 C 180 306, 220 306, 230 292" fill="none" stroke-width="3" stroke-linecap="round"></path></g>
-        <g data-k="head">
-          <rect x="176" y="250" width="48" height="46" rx="14" fill="#E9B893"></rect>
-          <ellipse cx="108" cy="168" rx="16" ry="24" fill="#EDBE99"></ellipse>
-          <ellipse cx="292" cy="168" rx="16" ry="24" fill="#EDBE99"></ellipse>
-          <ellipse cx="200" cy="160" rx="92" ry="108" fill="#F3CBA9"></ellipse>
-          <path d="M108 150 C 100 70, 160 44, 204 46 C 256 46, 304 76, 292 150 C 284 118, 262 98, 232 92 C 206 104, 160 106, 128 102 C 116 116, 110 132, 108 150 Z" fill="#3B2A22"></path>
-          <path d="M150 140 C 160 134, 172 134, 180 138" fill="none" stroke="#3B2A22" stroke-width="3.5" stroke-linecap="round"></path>
-          <path d="M220 138 C 228 134, 240 134, 250 140" fill="none" stroke="#3B2A22" stroke-width="3.5" stroke-linecap="round"></path>
-          <path d="M150 162 C 158 170, 172 170, 180 162" fill="none" stroke="#3B2A22" stroke-width="3.5" stroke-linecap="round"></path>
-          <path d="M220 162 C 228 170, 242 170, 250 162" fill="none" stroke="#3B2A22" stroke-width="3.5" stroke-linecap="round"></path>
-          <ellipse cx="148" cy="200" rx="16" ry="9" fill="#EF9F9A" opacity=".45"></ellipse>
-          <ellipse cx="252" cy="200" rx="16" ry="9" fill="#EF9F9A" opacity=".45"></ellipse>
-          <path d="M200 166 C 198 182, 192 192, 190 200 C 194 206, 206 206, 210 200" fill="none" stroke="#C98E6A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
-          <ellipse data-k="nosL" cx="193" cy="203" rx="3.2" ry="2.2" fill="#8A5A40"></ellipse>
-          <ellipse data-k="nosR" cx="207" cy="203" rx="3.2" ry="2.2" fill="#8A5A40"></ellipse>
-          <ellipse data-k="lips" cx="200" cy="236" rx="24" ry="5" fill="#D9736E"></ellipse>
-          <ellipse data-k="hole" cx="200" cy="236" rx="0" ry="0" fill="#5A2626"></ellipse>
-        </g>
-        <g id="figDots"></g>
-        <g id="figPuffs"></g>
+      <!-- 鯨豚式呼吸：吸氣變大、吐氣縮小的球；吐氣時邊緣有流動的聲波紋 -->
+      <svg class="anim" id="animBall" hidden width="300" height="250" viewBox="0 0 300 250">
+        <circle class="ball-rip" data-k="rip" cx="150" cy="125" r="0" fill="none" stroke-width="1.5" opacity="0"></circle>
+        <circle class="ball-rip" data-k="rip" cx="150" cy="125" r="0" fill="none" stroke-width="1.5" opacity="0"></circle>
+        <circle class="ball-rip" data-k="rip" cx="150" cy="125" r="0" fill="none" stroke-width="1.5" opacity="0"></circle>
+        <circle class="ball-halo" data-k="halo" cx="150" cy="125" r="40" opacity=".22"></circle>
+        <path class="ball-main" data-k="ball" d="M184 125A34 34 0 1 1 116 125A34 34 0 1 1 184 125Z"></path>
       </svg>
 
       <!-- 其他練習：波形圖 -->
@@ -386,7 +370,7 @@
   </div>
 </div>
 
-<script src="app.js?v=49"></script>
+<script src="app.js?v=50"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

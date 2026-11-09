@@ -15,13 +15,11 @@ const EX = [
     seq: [[0, '左鼻吸氣'], [1, '閉氣'], [2, '右鼻吐氣'], [3, '閉氣'], [0, '右鼻吸氣'], [1, '閉氣'], [2, '左鼻吐氣'], [3, '閉氣']] },
   // 冰人呼吸有自己的設定、練習與完成畫面（見下方「冰人呼吸」）
   { id: 'wimhof', name: '冰人呼吸', own: true },
-  { id: 'pursed', name: '呼氣練習', desc: '用鼻子吸氣，再把嘴唇噘成圓形，慢慢吐氣。吐氣約為吸氣的兩倍長。',
-    base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 6, '吐氣', '圓唇慢吐']] },
+  { id: 'res', name: '鯨豚式呼吸', desc: '鼻子吸氣；閉上嘴巴，用鼻子慢慢吐氣。吐氣時將喉部肌肉略縮起來，提高呼吸的阻力。',
+    base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 8, '吐氣', '閉嘴，喉部略縮慢慢吐']] },
   // 重生呼吸：數次短促的小呼吸＋一次深呼吸；base 第 5 欄是吸氣的深度（波形高度，1 = 吸滿）
   { id: 'rebirth', name: '重生呼吸', wip: true, desc: '吸氣與吐氣都用鼻子，相連不停頓。先做數次短促的小呼吸，再接一次較大的深呼吸，依序循環。',
     base: [[IN, 1.5, '小吸氣', '小吸', .55], [OUT, 1.5, '小吐氣', '小吐'], [IN, 4, '大吸氣', '大吸氣'], [OUT, 4, '大吐氣', '大吐氣']] },
-  { id: 'res', name: '鯨豚式呼吸', wip: true, desc: '吸氣與吐氣等長，每分鐘約 5.5 次。',
-    base: [[IN, 5.5, '吸氣'], [OUT, 5.5, '吐氣']] },
 ];
 
 // 首頁小圖示：線條 path（32×32）或圖檔
@@ -33,7 +31,7 @@ const ICONS = {
   rebirth: 'M16 10V24M16 9L13.5 5.5M16 9L18.5 5.5M16 15C13 9 7.5 6.5 5 8.5C3 10.5 5.5 15.5 16 15.5M16 15C19 9 24.5 6.5 27 8.5C29 10.5 26.5 15.5 16 15.5M16 16.5C10 16.5 6.5 19 8 22.5C9.5 25.5 14 22.5 16 18M16 16.5C22 16.5 25.5 19 24 22.5C22.5 25.5 18 22.5 16 18',
   wimhof: 'M16 4V28M5.6 10L26.4 22M5.6 22L26.4 10M13 6.5L16 9L19 6.5M13 25.5L16 23L19 25.5M7.5 7.7L8.2 11.5L4.5 12.9M24.5 24.3L23.8 20.5L27.5 19.1M27.5 12.9L23.8 11.5L24.5 7.7M4.5 19.1L8.2 20.5L7.5 24.3',
 };
-const ICON_IMGS = { res: 'icons/whale.png', pursed: 'icons/wind.png' };
+const ICON_IMGS = { res: 'icons/whale.png' };
 
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '藥師真言'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪呼嚕'], ['shurangama', '楞嚴咒心']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
@@ -93,7 +91,7 @@ const cnt = (id, k) => b => (b.n[id] || 0) >= k;
 const STAMPS = [
   ['first', '初息', '第一次完成練習', b => b.total >= 1], ['box', '方塊', '方塊呼吸 10 次', cnt('box', 10)],
   ['478', '四七八', '4-7-8 放鬆呼吸 10 次', cnt('478', 10)], ['belly', '諧振', '諧振式呼吸 10 次', cnt('belly', 10)],
-  ['nostril', '交替', '鼻孔交替呼吸 10 次', cnt('nostril', 10)], ['pursed', '呼氣', '呼氣練習 10 次', cnt('pursed', 10)],
+  ['nostril', '交替', '鼻孔交替呼吸 10 次', cnt('nostril', 10)], ['res', '鯨豚', '鯨豚式呼吸 10 次', cnt('res', 10)],
   ['wimhof', '冰人', '冰人呼吸 10 次', cnt('wimhof', 10)], ['hold', '屏息', '閉氣達 2 分鐘', b => b.hold >= 120],
   ['early', '晨光', '早上 7 點前練習', b => b.early], ['late', '夜深', '晚上 10 點後練習', b => b.late],
   ['m100', '百分', '累積 100 分鐘', b => b.sec >= 6000], ['m300', '三百分', '累積 300 分鐘', b => b.sec >= 18000],
@@ -335,53 +333,34 @@ function waveD(ex) {
   return 'M' + pts.join(' L');
 }
 
-// ---------- 呼氣練習人物 ----------
-const SVGNS = 'http://www.w3.org/2000/svg';
-const fig = $('animFig');
-for (let k = 0; k < 6; k++) {
-  const d = document.createElementNS(SVGNS, 'circle');
-  d.setAttribute('data-k', 'dot'); d.setAttribute('r', '5'); d.setAttribute('fill', '#5aaac0'); d.setAttribute('opacity', '0');
-  $('figDots').appendChild(d);
-  const p = document.createElementNS(SVGNS, 'circle');
-  p.setAttribute('data-k', 'puff'); p.setAttribute('r', '3'); p.setAttribute('fill', 'none');
-  p.setAttribute('class', 'fig-puff'); p.setAttribute('stroke-width', '2.5'); p.setAttribute('opacity', '0');
-  $('figPuffs').appendChild(p);
-}
-function drawFig(phase, prog, now) {
-  const q = k => fig.querySelector('[data-k="' + k + '"]');
-  const A = (el, o) => { for (const k in o) el.setAttribute(k, o[k]); };
-  const ease = x => .5 - .5 * Math.cos(Math.PI * x);
-  const s = phase === 'in' ? .25 + .75 * ease(prog) : 1 - .75 * ease(prog), n = (s - .25) / .75, rise = -8 * n;
-  A(q('body'), { transform: 'translate(0 ' + rise.toFixed(2) + ')' });
-  A(q('head'), { transform: 'translate(0 ' + (rise * .6).toFixed(2) + ')' });
-  const m = phase === 'ex' ? Math.min(1, prog * 6) : Math.max(0, 1 - prog * 6), e = m * m * (3 - 2 * m), y = 236 + rise * .6;
-  A(q('lips'), { cy: y.toFixed(2), rx: (24 - 12 * e).toFixed(2), ry: (5 + 7 * e).toFixed(2) });
-  A(q('hole'), { cy: y.toFixed(2), rx: (4.5 * e).toFixed(2), ry: (5 * e).toFixed(2) });
-  const f = phase === 'in' ? ease(Math.min(1, prog * 1.6)) : Math.max(0, 1 - prog * 4);
-  [q('nosL'), q('nosR')].forEach((el, k) => A(el, {
-    rx: (3.2 + 3.3 * f).toFixed(2), ry: (2.2 + 2.3 * f).toFixed(2), cx: (k ? 207 + 1.5 * f : 193 - 1.5 * f).toFixed(2),
-  }));
-  const ny = 203 + rise * .6;
-  fig.querySelectorAll('[data-k="dot"]').forEach((c, k) => {
-    if (phase !== 'in') { c.setAttribute('opacity', '0'); return; }
-    const t = ((now / 1100) + k / 6) % 1, side = k % 2 ? 1 : -1, sx = 200 + side * 95, sy = 300, tx = 200 + side * 7;
-    A(c, { cx: (sx + (tx - sx) * t).toFixed(1), cy: (sy + (ny - sy) * t - Math.sin(Math.PI * t) * 20).toFixed(1), opacity: (.9 * Math.sin(Math.PI * t)).toFixed(2) });
-  });
-  fig.querySelectorAll('[data-k="puff"]').forEach((c, k) => {
-    if (phase !== 'ex' || prog < .08) { c.setAttribute('opacity', '0'); return; }
-    const t = ((now / 1500) + k / 6) % 1, sp = (k - 2.5) * .22;
-    A(c, { cx: (200 + sp * 120 * t).toFixed(1), cy: (y + 10 + 95 * t).toFixed(1), r: (3 + 10 * t).toFixed(1), opacity: (.8 * (1 - t) * Math.min(1, t * 5)).toFixed(2) });
+// ---------- 鯨豚式呼吸：會放大縮小的球 ----------
+// 吸氣時平滑地變大；吐氣時慢慢縮小，邊緣變成流動的細波浪、外面有幾圈淡淡的波紋往外散（有阻力、要出聲）
+const ball = $('animBall');
+function drawBall(phase, prog, now) {
+  const ease = x => .5 - .5 * Math.cos(Math.PI * x), cl = x => Math.max(0, Math.min(1, x));
+  const tt = now / 1000, v = phase === 'in' ? ease(prog) : 1 - ease(prog), r = 34 + 70 * v;
+  const sh = phase === 'in' || reducedMotion() ? 0 : cl(prog * 8) * cl((1 - prog) * 6), amp = sh * 2.6, N = 96;
+  let d = '';
+  for (let i = 0; i <= N; i++) {
+    const a = i / N * 6.2832, rr = r + amp * Math.sin(a * 16 + tt * 9) + amp * .4 * Math.sin(a * 7 - tt * 5);
+    d += (i ? 'L' : 'M') + (150 + rr * Math.cos(a)).toFixed(2) + ' ' + (125 + rr * Math.sin(a)).toFixed(2);
+  }
+  ball.querySelector('[data-k="ball"]').setAttribute('d', d + 'Z');
+  ball.querySelector('[data-k="halo"]').setAttribute('r', (r + 6).toFixed(2));
+  ball.querySelectorAll('[data-k="rip"]').forEach((el, i) => {
+    const u = ((tt / 2.2) + i / 3) % 1;
+    el.setAttribute('r', (r + 6 + u * 34).toFixed(1));
+    el.setAttribute('opacity', (sh * .5 * (1 - u)).toFixed(3));
   });
 }
 
-// 波形與人物每格畫面更新
 function tick() {
   const ex = EX[cur];
   if (ex && waveStart != null) {
     const w = waveSegs(ex), now = performance.now(), tm = ((now - waveStart) / 1000) % w.T;
-    if (ex.id === 'pursed') {
+    if (ex.id === 'res') {
       const sg = segAt(w, tm);
-      drawFig(sg.to > sg.from ? 'in' : 'ex', (tm - sg.t0) / ((sg.t1 - sg.t0) || 1), now);
+      drawBall(sg.to > sg.from ? 'in' : 'ex', (tm - sg.t0) / ((sg.t1 - sg.t0) || 1), now);
     } else {
       const [x, y] = waveAt(w, tm);
       $('waveDot').style.transform = 'translate(150px,' + y + 'px)';
@@ -912,8 +891,8 @@ function start() {
 
   $('animBox').hidden = ex.id !== 'box';
   $('animN').hidden = ex.id !== 'nostril';
-  fig.toggleAttribute('hidden', ex.id !== 'pursed'); // SVG 元素沒有 .hidden 屬性
-  $('animWave').hidden = ['box', 'nostril', 'pursed'].includes(ex.id);
+  ball.toggleAttribute('hidden', ex.id !== 'res'); // SVG 元素沒有 .hidden 屬性
+  $('animWave').hidden = ['box', 'nostril', 'res'].includes(ex.id);
   $('wavePath').setAttribute('d', waveD(ex));
   $('waveG').setAttribute('transform', 'translate(150 0)');
   $('waveDot').style.transform = 'translate(150px,140px)';
