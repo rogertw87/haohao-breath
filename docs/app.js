@@ -4,10 +4,10 @@
 // base: [種類, 預設秒數, 設定頁標籤, 練習中提示(省略時同設定頁標籤)]
 const IN = 'in', HOLD = 'hold', OUT = 'out';
 const EX = [
-  { id: 'box', name: '方塊呼吸', desc: '吸氣、停住、吐氣、停住，各段等長。',
-    base: [[IN, 4, '吸氣'], [HOLD, 4, '吸氣後停住', '停住'], [OUT, 4, '吐氣'], [HOLD, 4, '吐氣後停住', '停住']] },
-  { id: '478', name: '4-7-8 放鬆呼吸', label: '4-7-8', fixed: true, desc: '吸氣 4 秒、停住 7 秒、吐氣 8 秒。',
-    base: [[IN, 4, '吸氣'], [HOLD, 7, '停住'], [OUT, 8, '吐氣']] },
+  { id: 'box', name: '方塊呼吸', desc: '吸氣、閉氣、吐氣、閉氣，各段等長。',
+    base: [[IN, 4, '吸氣'], [HOLD, 4, '吸氣後閉氣', '閉氣'], [OUT, 4, '吐氣'], [HOLD, 4, '吐氣後閉氣', '閉氣']] },
+  { id: '478', name: '4-7-8 放鬆呼吸', label: '4-7-8', fixed: true, desc: '吸氣 4 秒、閉氣 7 秒、吐氣 8 秒。',
+    base: [[IN, 4, '吸氣'], [HOLD, 7, '閉氣'], [OUT, 8, '吐氣']] },
   { id: 'belly', name: '諧振式呼吸', bpm: 6, desc: '吸氣與吐氣等長，依每分鐘次數調整節奏。',
     base: [[IN, 4, '吸氣', '腹部吸氣'], [OUT, 6, '吐氣', '慢慢吐氣']] },
   { id: 'nostril', name: '鼻孔交替呼吸', desc: '左右鼻孔輪流吸氣與吐氣。',
@@ -631,9 +631,9 @@ function drumFx(high, at) {
   s.connect(hp); hp.connect(ng); ng.connect(ac.destination);
   s.start(now); s.stop(now + .04);
 }
-// 其他練習：每段開頭播放提示音（吸氣、吸氣後停住、吐氣、吐氣後停住）。兩組可在設定頁切換：
+// 其他練習：每段開頭播放提示音（吸氣、吸氣後閉氣、吐氣、吐氣後閉氣）。兩組可在設定頁切換：
 // 鈴聲：audio/cues/ 四個音檔，已去掉開頭空白並調成一樣大聲
-// 舌鼓：原本的 audio/cue-in、cue-out、cue-hold.wav（鋼舌鼓高低音，兩次停住都是木魚）
+// 舌鼓：原本的 audio/cue-in、cue-out、cue-hold.wav（鋼舌鼓高低音，兩次閉氣都是木魚）
 const CUESETS = [['bell', '鈴聲'], ['drum', '舌鼓']];
 // 諧振式呼吸只有吸氣、吐氣，提示音另外選：鼓聲（原本的，預設）或鈴聲（和上面的鈴聲同一組）
 const BELLYCUES = [['beat', '鼓聲'], ['bell', '鈴聲']];
@@ -652,7 +652,7 @@ function loadCues() {
   CUE_KEYS.forEach(key => loadCue(key));
   if (state.bellyCue === 'bell') { loadCue('in', 'bell'); loadCue('out', 'bell'); }
 }
-// 設定頁點選提示音時試聽一輪：吸氣、停住、吐氣、停住，每個間隔 1 秒
+// 設定頁點選提示音時試聽一輪：吸氣、閉氣、吐氣、閉氣，每個間隔 1 秒
 let preview = [], previewTok = 0, previewEnd = 0;
 function stopPreview() {
   previewTok++;
@@ -680,7 +680,7 @@ function previewCues(set, belly) {
     });
   });
 }
-// 停住要分吸氣後還是吐氣後：往前找最近一段不是停住的呼吸
+// 閉氣要分吸氣後還是吐氣後：往前找最近一段不是閉氣的呼吸
 function prevKind(ex, seq, i) {
   for (let j = 1; j < seq.length; j++) {
     const q = ex.base[seq[(i - j + seq.length) % seq.length][0]][0];
@@ -1105,7 +1105,7 @@ function whBreathe(n) {
   wh.phase = 'breathe';
   const step = (i, t0) => {
     wh.now = i;
-    whText(String(i), '/ ' + c.breaths, '吸飽', c.breaths - i < 3 ? '最後幾口，準備吐氣後停住' : '');
+    whText(String(i), '/ ' + c.breaths, '吸飽', c.breaths - i < 3 ? '最後幾口，準備吐氣後閉氣' : '');
     circ(1, ti, 'cubic-bezier(.3,.1,.4,1)');
     if (i === c.breaths) bell(523.25);
     breathCue(IN);
@@ -1335,8 +1335,8 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
 const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
-let brPhase = null;  // 練習時目前這一段（吸氣、停住或吐氣）什麼時候開始、有多長
-// 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、停住時維持；不在練習（或冰人呼吸）就是 null
+let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
+// 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
 function breathNow() {
   if (!brPhase || screens.run.hidden || cur == null || EX[cur].id === 'wimhof') return null;
   const u = Math.min(1, Math.max(0, (performance.now() - brPhase.t0) / (brPhase.dur * 1000)));
