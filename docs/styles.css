@@ -133,7 +133,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--chip);
   display: flex; align-items: center; justify-content: center;
 }
-/* 圖片做的圖示（呼氣練習、鯨豚）：只取形狀，顏色跟其他圖示一樣用主題色 */
+/* 圖片做的圖示（鯨豚）：只取形狀，顏色跟其他圖示一樣用主題色 */
 .row-img {
   width: 34px; height: 34px; display: block; background: var(--accent);
   -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
@@ -234,10 +234,9 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   border-bottom: none; border-radius: 8px 8px 0 0; box-sizing: border-box;
 }
 .n-labels { width: 236px; display: flex; justify-content: space-between; font-size: 12px; color: var(--muted-2); }
-#animFig { display: block; }
-.fig-body { fill: var(--figure); }
-.fig-collar { stroke: var(--accent-2); }
-.fig-puff { stroke: var(--accent); }
+#animBall { display: block; overflow: visible; }
+.ball-main, .ball-halo { fill: var(--dot); }
+.ball-rip { stroke: var(--dot); }
 .wave-guide { stroke: var(--guide); }
 .wave-line { stroke: var(--line-2); }
 .anim-wave { width: 300px; display: flex; flex-direction: column; gap: 12px; }
