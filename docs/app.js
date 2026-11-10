@@ -1311,7 +1311,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura' };
+const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -1340,6 +1340,59 @@ function petalImgs() {
     g.strokeStyle = 'rgba(214,110,145,.35)'; g.lineWidth = .8; g.stroke(); return c;
   };
   return fxImgs.petals = [mk('#fff1f5', '#f7b3c8'), mk('#ffe9f0', '#f39cb8'), mk('#fff6f8', '#f8c4d4')];
+}
+const metImg = () => glowImg('meteor', 64, [[0, 'rgba(255,255,255,1)'], [.18, 'rgba(226,238,255,.85)'], [.45, 'rgba(150,185,255,.28)'], [1, 'rgba(120,160,255,0)']]);
+// 流星：從右上往左下，尾巴隨飛行距離拉開
+const newMet = (W, H) => {
+  const R = Math.random, a = (152 + R() * 7) * Math.PI / 180, dx = Math.cos(a), dy = Math.sin(a),
+    x = W * (.45 + R() * .75), y = H * (-.1 + R() * .28), v = 430 + R() * 220,
+    tx = dx < 0 ? (-60 - x) / (dx * v) : 99, ty = dy > 0 ? (H + 60 - y) / (dy * v) : 99;
+  return { x, y, dx, dy, v, len: 80 + R() * 70, w: 1.1 + R() * .9, age: 0, trav: 0, life: Math.max(.5, Math.min(tx, ty)) + .25 };
+};
+// 會閃爍的星星：亮起來、停一下、暗下去，然後換個地方重來
+const newTw = (W, H) => {
+  const R = Math.random;
+  return { x: R() * W, y: R() * H * .92, r: 1.5 + R() * 2.4, t: -R() * 10, up: .9 + R() * 1.3, hold: .25 + R() * .7, dn: 1 + R() * 1.6, gap: 5 + R() * 9 };
+};
+const twA = w => {
+  if (w.t < 0) return 0;
+  if (w.t < w.up) return w.t / w.up;
+  const b = w.t - w.up; if (b < w.hold) return 1;
+  const c = b - w.hold; return c < w.dn ? 1 - c / w.dn : 0;
+};
+// 飛碟：慢慢橫越，幾秒後突然加速竄走，後面拖一道彩虹
+const newUfo = (W, H) => {
+  const R = Math.random, dir = R() < .5 ? 1 : -1;
+  return { dir, x: dir > 0 ? -50 : W + 50, y0: H * (.08 + R() * .17), y: 0, v: 16 + R() * 14, s: 11 + R() * 5, t: 0, cruise: 5 + R() * 7, out: false, outT: 0, a: 0, sp: 0 };
+};
+const RB = ['rgba(255,95,109,', 'rgba(255,163,108,', 'rgba(255,224,102,', 'rgba(125,223,143,', 'rgba(111,200,255,', 'rgba(176,139,255,'];
+function drawUfo(g, u, t) {
+  const s = u.s, d = u.dir; g.save(); g.translate(u.x, u.y);
+  const L = Math.min(250, s * 2 + (u.sp || 0) * .34);
+  if (L > s * 2.2) {
+    g.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 6; i++) {
+      const o = (i - 2.5) * s * .15, x0 = -d * s * .85, x1 = -d * L, gr = g.createLinearGradient(x0, 0, x1, 0);
+      gr.addColorStop(0, RB[i] + (.55 * u.a).toFixed(3) + ')'); gr.addColorStop(.45, RB[i] + (.3 * u.a).toFixed(3) + ')'); gr.addColorStop(1, RB[i] + '0)');
+      g.strokeStyle = gr; g.lineWidth = s * .14; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(x0, o); g.bezierCurveTo(x0 + (x1 - x0) * .4, o * 1.25, x0 + (x1 - x0) * .7, o * 1.6, x1, o * 2); g.stroke();
+    }
+    g.globalCompositeOperation = 'source-over';
+  }
+  g.globalCompositeOperation = 'lighter';
+  const gl = g.createRadialGradient(0, 0, 0, 0, 0, s * 2.4);
+  gl.addColorStop(0, 'rgba(150,220,255,' + (.2 * u.a).toFixed(3) + ')'); gl.addColorStop(1, 'rgba(120,180,255,0)');
+  g.fillStyle = gl; g.beginPath(); g.arc(0, 0, s * 2.4, 0, 6.2832); g.fill();
+  g.globalCompositeOperation = 'source-over';
+  g.globalAlpha = u.a; g.fillStyle = '#101d28'; g.strokeStyle = 'rgba(175,218,255,.8)'; g.lineWidth = 1;
+  g.beginPath(); g.ellipse(0, 0, s, s * .28, 0, 0, 6.2832); g.fill(); g.stroke();
+  g.beginPath(); g.ellipse(0, -s * .04, s * .46, s * .34, 0, Math.PI, 0); g.fill(); g.stroke();
+  for (let i = -1; i <= 1; i++) {
+    const bl = .3 + .7 * Math.pow(Math.sin(t * 3.2 + i * 2.1), 2);
+    g.fillStyle = 'rgba(255,' + Math.round(198 + 45 * bl) + ',140,' + (bl * u.a).toFixed(3) + ')';
+    g.beginPath(); g.arc(i * s * .52, s * .2, s * .1, 0, 6.2832); g.fill();
+  }
+  g.globalAlpha = 1; g.restore();
 }
 const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
 // 每一種有 init（一打開就鋪滿）、move（移動）、draw（畫出來）；br 是練習時吸飽的程度，不在練習時是 null
@@ -1417,6 +1470,59 @@ const FXS = {
       }
       g.globalAlpha = 1;
     }
+  },
+  // 夜空：流星雨。平常什麼都沒有，每隔 15～26 秒來一陣，一次三到六顆；另外有幾顆星星輪流閃，偶爾飛過一台飛碟
+  meteors: {
+    init(st) { st.p = []; st.q = []; st.next = 4 + Math.random() * 8; st.u = null; st.uNext = 25 + Math.random() * 30; st.tw = null; },
+    move(st, dt, W, H) {
+      st.next -= dt;
+      if (st.next <= 0) {
+        const n = 3 + ((Math.random() * 4) | 0);
+        for (let i = 0; i < n; i++) st.q.push(i * (.12 + Math.random() * .35));
+        st.next = 15 + Math.random() * 11;
+      }
+      st.q = st.q.map(v => v - dt).filter(v => { if (v <= 0) { st.p.push(newMet(W, H)); return false; } return true; });
+      const keep = [];
+      for (const m of st.p) { m.age += dt; const d = m.v * dt; m.trav += d; m.x += m.dx * d; m.y += m.dy * d; if (m.age < m.life) keep.push(m); }
+      st.p = keep;
+      if (!st.tw) { st.tw = []; for (let i = 0; i < 11; i++) st.tw.push(newTw(W, H)); }
+      for (const w of st.tw) { w.t += dt; if (w.t > w.up + w.hold + w.dn) { const n = newTw(W, H); n.t = -Math.random() * w.gap; Object.assign(w, n); } }
+      if (!st.u) { st.uNext -= dt; if (st.uNext <= 0) { st.u = newUfo(W, H); st.uNext = 70 + Math.random() * 70; } }
+      else {
+        const u = st.u; u.t += dt;
+        if (!u.out && u.t > u.cruise) { u.out = true; u.outT = u.t; }
+        const k = u.out ? u.t - u.outT : 0, sp = u.v * (1 + k * k * 34); u.sp = sp;
+        u.x += u.dir * sp * dt; if (u.out) u.y0 -= sp * .35 * dt;
+        u.y = u.y0 + Math.sin(u.t * 1.1) * 3.5;
+        u.a = Math.min(1, u.t / 1.2) * (u.out ? Math.max(0, 1 - k / 1.1) : 1);
+        if (u.a <= 0 || u.x < -120 || u.x > W + 120 || u.y < -120) st.u = null;
+      }
+    },
+    draw(st, g, W, H, t) {
+      const img = metImg();
+      if (st.u) drawUfo(g, st.u, t);
+      g.globalCompositeOperation = 'lighter';
+      if (st.tw) for (const w of st.tw) {
+        const a = twA(w); if (a <= .02) continue;
+        const r = w.r * 3.2; g.globalAlpha = a * .95; g.drawImage(img, w.x - r, w.y - r, r * 2, r * 2);
+        if (w.r > 2.4) {
+          const L = w.r * 3.4; g.strokeStyle = 'rgba(255,255,255,' + (a * .45).toFixed(3) + ')'; g.lineWidth = .8;
+          g.beginPath(); g.moveTo(w.x - L, w.y); g.lineTo(w.x + L, w.y); g.moveTo(w.x, w.y - L); g.lineTo(w.x, w.y + L); g.stroke();
+        }
+        g.globalAlpha = 1;
+      }
+      for (const m of st.p) {
+        const u = m.age / m.life, a = (u < .08 ? u / .08 : 1) * (u > .62 ? Math.max(0, (1 - u) / .38) : 1) * .9;
+        if (a <= .01) continue;
+        const L = Math.min(m.len, m.trav), tx = m.x - m.dx * L, ty = m.y - m.dy * L, gr = g.createLinearGradient(m.x, m.y, tx, ty);
+        gr.addColorStop(0, 'rgba(255,255,255,' + a.toFixed(3) + ')'); gr.addColorStop(.18, 'rgba(214,232,255,' + (a * .55).toFixed(3) + ')');
+        gr.addColorStop(.55, 'rgba(150,190,255,' + (a * .18).toFixed(3) + ')'); gr.addColorStop(1, 'rgba(120,160,255,0)');
+        g.strokeStyle = gr; g.lineWidth = m.w; g.lineCap = 'round';
+        g.beginPath(); g.moveTo(m.x, m.y); g.lineTo(tx, ty); g.stroke();
+        const r = m.w * 3.4; g.globalAlpha = a; g.drawImage(img, m.x - r, m.y - r, r * 2, r * 2); g.globalAlpha = 1;
+      }
+      g.globalCompositeOperation = 'source-over';
+    }
   }
 };
 // 要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
@@ -1444,7 +1550,7 @@ function drawFx(now) {
   fx.drawn = host;
 }
 function syncSparks() {
-  const kind = FX_OF[state.theme], on = !!kind && !(kind === 'sparks' && reducedMotion());
+  const kind = FX_OF[state.theme], on = !!kind && !((kind === 'sparks' || kind === 'meteors') && reducedMotion());
   if (on) {
     if (!fx.c) { fx.c = document.createElement('canvas'); fx.c.className = 'sparks'; fx.c.setAttribute('aria-hidden', 'true'); }
     if (fx.kind !== kind) { fx.kind = kind; fx.st = null; fx.last = null; }
