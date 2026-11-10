@@ -133,12 +133,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--chip);
   display: flex; align-items: center; justify-content: center;
 }
-/* 圖片做的圖示（鯨豚）：只取形狀，顏色跟其他圖示一樣用主題色 */
-.row-img {
-  width: 34px; height: 34px; display: block; background: var(--accent);
-  -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
-  -webkit-mask-position: center; mask-position: center;
-}
+.row-icon svg { color: var(--accent); }
 .row-icon svg path { stroke: var(--accent); }
 .row-icon svg { width: 26px; height: 26px; display: block; }
 .row-name { font-size: 28px; font-weight: 300; letter-spacing: .04em; color: var(--ink); }
