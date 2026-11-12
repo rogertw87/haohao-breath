@@ -42,7 +42,7 @@ const MUSIC_LISTS = {
   // 楞嚴咒心：唐密唸法（shurangama2）連續 5 遍，再接一般唸法（shurangama1）5 遍
   shurangama: [...Array(5).fill('audio/shurangama2.mp3'), ...Array(5).fill('audio/shurangama1.mp3')],
 };
-const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3', rainforest: 'audio/rainforest.mp3', dabei: 'audio/dabei.mp3', singing: 'audio/singing.mp3', bowl: 'audio/crystalbowl.mp3' };
+const MUSIC_FILES = { handpan: 'audio/handpan.mp3', drums: 'audio/drums.mp3', rain: 'audio/rain.mp3', evening: 'audio/evening.mp3', chant: 'audio/chant.mp3?v=2', campfire: 'audio/campfire.mp3', rainforest: 'audio/rainforest.mp3', dabei: 'audio/dabei.mp3', singing: 'audio/singing.mp3', bowl: 'audio/crystalbowl.mp3?v=2' };
 // 音檔頭尾本身有淡入淡出的背景音樂：循環時跳過開頭與結尾（秒），兩個播放器無縫接替
 const LOOPCUT = { campfire: [1.2, 1.8] };
 const KEY = 'haohao-breath-settings';
