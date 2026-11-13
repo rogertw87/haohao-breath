@@ -721,7 +721,7 @@ function renderHome() {
       const tag = document.createElement('span');
       tag.className = 'row-tag'; tag.textContent = '未上架';
       row.append(tag);
-    } else row.addEventListener('click', () => open(i));
+    } else row.addEventListener('click', () => openEx(i));
     list.appendChild(row);
   });
 }
@@ -826,7 +826,7 @@ function clearAll() {
   timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = [];
 }
 
-function open(i) {
+function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（Google 登入要用它開視窗）
   clearAll(); stopMusic(true);
   cur = i;
   if (EX[i].own) { whOpen(); return; }
@@ -834,7 +834,7 @@ function open(i) {
   show('setup');
   screens.setup.scrollTop = 0;
 }
-function close() {
+function closeEx() {
   clearAll(); stopMusic(); releaseWake(); duck = 1;
   cur = null;
   renderToday();
@@ -919,7 +919,7 @@ function start() {
   timers.push(setTimeout(() => { clearAll(); stopMusic(); logDone(ex.id, total); show('done'); showAward(); }, LEAD + total * 1000));
 }
 
-function stop() {
+function stopEx() {
   clearAll(); stopMusic();
   renderSetup();
   show('setup');
@@ -1204,9 +1204,9 @@ document.addEventListener('click', e => {
   const b = e.target.closest('[data-action]');
   if (!b) return;
   const a = b.dataset.action;
-  if (a === 'close') close();
+  if (a === 'close') closeEx();
   else if (a === 'start') start();
-  else if (a === 'stop') stop();
+  else if (a === 'stop') stopEx();
   else if (a === 'resume') resumeAllAudio();
   else if (a === 'badges-open') { setMenu(false); renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
   else if (a === 'badges-close') show(null);
@@ -1937,6 +1937,7 @@ function paintSync() {
   if (!sync) {
     txt.textContent = syncErr === 'loading' ? '正在載入 Google 登入，請再按一次。'
       : syncErr === 'denied' ? '沒有拿到存取雲端硬碟的允許，所以還沒開始同步。可以再按一次登入。'
+      : syncErr === 'closed' ? 'Google 登入的視窗沒有打開，或被關掉了。請再按一次；如果一直沒出現，請確認瀏覽器沒有封鎖彈出式視窗。'
       : '用 Google 帳號登入後，這台裝置的紀錄會和你其他裝置的合在一起，換手機、用電腦都看得到同一份。';
   } else {
     const b = document.createElement('b');
@@ -1945,6 +1946,7 @@ function paintSync() {
       st === 'busy' ? '同步中…'
       : st === 'fail' ? '這次沒有同步成功，可能是網路不穩，按「立即同步」再試一次。'
       : syncErr === 'loading' ? '正在載入 Google 登入，請再按一次。'
+      : syncErr === 'closed' && !tokenOk() ? 'Google 登入的視窗沒有打開，或被關掉了。請再按一次；如果一直沒出現，請確認瀏覽器沒有封鎖彈出式視窗。'
       : !tokenOk() ? '登入已經過了一段時間，按「立即同步」重新連上（不用再輸入密碼）。'
       : syncDirty() ? '有新的紀錄，幾秒後會自動存上去。'
       : sync.at ? agoLabel(sync.at) + '存好' : '準備中…');
