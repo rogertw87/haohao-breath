@@ -517,6 +517,64 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 }
 /* 首頁的櫻花枝比較茂密，稍微往上移，不會壓到標題 */
 :root[data-theme="sakura"] .home::before { display: block; background: var(--page) url('assets/themes2/sakura.jpg') center -18px / cover; }
+:root[data-theme="chakra"] { /* 脈輪：深藍夜空，一道柔和的七彩光柱，七個脈輪由下往上亮 */
+  --page: #120e2c;
+  --screen: #0f0c26;
+  --ink: #ece8ff;
+  --ink-2: #d6c8ff;
+  --accent: #b7a2ff;
+  --accent-2: #c4adff;
+  --line-2: #3b3470;
+  --line: #2a2350;
+  --soft-2: #1d1844;
+  --chip: #241d52;
+  --soft: #120e2c;
+  --line-3: #241d52;
+  --muted-2: #a59fcf;
+  --muted: #c3bde6;
+  --track: #5b4a9a;
+  --guide: #1d1844;
+  --figure: #241d52;
+  --fade: rgba(15,12,38,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #1a1540;
+  --sel: #b7a2ff;
+  --selfg: #120e2c;
+  --img-filter: brightness(1.9);
+  --dot: #c4adff;
+  --dot-glow: 0 0 0 2px #120e2c, 0 0 0 7px rgba(183,162,255,.24), 0 0 22px 4px rgba(170,150,255,.4);
+  --sky-pos: center;
+}
+:root[data-theme="chakra"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+:root[data-theme="gold"] { /* 中脈：深紫的夜，一道金色光柱從底下貫通到頭頂 */
+  --page: #170e1b;
+  --screen: #130b16;
+  --ink: #f6ead8;
+  --ink-2: #f3cf86;
+  --accent: #f0bf62;
+  --accent-2: #f3c56a;
+  --line-2: #4a3826;
+  --line: #33261c;
+  --soft-2: #24171e;
+  --chip: #2c1d18;
+  --soft: #170e1b;
+  --line-3: #2c1d18;
+  --muted-2: #c9b292;
+  --muted: #dcc8aa;
+  --track: #8a6a2a;
+  --guide: #24171e;
+  --figure: #2c1d18;
+  --fade: rgba(19,11,22,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #20141c;
+  --sel: #f0bf62;
+  --selfg: #170e1b;
+  --img-filter: brightness(1.9);
+  --dot: #f3c56a;
+  --dot-glow: 0 0 0 2px #170e1b, 0 0 0 7px rgba(243,197,106,.24), 0 0 22px 4px rgba(255,190,90,.4);
+  --sky-pos: center;
+}
+:root[data-theme="gold"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
 /* 火星、螢火蟲、花瓣：畫在畫面背景之上、文字按鈕之下 */
 .sparks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 .home > .sparks { left: 50%; max-width: 480px; transform: translateX(-50%); }
