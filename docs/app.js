@@ -52,8 +52,9 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null });
 const state = Object.assign(
-  { theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat' },
+  DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
 let cur = null;        // 目前練習
@@ -62,11 +63,12 @@ let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue })); } catch (e) {}
+  syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy })); } catch (e) {}
 }
 
-// ---------- 今日紀錄（只存在這台裝置，日期換了就重新計算） ----------
+// ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
 function today() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 const todayLog = () => (state.log && state.log.date === today() ? state.log.items : {});
 function logDone(id, sec) {
@@ -837,6 +839,7 @@ function close() {
   cur = null;
   renderToday();
   show(null);
+  syncResume();   // 練習中沒做的同步，回到首頁再做
   $('whSafety').hidden = true;
 }
 
@@ -1210,6 +1213,7 @@ document.addEventListener('click', e => {
   else if (a === 'btab') { bTab = b.dataset.tab; renderBadges(); }
   else if (a === 'award-next') { awards.shift(); showAward(); }
   else if (a.startsWith('install-')) installAction(a.slice(8), e);
+  else if (a.startsWith('sync-')) syncAction(a.slice(5), b, e);
   else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
@@ -1625,7 +1629,380 @@ $('menuBtn').addEventListener('click', () => setMenu($('menuPop').hidden));
 document.addEventListener('click', e => { if (!e.target.closest('#menu')) setMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
 
+// ---------- 雲端同步：練習紀錄、勳章、冰人呼吸紀錄和設定，存在每個人自己的 Google 雲端硬碟 ----------
+// 放在雲端硬碟裡「應用程式專用」的隱藏資料夾：只有這個網站讀得到，別人（包括做網站的人）都看不到。
+// 在 Google Cloud 建好「網頁應用程式」用戶端後，把用戶端 ID 填在這裡；空的就完全不顯示同步。
+var GOOGLE_CLIENT_ID = '1015820070001-lsv79hbhorgdjl31s4nbltm3drict1r6.apps.googleusercontent.com';
+var SYNC_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+var SYNC_FILE = 'haohao-breath.json';
+var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, token, exp, fileId, at }
+var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+var syncOn = !!GOOGLE_CLIENT_ID;
+// 會同步的設定（音量每台裝置不一樣，不同步）
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue'];
+// state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
+var sync = null, lastSnap = null, applying = false;
+var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
+// 比較兩份資料：先把物件的欄位排好順序，順序不同但內容一樣也算一樣
+const syCanon = v => Array.isArray(v) ? v.map(syCanon) : v && typeof v === 'object' ? Object.keys(v).sort().reduce((o, k) => { o[k] = syCanon(v[k]); return o; }, {}) : v;
+const sySame = (a, b) => JSON.stringify(syCanon(a)) === JSON.stringify(syCanon(b));
+const r1 = x => Math.round(x * 10) / 10;   // 秒數留一位小數，免得加加減減出現很長的小數
+
+// 設定攤平成一項一項：custom.box、wh.rounds… 各自比修改時間
+function setFlat(st) {
+  const f = {};
+  const put = (k, v) => {
+    if (v === undefined || v === null) return;
+    if (typeof v === 'string' && v.startsWith('mine:')) v = 'mine';   // 自己上傳的錄音只在那台裝置上
+    f[k] = v;
+  };
+  SET_KEYS.forEach(k => {
+    const v = st[k];
+    if (k === 'custom' || k === 'wh') Object.keys(v || {}).forEach(j => put(k + '.' + j, v[j]));
+    else put(k, v);
+  });
+  return f;
+}
+function applySet(f) {
+  const o = { custom: {}, wh: {} };
+  Object.keys(f).forEach(k => {
+    const i = k.indexOf('.');
+    if (i > 0) { const a = k.slice(0, i); if (o[a]) o[a][k.slice(i + 1)] = f[k]; } else o[k] = f[k];
+  });
+  // 別台裝置選的是自己上傳的錄音（這台沒有那個檔案），或這個版本還沒有的音樂：維持這台原本的選擇
+  const ok = m => m === 'none' || MUSIC.some(([k]) => k === m);
+  const pick = (v, was) => (v === 'mine' || !ok(v) ? was : v);
+  state.custom = o.custom;
+  const w = { ...o.wh };
+  if (w.music !== undefined) w.music = pick(w.music, state.wh && state.wh.music);
+  if (w.music === undefined) delete w.music;
+  state.wh = w;
+  SET_KEYS.forEach(k => {
+    if (k === 'custom' || k === 'wh' || !(k in o)) return;
+    state[k] = k === 'music' ? pick(o[k], state.music) : o[k];
+  });
+}
+// 每一項各自比修改時間，新的贏；被刪掉的（例如恢復預設）也有時間，所以不會被另一台裝置加回來
+function mergeFlat(lf, ls, rf, rs) {
+  const out = {}, outS = {};
+  new Set([...Object.keys(lf), ...Object.keys(ls), ...Object.keys(rf), ...Object.keys(rs)]).forEach(k => {
+    const a = ls[k] || 0, b = rs[k] || 0, useR = b > a || (b === a && k in rf);
+    const v = useR ? rf[k] : lf[k];
+    if (v !== undefined) out[k] = v;
+    if (a || b) outS[k] = Math.max(a, b);
+  });
+  return { f: out, s: outS };
+}
+function syncSnap() { return { f: setFlat(state), rec: JSON.stringify([state.bdg, state.log, state.whHist]) }; }
+// save() 每次都會叫這裡：記下改了什麼，登入中就幾秒後存上去
+function syncMark() {
+  if (!syncOn || applying || !lastSnap || !state.sy) return;
+  const s = syncSnap(), now = Date.now();
+  let changed = s.rec !== lastSnap.rec;
+  new Set([...Object.keys(s.f), ...Object.keys(lastSnap.f)]).forEach(k => {
+    if (!sySame(s.f[k], lastSnap.f[k])) { state.sy.stamps[k] = now; changed = true; }
+  });
+  lastSnap = s;
+  if (!changed) return;
+  state.sy.dirty = now;
+  if (sync && tokenOk()) { clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 1500); }
+  setTimeout(paintSync, 0);
+}
+const syncDirty = () => !!(state.sy && state.sy.dirty > ((sync && sync.at) || 0));
+const tokenOk = () => !!(sync && sync.token && sync.exp > Date.now() + 60000);
+
+// 練習紀錄：每台裝置各記各的，合起來就是全部。這台的部分 = 現在的總數 − 其他裝置的
+function myRec(others) {
+  const b = bdg(), o = Object.values(others || {}), n = { ...b.n };
+  let total = b.total, sec = b.sec;
+  o.forEach(d => {
+    const x = d.b || {};
+    total -= x.total || 0; sec -= x.sec || 0;
+    Object.keys(x.n || {}).forEach(k => { n[k] = (n[k] || 0) - x.n[k]; });
+  });
+  Object.keys(n).forEach(k => { if (n[k] > 0) return; delete n[k]; });
+  let log = null;
+  const l = state.log;
+  if (l && l.items) {
+    const items = {};
+    Object.keys(l.items).forEach(k => { items[k] = { n: l.items[k].n, sec: l.items[k].sec }; });
+    o.forEach(d => {
+      if (!d.log || d.log.date !== l.date) return;
+      Object.keys(d.log.items || {}).forEach(k => { if (items[k]) { items[k].n -= d.log.items[k].n; items[k].sec -= d.log.items[k].sec; } });
+    });
+    Object.keys(items).forEach(k => { if (items[k].n <= 0) delete items[k]; else items[k].sec = Math.max(0, r1(items[k].sec)); });
+    log = { date: l.date, items };
+  }
+  // 天數、最長閉氣、早晚、印章日期：合併時取聯集或最大，重複算也不會多
+  return { b: { days: b.days, n, total: Math.max(0, total), sec: Math.max(0, r1(sec)), hold: b.hold, early: b.early, late: b.late, best: b.best, got: b.got }, log };
+}
+function combine(parts) {
+  const t = today(), b = { days: {}, n: {}, total: 0, sec: 0, hold: 0, early: false, late: false, best: 0, got: {} }, items = {};
+  parts.forEach(p => {
+    const x = p.b || {};
+    Object.assign(b.days, x.days || {});
+    Object.keys(x.n || {}).forEach(k => { b.n[k] = (b.n[k] || 0) + x.n[k]; });
+    b.total += x.total || 0; b.sec += x.sec || 0;
+    b.hold = Math.max(b.hold, x.hold || 0); b.early = b.early || !!x.early; b.late = b.late || !!x.late; b.best = Math.max(b.best, x.best || 0);
+    Object.keys(x.got || {}).forEach(k => { if (!b.got[k] || x.got[k] < b.got[k]) b.got[k] = x.got[k]; });
+    if (p.log && p.log.date === t) Object.keys(p.log.items || {}).forEach(k => {
+      const c = items[k] || { n: 0, sec: 0 }, y = p.log.items[k];
+      items[k] = { n: c.n + y.n, sec: r1(c.sec + y.sec) };
+    });
+  });
+  b.sec = r1(b.sec);
+  b.best = Math.max(b.best, streak(b.days));
+  earned(b).forEach(k => { if (!b.got[k]) b.got[k] = t; });   // 合起來才達到的印章（例如兩台加起來滿 100 分鐘）
+  return { bdg: b, log: Object.keys(items).length ? { date: t, items } : null };
+}
+function mergeWh(a, b) {
+  const m = {};
+  [...(a || []), ...(b || [])].forEach(x => { if (x && x.d) m[x.d] = x; });
+  return Object.values(m).sort((x, y) => x.d - y.d).slice(-50);
+}
+function devName() { const p = platform(); return p === 'ios' ? 'iPhone／iPad' : p === 'android' ? 'Android' : p === 'desktop' ? '電腦' : '手機'; }
+
+// 雲端硬碟：應用程式專用資料夾裡的一個檔案
+function gfetch(url, opt) {
+  opt = opt || {};
+  opt.headers = Object.assign({}, opt.headers, { Authorization: 'Bearer ' + sync.token });
+  return fetch(url, opt).then(r => {
+    if (r.status === 401) { sync.token = null; sync.exp = 0; saveLogin(); throw { code: 'auth' }; }
+    if (!r.ok) throw { code: 'http', status: r.status };
+    return r;
+  });
+}
+function findFile() {
+  if (sync.fileId) return Promise.resolve(sync.fileId);
+  const q = encodeURIComponent("name='" + SYNC_FILE + "' and trashed=false");
+  return gfetch(DRIVE + '/files?spaces=appDataFolder&orderBy=modifiedTime%20desc&fields=files(id)&q=' + q)
+    .then(r => r.json()).then(j => (j.files && j.files[0] ? j.files[0].id : null));
+}
+function readRemote(id) {
+  if (!id) return Promise.resolve(null);
+  return gfetch(DRIVE + '/files/' + id + '?alt=media').then(r => r.json()).catch(e => {
+    if (e && e.status === 404) { sync.fileId = null; return findFile().then(id2 => (id2 && id2 !== id ? readRemote(id2) : null)); }
+    throw e;
+  });
+}
+function writeRemote(id, body) {
+  const data = JSON.stringify(body);
+  if (id) return gfetch(UPLOAD + '/' + id + '?uploadType=media', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: data }).then(() => id);
+  const b = 'hhb' + Date.now();
+  const multi = '--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify({ name: SYNC_FILE, parents: ['appDataFolder'] }) +
+    '\r\n--' + b + '\r\nContent-Type: application/json\r\n\r\n' + data + '\r\n--' + b + '--';
+  return gfetch(UPLOAD + '?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: multi })
+    .then(r => r.json()).then(j => j.id);
+}
+function saveLogin() { try { if (sync) localStorage.setItem(LS_SYNC, JSON.stringify(sync)); else localStorage.removeItem(LS_SYNC); } catch (e) {} }
+function refreshSynced() {
+  applyTheme();
+  renderToday();
+  if (!screens.badges.hidden) renderBadges();
+  if (!screens.setup.hidden && cur != null) renderSetup();
+  if (!screens.whSetup.hidden) whRenderSetup();
+}
+function syncNow() {
+  if (!syncOn || !sync || !tokenOk()) { paintSync(); return Promise.resolve(); }
+  if (syncBusy || practicing()) { syncAgain = true; return Promise.resolve(); }   // 練習中不動資料，練完再同步
+  syncBusy = true; syncErr = ''; paintSync();
+  const t0 = Date.now();
+  let id = null;
+  return findFile().then(fid => { id = fid; return readRemote(fid); }).then(remote => {
+    if (practicing()) throw { code: 'later' };
+    if (remote && remote.app !== 'haohao-breath') remote = null;
+    const sy = state.sy, me = sy.dev, others = {};
+    Object.keys((remote && remote.dev) || {}).forEach(k => { if (k !== me) others[k] = remote.dev[k]; });
+    const mine = Object.assign({ at: t0, ua: devName() }, myRec(sy.others));
+    const all = combine([mine, ...Object.values(others)]);
+    const rset = (remote && remote.set) || {};
+    const m = mergeFlat(setFlat(state), sy.stamps || {}, rset.f || {}, rset.s || {});
+    const wh = mergeWh(state.whHist, remote && remote.wh);
+    // 放進這台裝置（這一步不算新的變更），重畫畫面
+    applying = true;
+    try {
+      state.bdg = all.bdg; state.log = all.log; state.whHist = wh;
+      applySet(m.f);
+      sy.others = others; sy.stamps = m.s;
+      save();
+    } finally { applying = false; }
+    lastSnap = syncSnap();
+    refreshSynced();
+    const noAt = d => d && Object.assign({}, d, { at: 0 });
+    if (remote && sySame(remote.set, { f: m.f, s: m.s }) && sySame(remote.wh, wh) && sySame(noAt(remote.dev && remote.dev[me]), noAt(mine))) return id;   // 雲端已經是最新的
+    return writeRemote(id, { app: 'haohao-breath', v: 1, at: Date.now(), set: { f: m.f, s: m.s }, dev: Object.assign({}, others, { [me]: mine }), wh });
+  }).then(fid => {
+    if (!sync) return;
+    sync.fileId = fid || sync.fileId;
+    sync.at = t0;
+    saveLogin();
+  }).catch(e => {
+    if (e && e.code === 'later') { syncAgain = true; return; }
+    syncErr = e && e.code === 'auth' ? 'auth' : 'fail';
+  }).then(() => {
+    syncBusy = false;
+    paintSync();
+    if (syncAgain && !practicing()) { syncAgain = false; syncNow(); }
+  });
+}
+function syncResume() { if (syncAgain && !syncBusy) { syncAgain = false; syncNow(); } }
+
+// Google 登入：拿一張一小時有效的通行證，只能讀寫這個網站自己的資料夾
+function loadGis() {
+  if (gisP) return gisP;
+  gisP = new Promise((res, rej) => {
+    if (gisReady()) { res(); return; }
+    const sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client';
+    sc.async = true;
+    sc.onload = () => res();
+    sc.onerror = () => { gisP = null; rej({ code: 'gis' }); };
+    document.head.appendChild(sc);
+  });
+  return gisP;
+}
+function gisReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
+// 一定要在按按鈕的當下呼叫，不然 Google 的視窗會被瀏覽器擋掉
+function askToken(done) {
+  if (!gisReady()) { loadGis().catch(() => {}); syncErr = 'loading'; paintSync(); return; }
+  if (!tokenClient) tokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: SYNC_SCOPE, callback: () => {} });
+  tokenClient.callback = r => {
+    if (r && r.access_token && google.accounts.oauth2.hasGrantedAllScopes(r, SYNC_SCOPE)) done(r);
+    else { syncErr = 'denied'; paintSync(); }
+  };
+  tokenClient.error_callback = () => { syncErr = 'closed'; paintSync(); };
+  const opt = { prompt: '' };
+  if (sync && sync.email) opt.login_hint = sync.email;
+  tokenClient.requestAccessToken(opt);
+}
+function takeToken(r) {
+  sync = sync || {};
+  sync.token = r.access_token;
+  sync.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+  syncErr = '';
+  saveLogin();
+  paintSync();
+}
+const inApp = () => platform() === 'inapp';
+function signIn() {
+  if (inApp()) { paintSync(); return; }
+  askToken(r => {
+    takeToken(r);
+    gfetch(DRIVE + '/about?fields=user(emailAddress)').then(x => x.json()).then(j => {
+      if (sync && j.user && j.user.emailAddress) { sync.email = j.user.emailAddress; saveLogin(); }
+    }).catch(() => {}).then(() => syncNow());
+  });
+}
+// 登出：這台裝置上的紀錄留著（包括從其他裝置合併過來的），只是不再同步
+function signOut() {
+  sync = null; syncErr = '';
+  saveLogin();
+  paintSync();
+}
+function tapSync() {   // 沒登入就登入；登入了就馬上同步，通行證過期就重新拿一張
+  if (!sync) { signIn(); return; }
+  if (tokenOk()) { syncNow(); return; }
+  if (inApp()) { $('syncSheet').hidden = false; paintSync(); return; }
+  askToken(r => { takeToken(r); syncNow(); });
+}
+function syncAction(a, b, e) {
+  if (a === 'open') { setMenu(false); loadGis().catch(() => {}); paintSync(); $('syncSheet').hidden = false; }
+  else if (a === 'close') { if (b.id === 'syncSheet' && e.target.closest('.sheet')) return; $('syncSheet').hidden = true; }
+  else if (a === 'go') tapSync();
+  else if (a === 'out') signOut();
+}
+
+const SYNC_MARK = { ok: 'M9.6 13.9l1.8 1.8 3.2-3.4', tap: 'M12 16v-4.6M10 13.4l2-2 2 2', fail: 'M12 11.3v2.6M12 16.2h.01' };
+function agoLabel(t) {
+  const s = Math.round((Date.now() - t) / 1000);
+  if (s < 60) return '剛剛';
+  if (s < 3600) return Math.floor(s / 60) + ' 分鐘前';
+  if (s < 86400) return Math.floor(s / 3600) + ' 小時前';
+  const d = new Date(t);
+  return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0') + ' ';
+}
+function paintSync() {
+  if (!syncOn) return;
+  const st = !sync ? 'off' : syncBusy ? 'busy' : syncErr === 'fail' ? 'fail' : (!tokenOk() || !sync.at || syncDirty()) ? 'tap' : 'ok';
+  // 首頁左上角
+  const pill = $('syncPill');
+  pill.hidden = !sync;
+  pill.className = 'sync-pill ' + st;
+  $('syncPillT').textContent = { off: '', busy: '同步中', fail: '重試', tap: '同步', ok: '已同步' }[st];   // 字要短，才不會擠到標題
+  $('syncPillMark').setAttribute('d', SYNC_MARK[st] || '');
+  pill.setAttribute('aria-label', { off: '', busy: '同步中', fail: '同步失敗，點一下再試', tap: '有紀錄還沒同步，點一下同步', ok: '已同步，點一下再同步一次' }[st]);
+  // 雲端同步的視窗
+  const txt = $('syncText');
+  txt.textContent = '';
+  if (!sync) {
+    txt.textContent = syncErr === 'loading' ? '正在載入 Google 登入，請再按一次。'
+      : syncErr === 'denied' ? '沒有拿到存取雲端硬碟的允許，所以還沒開始同步。可以再按一次登入。'
+      : '用 Google 帳號登入後，這台裝置的紀錄會和你其他裝置的合在一起，換手機、用電腦都看得到同一份。';
+  } else {
+    const b = document.createElement('b');
+    b.textContent = sync.email || '你的 Google 帳號';
+    txt.append('用 ', b, ' 同步中', document.createElement('br'),
+      st === 'busy' ? '同步中…'
+      : st === 'fail' ? '這次沒有同步成功，可能是網路不穩，按「立即同步」再試一次。'
+      : syncErr === 'loading' ? '正在載入 Google 登入，請再按一次。'
+      : !tokenOk() ? '登入已經過了一段時間，按「立即同步」重新連上（不用再輸入密碼）。'
+      : syncDirty() ? '有新的紀錄，幾秒後會自動存上去。'
+      : sync.at ? agoLabel(sync.at) + '存好' : '準備中…');
+  }
+  $('syncOut').hidden = !sync;
+  const go = $('syncGo');
+  go.textContent = !sync ? '用 Google 登入同步' : syncBusy ? '同步中…' : '立即同步';
+  go.disabled = syncBusy;
+  // LINE、Facebook 這類 App 裡的瀏覽器，Google 不讓登入
+  const ia = inApp() && (!sync || !tokenOk()), line = /Line\//i.test(navigator.userAgent || '');
+  $('syncInapp').hidden = !ia;
+  go.hidden = ia;
+  if (ia) {
+    $('syncInappMsg').textContent = line
+      ? '請點右上角的「⋮」，選「用預設瀏覽器開啟」，或按下面的按鈕，改用 Chrome 或 Safari 打開就可以登入。'
+      : '請點右上角的選單，選「用瀏覽器開啟」，改用 Chrome 或 Safari 打開就可以登入。';
+    $('syncInappGo').hidden = !line;
+    if (line) $('syncInappGo').href = location.href.split('#')[0] + (location.search ? '&' : '?') + 'openExternalBrowser=1&sync=1';
+  }
+  const nd = state.sy ? Object.keys(state.sy.others || {}).length + 1 : 1;
+  $('syncNote').textContent = (sync && nd > 1 ? '這個帳號裡有 ' + nd + ' 台裝置的紀錄，已經合在一起。' : '') +
+    '同步的有練習紀錄、勳章、冰人呼吸的閉氣紀錄和練習設定；音量和自己上傳的錄音只留在這台裝置。資料存在你自己的 Google 雲端硬碟裡一個隱藏的專用資料夾，只有好好呼吸讀得到，別人（包括做這個網站的人）都看不到。';
+  // 勳章頁的說明
+  $('bStore').textContent = sync ? '紀錄會同步到你的 Google 雲端硬碟（' + (sync.email || '已登入') + '），換手機、用電腦登入同一個帳號就看得到。'
+    : '紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。';
+  $('bSyncLink').hidden = !!sync;
+}
+function startSync() {
+  if (!syncOn) return;
+  $('syncItem').hidden = false;
+  try { sync = JSON.parse(localStorage.getItem(LS_SYNC) || 'null'); } catch (e) { sync = null; }
+  if (!state.sy) {
+    // 第一次：同步之前就改過的設定記為很早以前改的（比預設值新、比之後任何一次修改舊）
+    const def = setFlat(DEFAULTS()), now = setFlat(state), stamps = {};
+    Object.keys(now).forEach(k => { if (!sySame(now[k], def[k])) stamps[k] = 1; });
+    state.sy = { dev: Date.now().toString(36) + Math.random().toString(36).slice(2, 8), others: {}, stamps, dirty: 0 };
+    applying = true; try { save(); } finally { applying = false; }
+  }
+  state.sy.stamps = state.sy.stamps || {};
+  lastSnap = syncSnap();
+  if (sync) loadGis().catch(() => {});      // 先載入，按「點我同步」時才能馬上跳出 Google 的視窗
+  paintSync();
+  if (tokenOk()) syncNow();
+  setInterval(paintSync, 30000);
+  // 從 LINE 改用瀏覽器打開時，直接打開同步的視窗
+  if (/[?&]sync=1/.test(location.search)) {
+    try { history.replaceState(null, '', location.pathname + location.search.replace(/[?&](sync|openExternalBrowser)=1/g, '').replace(/^&/, '?') + location.hash); } catch (e) {}
+    syncAction('open');
+  }
+}
+document.addEventListener('visibilitychange', () => {
+  if (!syncOn) return;
+  if (document.visibilityState === 'visible' && sync && tokenOk()) syncNow();   // 切回來時抓最新的
+  else paintSync();
+});
+
 applyTheme();
 renderHome();
 renderToday();
 loadMine();
+startSync();
