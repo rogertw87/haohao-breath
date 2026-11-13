@@ -1632,7 +1632,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(fals
 // ---------- 雲端同步：練習紀錄、勳章、冰人呼吸紀錄和設定，存在每個人自己的 Google 雲端硬碟 ----------
 // 放在雲端硬碟裡「應用程式專用」的隱藏資料夾：只有這個網站讀得到，別人（包括做網站的人）都看不到。
 // 在 Google Cloud 建好「網頁應用程式」用戶端後，把用戶端 ID 填在這裡；空的就完全不顯示同步。
-var GOOGLE_CLIENT_ID = '';
+var GOOGLE_CLIENT_ID = '1015820070001-lsv79hbhorgdjl31s4nbltm3drict1r6.apps.googleusercontent.com';
 var SYNC_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
 var SYNC_FILE = 'haohao-breath.json';
 var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, token, exp, fileId, at }

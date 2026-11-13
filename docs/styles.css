@@ -408,6 +408,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .sync-go { background: var(--ink); color: var(--screen); }   /* 和「開始」按鈕同一種顏色，各主題都清楚 */
 .sync-go:disabled { opacity: .6; cursor: default; }
 .sync-note { margin: -4px 0 0; font-size: 12px; line-height: 1.7; color: var(--muted-2); text-wrap: pretty; }
+.sync-note a { color: var(--accent); text-underline-offset: 3px; white-space: nowrap; }
 .sync-inapp { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 14px; background: #fff3c4; color: #4a3500; border: 1px solid #e8c95a; font-size: 14px; line-height: 1.6; }
 .sync-inapp-go { align-self: flex-start; margin-top: 6px; padding: 6px 14px; border-radius: 99px; background: #4a3500; color: #fff3c4; font-size: 13px; text-decoration: none; }
 .bnote-link { padding: 0; border: none; background: none; color: var(--accent); font-size: inherit; line-height: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
