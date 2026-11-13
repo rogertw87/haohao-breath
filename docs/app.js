@@ -198,7 +198,7 @@ function renderBadges() {
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
-  const dk = state.theme === 'dark' || state.theme === 'night' || state.theme === 'fire' || state.theme === 'fireflies';
+  const dk = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold'].includes(state.theme);
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -1264,9 +1264,10 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura'];
-const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')" };  // 各畫面的背景圖
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪、中脈；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'gold'];
+const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
+  chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)' };
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -1311,7 +1312,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors' };
+const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', gold: 'goldbeam' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -1395,6 +1396,23 @@ function drawUfo(g, u, t) {
   g.globalAlpha = 1; g.restore();
 }
 const wrapA = a => Math.atan2(Math.sin(a), Math.cos(a));
+// 脈輪、中脈兩個主題：首頁的中脈放在右邊不擋到練習名稱，練習畫面放在呼吸圖形正中間；「吸氣」和數字後面的光淡掉，字才清楚
+const C7S=['244,134,146','246,172,118','242,214,134','146,210,170','136,192,236','156,160,238','206,180,248'];
+const ezC=u=>u*u*(3-2*u);
+const glowC=(g,x,y,r,col,a,mid)=>{if(a<=.002)return;const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba('+col+','+a.toFixed(3)+')');gr.addColorStop(mid||.4,'rgba('+col+','+(a*.4).toFixed(3)+')');gr.addColorStop(1,'rgba('+col+',0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);};
+const chLay=(st,W,H,beam)=>{const l=st.lay||{},v=l.vis;
+  if(v){const top=96,bot=H-110,vc=v.y+v.h/2,hh=Math.min(v.h,260),cb=l.clear&&l.clear.length?Math.max(...l.clear.map(r=>r.y+r.h)):vc+hh/2+90,root=Math.min(bot-6,cb+70),crown=top+8,throat=vc-hh*.34;
+    return {run:true,x:v.x+v.w/2,top,bot:beam?bot+6:bot,k:1,clear:l.clear,ys:[root,Math.min(root-34,cb+28),vc+hh*.34,vc,throat,(crown+throat)/2,crown]};}
+  const x=W/2+Math.min(W,480)/2-54,top=132,bot=beam?H+10:H-30,ys=[];for(let i=0;i<7;i++)ys.push(bot-(beam?40:18)+(top+10-(bot-(beam?40:18)))*i/6);
+  return {run:false,x,top,bot,k:l.home===false?0:1,ys};};
+const fxClear=(g,rs)=>{(rs||[]).forEach(r=>fxClear1(g,r));};
+const fxClear1=(g,r)=>{if(!r)return;g.save();g.globalCompositeOperation='destination-out';g.translate(r.x+r.w/2,r.y+r.h/2);g.scale(Math.max(r.w/2+60,110)/80,(r.h/2+16)/80);
+  const gr=g.createRadialGradient(0,0,0,0,0,80);gr.addColorStop(0,'rgba(0,0,0,.9)');gr.addColorStop(.6,'rgba(0,0,0,.85)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(-80,-80,160,160);g.restore();};
+let _chDot=null;const chDot=()=>{if(_chDot)return _chDot;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d'),r=g.createRadialGradient(12,12,0,12,12,12);r.addColorStop(0,'rgba(255,255,255,1)');r.addColorStop(.3,'rgba(210,190,255,.75)');r.addColorStop(1,'rgba(210,190,255,0)');g.fillStyle=r;g.fillRect(0,0,24,24);return _chDot=c;};
+let _gbDot=null;const gbDot=()=>{if(_gbDot)return _gbDot;const c=document.createElement('canvas');c.width=c.height=24;const g=c.getContext('2d'),r=g.createRadialGradient(12,12,0,12,12,12);r.addColorStop(0,'rgba(255,246,220,1)');r.addColorStop(.3,'rgba(255,186,90,.75)');r.addColorStop(1,'rgba(255,186,90,0)');g.fillStyle=r;g.fillRect(0,0,24,24);return _gbDot=c;};
+let _gbBeam=null;const gbBeam=()=>{if(_gbBeam)return _gbBeam;const c=document.createElement('canvas');c.width=64;c.height=256;const g=c.getContext('2d'),im=g.createImageData(64,256);
+  for(let y=0;y<256;y++)for(let x=0;x<64;x++){const d=(x-31.5)/13,v=y/255,a=Math.exp(-d*d)*Math.min(1,v*8,(1-v)*10),i=(y*64+x)*4;im.data[i]=255;im.data[i+1]=196;im.data[i+2]=110;im.data[i+3]=Math.round(a*255);}
+  g.putImageData(im,0,0);return _gbBeam=c;};
 // 每一種有 init（一打開就鋪滿）、move（移動）、draw（畫出來）；br 是練習時吸飽的程度，不在練習時是 null
 const FXS = {
   // 營火：火星從下方火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定
@@ -1523,8 +1541,43 @@ const FXS = {
       }
       g.globalCompositeOperation = 'source-over';
     }
-  }
+  },
+ // 脈輪：七個脈輪沿著中脈，每 8 秒一道光從海底輪走到頂輪，到頂上散成一圈光；小光點沿著中脈往上飄
+ chakra:{lay:true,init(st){st.stars=[];for(let i=0;i<64;i++)st.stars.push({x:Math.random(),y:Math.random(),r:.5+Math.random()*.9,ph:Math.random()*6.28,f:.3+Math.random()*.7});st.p=[];st.acc=0;},
+  move(st,dt,W,H){const L=chLay(st,W,H);st.acc+=5*dt;while(st.acc>=1){st.acc-=1;st.p.push({y:L.bot-Math.random()*30,v:30+Math.random()*30,ph:Math.random()*6.28,r:1.2+Math.random()*1.2,life:0});}
+    st.p=st.p.filter(q=>{q.y-=q.v*dt;q.ph+=dt*3;q.life+=dt;return q.y>L.top&&q.y<H+40;});},
+  draw(st,g,W,H,t){const L=chLay(st,W,H),x=L.x,top=L.top,bot=L.bot,K=L.k;
+    g.globalCompositeOperation='lighter';g.fillStyle='#d8d2ff';
+    for(const s of st.stars){g.globalAlpha=.18+.22*Math.pow(Math.sin(t*s.f+s.ph),2);g.beginPath();g.arc(s.x*W,s.y*H,s.r,0,6.2832);g.fill();}
+    g.globalAlpha=1;if(K<=0){g.globalCompositeOperation='source-over';return;}g.globalAlpha=K;
+    const c=t%8,pulse=c<2.6?bot+(top-bot)*ezC(c/2.6):null,bloom=c>=2.4&&c<5?(c-2.4)/2.6:0;
+    const dim=g.createLinearGradient(0,bot,0,top);C7S.forEach((cc,i)=>dim.addColorStop(i/6,'rgba('+cc+',.2)'));g.fillStyle=dim;g.beginPath();g.roundRect(x-5,top,10,bot-top,5);g.fill();
+    g.save();g.shadowColor='rgba(190,176,250,.6)';g.shadowBlur=20;const lit=g.createLinearGradient(0,bot,0,top);C7S.forEach((cc,i)=>lit.addColorStop(i/6,'rgba('+cc+','+(L.run?.6:.56)+')'));
+    g.fillStyle=lit;g.beginPath();g.roundRect(x-5,top,10,bot-top,5);g.fill();g.restore();
+    g.fillStyle='rgba(255,255,255,'+(L.run?.26:.22)+')';g.fillRect(x-1.2,top+5,2.4,bot-top-10);
+    L.ys.forEach((y,i)=>{const k=.66+(pulse===null?0:Math.exp(-Math.pow((y-pulse)/30,2)));glowC(g,x,y,32+12*Math.min(1,k),C7S[i],.38*k);glowC(g,x,y,12,'255,255,255',.45*Math.min(1.2,k),.5);});
+    if(pulse!==null)glowC(g,x,pulse,30,'255,255,255',.5);
+    if(bloom>0){const r=10+(L.run?26:54)*ezC(Math.min(1,bloom)),a=(1-bloom)*(L.run?.4:.5);glowC(g,x,top+10,26+30*bloom,'220,190,255',a);g.strokeStyle='rgba(230,210,255,'+(a*.8).toFixed(3)+')';g.lineWidth=1.2;g.beginPath();g.arc(x,top+10,r,0,6.2832);g.stroke();}
+    const img=chDot();for(const q of st.p){g.globalAlpha=Math.min(1,q.life*2)*.7*K;g.drawImage(img,x-q.r*2+Math.sin(q.ph)*6,q.y-q.r*2,q.r*4,q.r*4);}
+    g.globalAlpha=1;g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}},
+ // 中脈：一道金色光柱從底下貫通到頭頂，小光點一直用同樣的速度往上流，頭頂一團柔和的光
+ goldbeam:{lay:true,init(st,W,H){st.p=[];for(let i=0;i<40;i++)st.p.push(this.mote(H,true));},
+  mote(H,any){return {y:any?Math.random()*H:H+Math.random()*20,dx:(Math.random()*2-1)*(4+Math.random()*20),v:40+Math.random()*55,ph:Math.random()*6.28,f:1+Math.random()*2,r:1+Math.random()*1.6};},
+  move(st,dt,W,H){const L=chLay(st,W,H,true);for(let i=0;i<st.p.length;i++){const q=st.p[i];q.y-=q.v*dt;q.ph+=q.f*dt;if(q.y<L.top+6){st.p[i]=this.mote(H,false);st.p[i].y=L.bot+Math.random()*20;}}},
+  draw(st,g,W,H,t){const L=chLay(st,W,H,true),x=L.x,top=L.top,bot=L.bot,K=L.k*.75,sh=.9+.1*Math.sin(t*1.7)*Math.sin(t*.63),beam=gbBeam();if(K<=0)return;
+    g.globalCompositeOperation='lighter';glowC(g,x,bot-20,90,'255,150,60',.22*K);
+    g.globalAlpha=.6*K*sh;g.drawImage(beam,x-115,top,230,bot-top);g.globalAlpha=.95*K*sh;g.drawImage(beam,x-42,top,84,bot-top);g.globalAlpha=1;
+    g.fillStyle='rgba(255,240,205,'+(.6*K).toFixed(3)+')';g.fillRect(x-5,top+6,10,bot-top-12);
+    glowC(g,x,top+4,80,'255,196,110',.34*K);glowC(g,x,top+4,26,'255,240,210',.7*K,.5);
+    const img=gbDot();for(const q of st.p){const e=Math.max(0,Math.min(1,(q.y-top)/60,(bot-q.y)/60));if(e<=0)continue;g.globalAlpha=e*(.45+.55*Math.pow(Math.sin(q.ph),2))*K;g.drawImage(img,x+q.dx+Math.sin(q.ph*.7)*2-q.r*2,q.y-q.r*2,q.r*4,q.r*4);}
+    g.globalAlpha=1;g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}}
 };
+// 脈輪、中脈：量出呼吸圖形和「吸氣／數字」在畫面上的位置（看不見的不算），中脈的光才知道要放哪、避開哪裡
+function fxLay(host, c) {
+  const cr = c.getBoundingClientRect(), R = e => { const r = e.getBoundingClientRect(); return r.width ? { x: r.left - cr.left, y: r.top - cr.top, w: r.width, h: r.height } : null; };
+  const all = sel => [...host.querySelectorAll(sel)].map(R).filter(Boolean);
+  return { home: host.classList.contains('home'), vis: all('[data-fxvis]')[0] || null, clear: all('[data-fxclear]') };
+}
 // 要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
 function fxHost() {
   const open = Object.values(screens).find(s => !s.hidden);
@@ -1545,6 +1598,7 @@ function drawFx(now) {
   if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
   const dt = still || fx.last == null ? 0 : Math.min(.05, Math.max(0, now - fx.last) / 1000); fx.last = now;
   const t = now / 1000, br = breathNow(), F = FXS[fx.kind];
+  if (F.lay && (fx.layHost !== host || now - (fx.layT || 0) > 300)) { fx.layHost = host; fx.layT = now; fx.st.lay = fxLay(host, c); }
   F.move(fx.st, dt, W, H, t, br);
   const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); F.draw(fx.st, g, W, H, t, br);
   fx.drawn = host;

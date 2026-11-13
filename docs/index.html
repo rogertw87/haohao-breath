@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=47">
+<link rel="stylesheet" href="styles.css?v=48">
 </head>
 <body>
 <main class="home">
@@ -35,6 +35,8 @@
           <button class="menu-theme-opt" data-theme-pick="fire">營火</button>
           <button class="menu-theme-opt" data-theme-pick="fireflies">螢火蟲</button>
           <button class="menu-theme-opt" data-theme-pick="sakura">櫻花</button>
+          <button class="menu-theme-opt" data-theme-pick="chakra">脈輪</button>
+          <button class="menu-theme-opt" data-theme-pick="gold">中脈</button>
         </div>
       </div>
       <button class="menu-item" data-action="badges-open"><svg viewBox="0 0 24 24"><path d="M8.5 3l2.6 6.4M15.5 3l-2.6 6.4M12 9.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11"></path></svg><span>勳章</span></button>
@@ -123,18 +125,18 @@
 
     <div class="stage">
       <!-- 方塊呼吸 -->
-      <div class="anim anim-box" id="animBox" hidden>
+      <div class="anim anim-box" id="animBox" data-fxvis hidden>
         <div class="box-frame"><div class="dot" id="boxDot"></div></div>
       </div>
 
       <!-- 鼻孔交替呼吸 -->
-      <div class="anim anim-n" id="animN" hidden>
+      <div class="anim anim-n" id="animN" data-fxvis hidden>
         <div class="n-frame"><div class="dot" id="nDot"></div></div>
         <div class="n-labels"><span>左</span><span>右</span></div>
       </div>
 
       <!-- 鯨豚式呼吸：吸氣變大、吐氣縮小的球；吐氣時邊緣有流動的聲波紋 -->
-      <svg class="anim" id="animBall" hidden width="300" height="250" viewBox="0 0 300 250">
+      <svg class="anim" id="animBall" data-fxvis hidden width="300" height="250" viewBox="0 0 300 250">
         <circle class="ball-rip" data-k="rip" cx="150" cy="125" r="0" fill="none" stroke-width="1.5" opacity="0"></circle>
         <circle class="ball-rip" data-k="rip" cx="150" cy="125" r="0" fill="none" stroke-width="1.5" opacity="0"></circle>
         <circle class="ball-rip" data-k="rip" cx="150" cy="125" r="0" fill="none" stroke-width="1.5" opacity="0"></circle>
@@ -143,7 +145,7 @@
       </svg>
 
       <!-- 其他練習：波形圖 -->
-      <div class="anim anim-wave" id="animWave" hidden>
+      <div class="anim anim-wave" id="animWave" data-fxvis hidden>
         <div class="wave-box">
           <svg class="wave-svg" width="300" height="160" viewBox="0 0 300 160">
             <line class="wave-guide" x1="0" y1="80" x2="300" y2="80" stroke-width="1" stroke-dasharray="3 5"></line>
@@ -155,7 +157,7 @@
         <div class="wave-cycle">一輪 <span id="cycleSec"></span></div>
       </div>
 
-      <div class="phase">
+      <div class="phase" data-fxclear>
         <span class="phase-label" id="phaseLabel"></span>
         <span class="phase-count" id="countText"></span>
       </div>
@@ -299,12 +301,12 @@
   <div class="run-inner">
     <div class="run-head"><span class="run-name">冰人呼吸</span><span class="wh-round" data-bind="whRound"></span></div>
     <div class="stage">
-      <div class="wh-circle">
+      <div class="wh-circle" data-fxvis>
         <div class="wh-ring"></div>
         <div class="wh-fill" id="whCirc"></div>
-        <div class="wh-count"><span class="wh-big" id="whBig"></span><span class="wh-small" id="whSmall"></span></div>
+        <div class="wh-count" data-fxclear><span class="wh-big" id="whBig"></span><span class="wh-small" id="whSmall"></span></div>
       </div>
-      <div class="wh-text"><span class="wh-label" id="whLabel"></span><span class="wh-hint" id="whHint"></span></div>
+      <div class="wh-text" data-fxclear><span class="wh-label" id="whLabel"></span><span class="wh-hint" id="whHint"></span></div>
     </div>
     <button class="resume-tip" data-action="resume" hidden>聲音已暫停，點一下繼續</button>
     <div class="wh-actions">
@@ -370,7 +372,7 @@
   </div>
 </div>
 
-<script src="app.js?v=57"></script>
+<script src="app.js?v=58"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
