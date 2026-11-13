@@ -1924,13 +1924,12 @@ function agoLabel(t) {
 function paintSync() {
   if (!syncOn) return;
   const st = !sync ? 'off' : syncBusy ? 'busy' : syncErr === 'fail' ? 'fail' : (!tokenOk() || !sync.at || syncDirty()) ? 'tap' : 'ok';
-  // 首頁左上角
-  const pill = $('syncPill');
-  pill.hidden = !sync;
-  pill.className = 'sync-pill ' + st;
-  $('syncPillT').textContent = { off: '', busy: '同步中', fail: '重試', tap: '同步', ok: '已同步' }[st];   // 字要短，才不會擠到標題
-  $('syncPillMark').setAttribute('d', SYNC_MARK[st] || '');
-  pill.setAttribute('aria-label', { off: '', busy: '同步中', fail: '同步失敗，點一下再試', tap: '有紀錄還沒同步，點一下同步', ok: '已同步，點一下再同步一次' }[st]);
+  // 選單「雲端同步」：雲朵裡的小記號和右邊的狀態
+  const sst = $('syncSt');
+  sst.hidden = !sync;
+  sst.className = 'sync-st ' + st;
+  sst.textContent = { off: '', busy: '同步中', fail: '同步失敗', tap: '還沒同步', ok: '已同步' }[st];
+  $('syncMark').setAttribute('d', SYNC_MARK[st] || '');
   // 雲端同步的視窗
   const txt = $('syncText');
   txt.textContent = '';
