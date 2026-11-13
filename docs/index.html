@@ -23,6 +23,7 @@
 </head>
 <body>
 <main class="home">
+  <button class="sync-pill" id="syncPill" data-action="sync-go" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z"></path><path id="syncPillMark" d=""></path></svg><span id="syncPillT"></span></button>
   <div class="menu" id="menu">
     <button class="menu-btn" id="menuBtn" aria-label="選單" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></button>
     <div class="menu-pop" id="menuPop" hidden>
@@ -40,6 +41,7 @@
         </div>
       </div>
       <button class="menu-item" data-action="badges-open"><svg viewBox="0 0 24 24"><path d="M8.5 3l2.6 6.4M15.5 3l-2.6 6.4M12 9.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11"></path></svg><span>勳章</span></button>
+      <button class="menu-item" id="syncItem" data-action="sync-open" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z"></path></svg><span>雲端同步</span></button>
       <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
       <a class="menu-item" href="thanks.html"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"></path></svg><span>感謝</span></a>
       <a class="menu-item" href="privacy.html"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3Z"></path></svg><span>隱私權</span></a>
@@ -227,7 +229,7 @@
       </div>
     </div>
     <div class="bcard bgrid bstamps" id="bStamps" hidden></div>
-    <p class="bnote">完整練完一次練習就算練了一天，中途停止不算。紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。</p>
+    <p class="bnote">完整練完一次練習就算練了一天，中途停止不算。<span id="bStore">紀錄只存在這支手機，換手機或清除瀏覽器資料會不見。</span><button class="bnote-link" id="bSyncLink" data-action="sync-open" hidden>用 Google 登入同步</button></p>
   </div>
 </section>
 
@@ -250,6 +252,18 @@
     <ol class="install-steps" id="installSteps"></ol>
     <button class="install-go" id="installGo" data-action="install-prompt" hidden>立即加入</button>
     <button class="install-ok" data-action="install-close">知道了</button>
+  </div>
+</div>
+
+<!-- 雲端同步 -->
+<div class="sheet-bg" id="syncSheet" data-action="sync-close" hidden>
+  <div class="sheet install" role="dialog" aria-modal="true" aria-labelledby="syncHead">
+    <div class="install-head"><span class="sync-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z"></path></svg></span><div><span class="install-name" id="syncHead">雲端同步</span><span class="install-sub">換手機、用電腦，都看得到同一份紀錄。</span></div></div>
+    <div class="sync-row"><p class="sync-t" id="syncText"></p><button class="sync-mini" id="syncOut" data-action="sync-out" hidden>登出</button></div>
+    <div class="sync-inapp" id="syncInapp" hidden><b>在這個 App 裡沒辦法登入 Google</b><span id="syncInappMsg"></span><a class="sync-inapp-go" id="syncInappGo" hidden>改用瀏覽器打開</a></div>
+    <button class="install-go sync-go" id="syncGo" data-action="sync-go">用 Google 登入同步</button>
+    <p class="sync-note" id="syncNote"></p>
+    <button class="install-ok" data-action="sync-close">關閉</button>
   </div>
 </div>
 
