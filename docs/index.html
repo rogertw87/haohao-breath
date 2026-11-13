@@ -19,11 +19,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=49">
+<link rel="stylesheet" href="styles.css?v=50">
 </head>
 <body>
 <main class="home">
-  <button class="sync-pill" id="syncPill" data-action="sync-go" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z"></path><path id="syncPillMark" d=""></path></svg><span id="syncPillT"></span></button>
   <div class="menu" id="menu">
     <button class="menu-btn" id="menuBtn" aria-label="選單" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M5 12h.01M12 12h.01M19 12h.01"></path></svg></button>
     <div class="menu-pop" id="menuPop" hidden>
@@ -41,7 +40,7 @@
         </div>
       </div>
       <button class="menu-item" data-action="badges-open"><svg viewBox="0 0 24 24"><path d="M8.5 3l2.6 6.4M15.5 3l-2.6 6.4M12 9.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11"></path></svg><span>勳章</span></button>
-      <button class="menu-item" id="syncItem" data-action="sync-open" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z"></path></svg><span>雲端同步</span></button>
+      <button class="menu-item" id="syncItem" data-action="sync-open" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z"></path><path id="syncMark" d=""></path></svg><span>雲端同步</span><span class="sync-st" id="syncSt" hidden></span></button>
       <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
       <a class="menu-item" href="thanks.html"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"></path></svg><span>感謝</span></a>
       <a class="menu-item" href="privacy.html"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3Z"></path></svg><span>隱私權</span></a>
@@ -387,7 +386,7 @@
   </div>
 </div>
 
-<script src="app.js?v=60"></script>
+<script src="app.js?v=61"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
