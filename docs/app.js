@@ -1207,22 +1207,24 @@ function whAction(a) {
 // custom.rebirth = [小呼吸一吸一吐秒數, 大呼吸（吸、吐、放鬆）秒數]；每次 0.1 秒，0 秒就不做那一種呼吸，兩個不能都是 0
 const rbOf = () => { const c = state.custom.rebirth; return c && c.length === 2 ? c : [1.5, 4]; };
 const rbN = () => (state.rMode === '9' ? 9 : 4);
-// 吐氣提示音：吐氣聲（預設，真人錄的用力吐氣：小呼吸用短的、大呼吸用長的）、手鼓、水滴、拇指琴（後三個當場合成）
-const RBSNDS = [['breath', '吐氣聲'], ['hand', '手鼓'], ['drop', '水滴'], ['kalimba', '拇指琴']];
-const RB_EXHALE = { s: 'audio/rb-exhale-short.wav?v=2', l: 'audio/rb-exhale-long.wav' };   // v=2：換成新錄的短吐氣聲
+// 吐氣提示音：呼吸聲（預設，真人錄的一吸一吐，小呼吸、大呼吸各一組，吸氣和吐氣分開）、手鼓、水滴、拇指琴（後三個當場合成）
+// 呼吸聲在吸氣開始時放吸氣的錄音、水滴落地時放吐氣的錄音；其他三個只在吐氣時響
+const RBSNDS = [['breath', '呼吸聲'], ['hand', '手鼓'], ['drop', '水滴'], ['kalimba', '拇指琴']];
+const RB_BREATH = { si: 'audio/rb-breath-small-in.wav', so: 'audio/rb-breath-small-out.wav', bi: 'audio/rb-breath-big-in.wav', bo: 'audio/rb-breath-big-out.wav' };
 const rbSndOf = k => (RBSNDS.some(([x]) => x === k) ? k : 'breath');
 const rbExBufs = {};
 function rbExBuf(b) {
-  return rbExBufs[b] || (rbExBufs[b] = fetch(RB_EXHALE[b]).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
+  return rbExBufs[b] || (rbExBufs[b] = fetch(RB_BREATH[b]).then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); })
     .then(a => new Promise((ok, no) => ac.decodeAudioData(a, ok, no))).catch(() => null));
 }
-// 每次音量、快慢差一點點，聽起來比較自然
-function rbExhale(out, big, t) {
-  rbExBuf(big ? 'l' : 's').then(buf => {
+// 放一段呼吸錄音：b 是 si/so/bi/bo；每次音量、快慢差一點點。d 有給的話，到這一段結束前淡掉（速度調很快時，吸氣聲不會拖到下一段）
+function rbBreath(out, b, t, d) {
+  rbExBuf(b).then(buf => {
     if (!buf || (out !== rbOutG && out !== rbPvG)) return;
-    const s = ac.createBufferSource(), g = ac.createGain();
-    s.buffer = buf; s.playbackRate.value = 1 + (Math.random() - .5) * .06; g.gain.value = .75 * (1 + (Math.random() - .5) * .16);
-    s.connect(g); g.connect(out); s.start(Math.max(t, ac.currentTime));
+    const s = ac.createBufferSource(), g = ac.createGain(), t0 = Math.max(t, ac.currentTime), v = .75 * (1 + (Math.random() - .5) * .16);
+    s.buffer = buf; s.playbackRate.value = 1 + (Math.random() - .5) * .06; g.gain.setValueAtTime(v, t0);
+    s.connect(g); g.connect(out); s.start(t0);
+    if (d && d < buf.duration) { g.gain.setValueAtTime(v, t0 + Math.max(.03, d - .08)); g.gain.linearRampToValueAtTime(0, t0 + d); s.stop(t0 + d + .02); }
   });
 }
 const RB_N4 = [523.25, 587.33, 659.25, 783.99], RB_N9 = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66];
@@ -1325,7 +1327,7 @@ function rbRenderSetup() {
   $('rbMusicHint').hidden = state.music === 'none';
   const snd = rbSndOf(state.rbSnd);
   rbOpts($('rbSnds'), RBSNDS, k => snd === k, k => { state.rbSnd = k; save(); rbRenderSetup(); rbPreview(k); });
-  $('rbSndNote').textContent = '每次吐氣響一聲，點一下可以試聽。' + (snd === 'breath' ? '小呼吸是短的那一聲，大呼吸是長的那一聲。' : snd === 'kalimba'
+  $('rbSndNote').textContent = '每次吐氣響一聲，點一下可以試聽。' + (snd === 'breath' ? '吸氣、吐氣都有聲音：小呼吸用短的那一組，大呼吸用長的那一組。' : snd === 'kalimba'
     ? (rbN() === 9 ? '九口小呼吸從低音 Sol 一路往上彈，大呼吸回到更低的 Do。' : '四口小呼吸是 Do、Re、Mi、Sol 往上走，大呼吸回到低音 Do。閉著眼睛也知道做到第幾口。')
     : '大呼吸那一口會深一點、長一點。');
 }
@@ -1348,7 +1350,7 @@ function rbPreview(k) {
   previewEnd = setTimeout(() => { if (!practicing()) keepAlive.pause(); }, 5000);
   const g = ac.createGain(); g.connect(ac.destination); rbPvG = g;
   const t0 = ac.currentTime + .05, n = rbN();
-  if (k === 'breath') { [0, 1, 2].forEach(i => rbExhale(g, i === 2, t0 + i * .6)); return; }
+  if (k === 'breath') { [['si', 0], ['so', .75], ['bi', 1.45], ['bo', 2.75]].forEach(([b, dt]) => rbBreath(g, b, t0 + dt)); return; }   // 一口小呼吸、一口大呼吸
   if (k === 'kalimba') { for (let j = 0; j < n; j++) rbSynthFx(g, k, false, j, n, t0 + j * .32, null); rbSynthFx(g, k, true, n, n, t0 + n * .32 + .1, null); return; }
   [0, 1, 2].forEach(i => rbSynthFx(g, k, i === 2, i, n, t0 + i * .5, noise()));
 }
@@ -1364,7 +1366,7 @@ function rbStart() {
   $('rbSafety').hidden = true;
   ctx(); keepAlive.play().catch(() => {}); lockWake();
   rbFadeOut(); rbOutG = ac.createGain(); rbOutG.connect(ac.destination);
-  rbExBuf('s'); rbExBuf('l');
+  ['si', 'so', 'bi', 'bo'].forEach(rbExBuf);
   if (state.music !== 'none') playMusic(state.music);   // 背景音樂：和其他練習一樣，開始時播放
   rb = { offset: 0, pausedAt: null, ph: 'ready', segI: 0, segs: null, segT: 0, phT: 0, hit: false, ripT: null };
   rb.phT = rbNow();
@@ -1419,6 +1421,8 @@ function rbSegStart(s) {
   const hint = rbNow() >= rb.endAt ? '最後一組，做完就結束' : s.ph === 'bin' ? '吸長一點' : s.ph === 'bout' ? '爽快地吐出去' : s.ph === 'brest' ? '放鬆一下，接著下一組' : '鼻子輕鬆吸、爽快吐，吸吐之間沒有空檔';
   rbText(lab, hint);
   rbDots(s);
+  // 呼吸聲：吸氣一開始就放吸氣的錄音
+  if ((s.ph === 'sin' || s.ph === 'bin') && rbSndOf(state.rbSnd) === 'breath' && !syncPaused && rbOutG) rbBreath(rbOutG, s.ph === 'bin' ? 'bi' : 'si', ac.currentTime, s.d);
 }
 // 水滴只從上面往下掉：吸氣時在上面慢慢聚成一滴（大呼吸聚得比較大），吐氣時掉下來，落地就消失、濺起小水珠
 const rbIsOut = s => s.ph === 'sout' || s.ph === 'bout';
@@ -1441,7 +1445,7 @@ function rbHit(s, t) {
   rb.spl = Array.from({ length: n }, (_, i) => ({ a: ((i + .5) / n - .5) * 2.3 + (Math.random() - .5) * .25, v: (big ? 240 : 160) * (.8 + .4 * Math.random()) }));
   if (syncPaused || !rbOutG) return;
   const snd = rbSndOf(state.rbSnd);
-  if (snd === 'breath') rbExhale(rbOutG, big, ac.currentTime);
+  if (snd === 'breath') rbBreath(rbOutG, big ? 'bo' : 'so', ac.currentTime);
   else rbSynthFx(rbOutG, snd, big, s.j, rbN(), ac.currentTime, noise());
 }
 // y 是高度（0 底下、1 上面），op 透明度，sc 大小，st 掉落時拉長，big 是大呼吸那一滴（帶一點金光）
