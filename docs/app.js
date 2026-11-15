@@ -475,6 +475,7 @@ function loadMine() {
     if (gone(state.music)) { state.music = 'none'; save(); }
     if (state.wh && state.wh.music && gone(state.wh.music)) { state.wh = { ...state.wh, music: 'none' }; save(); }
     if (cur != null && !screens.setup.hidden) renderSetup();
+    if (cur != null && !screens.rbSetup.hidden) rbRenderSetup();
     if (cur != null && !screens.whSetup.hidden) whRenderSetup();
   });
 }
@@ -484,9 +485,9 @@ function addMine(f) {
   idb('readwrite', st => st.put({ blob: f, name: f.name }, id)).then(() => {
     myUrls[id] = URL.createObjectURL(f);
     mine.push({ id, name: stripExt(f.name) });
-    // 在冰人呼吸設定頁上傳的，就選為冰人呼吸的背景音樂
-    if (cur != null && EX[cur].own) { whSet('music', 'mine:' + id); return; }
-    state.music = 'mine:' + id; save(); renderSetup();
+    // 在冰人呼吸設定頁上傳的，就選為冰人呼吸的背景音樂；其他練習（包括重生呼吸）共用一般的背景音樂
+    if (cur != null && EX[cur].id === 'wimhof') { whSet('music', 'mine:' + id); return; }
+    state.music = 'mine:' + id; save(); renderMusicSetup();
   }).catch(() => alert('無法儲存這個檔案，請換一個試試。'));
 }
 function delMine(m) {
@@ -497,8 +498,10 @@ function delMine(m) {
   mine = mine.filter(x => x.id !== m.id);
   if (state.music === 'mine:' + m.id) { state.music = 'none'; save(); }
   if (state.wh && state.wh.music === 'mine:' + m.id) { state.wh = { ...state.wh, music: 'none' }; save(); }
-  renderSetup();
+  renderMusicSetup();
 }
+// 上傳或刪除錄音後，重畫目前打開的設定頁
+function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else renderSetup(); }
 $('mineFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) addMine(f); });
 
 // ---------- 節拍音效（即時合成） ----------
@@ -1292,6 +1295,19 @@ function rbRenderSetup() {
     $('rbRows').appendChild(row);
   });
   $('rbReset').hidden = a === 1.5 && b === 4;
+  // 背景音樂：和其他練習共用同一個設定
+  musicGrid($('rbMusic'), state.music, k => { state.music = k; save(); rbRenderSetup(); });
+  $('rbMineBox').hidden = !mine.length;
+  $('rbMineRows').innerHTML = '';
+  mine.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'mine-row';
+    row.innerHTML = '<span></span><button>刪除</button>';
+    row.firstChild.textContent = m.name;
+    row.lastChild.addEventListener('click', () => delMine(m));
+    $('rbMineRows').appendChild(row);
+  });
+  $('rbMusicHint').hidden = state.music === 'none';
   const snd = rbSndOf(state.rbSnd);
   rbOpts($('rbSnds'), RBSNDS, k => snd === k, k => { state.rbSnd = k; save(); rbRenderSetup(); rbPreview(k); });
   $('rbSndNote').textContent = '每次吐氣響一聲，點一下可以試聽。' + (snd === 'kalimba'
@@ -1332,6 +1348,7 @@ function rbStart() {
   $('rbSafety').hidden = true;
   ctx(); keepAlive.play().catch(() => {}); lockWake();
   rbFadeOut(); rbOutG = ac.createGain(); rbOutG.connect(ac.destination);
+  if (state.music !== 'none') playMusic(state.music);   // 背景音樂：和其他練習一樣，開始時播放
   rb = { offset: 0, pausedAt: null, ph: 'ready', segI: 0, segs: null, segT: 0, phT: 0, hit: false, ripT: null };
   rb.phT = rbNow();
   rbPausedUi(false);
@@ -1451,7 +1468,7 @@ function rbResume() {
   rb.offset += performance.now() - rb.pausedAt; rb.pausedAt = null; rbPausedUi(false);
   if (rb.ph === 'go') rbSegStart(rb.segs[rb.segI]); else rbText('準備', '坐好或平躺，放鬆肩膀');
 }
-function rbEnd() { cancelAnimationFrame(rbRaf); releaseWake(); rbFadeOut(); keepAlive.pause(); rb = null; }
+function rbEnd() { cancelAnimationFrame(rbRaf); releaseWake(); rbFadeOut(); stopMusic(); keepAlive.pause(); rb = null; }
 // 練完：時間到、最後一組做完才算一次；中途停止不記錄
 function rbFinish(at) {
   const sec = Math.max(1, Math.round((at - rb.goT) / 1000));

@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=51">
+<link rel="stylesheet" href="styles.css?v=52">
 </head>
 <body>
 <main class="home">
@@ -411,7 +411,15 @@
     <div class="panel rows rb-rows" id="rbRows"></div>
     <div class="rb-note-row"><span>設成 0 秒就不做那一種呼吸。</span><button class="rb-reset" id="rbReset" data-action="rb-reset">恢復預設</button></div>
 
-    <span class="section-title music-title">提示音</span>
+    <span class="section-title music-title">背景音樂</span>
+    <div class="music-grid" id="rbMusic"></div>
+    <div class="mine" id="rbMineBox" hidden>
+      <span class="mine-title">我的錄音</span>
+      <div id="rbMineRows"></div>
+    </div>
+    <p class="hint music-hint" id="rbMusicHint" hidden>練習開始時播放。</p>
+
+    <span class="section-title cue-title">提示音</span>
     <div class="music-grid" id="rbSnds"></div>
     <p class="hint rb-hint" id="rbSndNote"></p>
 
@@ -484,7 +492,7 @@
   </div>
 </div>
 
-<script src="app.js?v=63"></script>
+<script src="app.js?v=64"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
