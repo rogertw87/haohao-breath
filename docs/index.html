@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=53">
+<link rel="stylesheet" href="styles.css?v=54">
 </head>
 <body>
 <main class="home">
@@ -492,7 +492,83 @@
   </div>
 </div>
 
-<script src="app.js?v=67"></script>
+<!-- 聆聽：設定頁（不做呼吸練習，單純聽聲音） -->
+<section class="screen" id="lsSetup" hidden>
+  <div class="setup-inner">
+    <button class="back" data-action="close">← 返回</button>
+    <h2 class="ex-name">聆聽</h2>
+    <p class="desc ls-desc">不做呼吸練習，單純聽聲音：放鬆、專心，或準備入睡。</p>
+
+    <div class="section-head"><span class="section-title">聲音</span><span class="ls-sel-note" id="lsSelNote"></span></div>
+    <div class="music-grid" id="lsSounds"></div>
+    <div id="lsVolBox" hidden>
+      <span class="section-title ls-vol-title">音量</span>
+      <div class="panel ls-vols" id="lsVols"></div>
+    </div>
+    <p class="hint ls-note" id="lsMixNote"></p>
+    <div class="mine ls-mine" id="lsMineBox" hidden>
+      <span class="mine-title">我的錄音</span>
+      <div id="lsMineRows"></div>
+    </div>
+
+    <span class="section-title music-title ls-gap">時間</span>
+    <div class="music-grid" id="lsMins"></div>
+    <div id="lsFadeBox">
+      <span class="section-title cue-title">結束前慢慢變小聲</span>
+      <div class="music-grid ls-fades" id="lsFades"></div>
+    </div>
+    <p class="hint ls-note" id="lsTimeNote"></p>
+
+    <span class="section-title music-title">畫面</span>
+    <div class="panel rows" id="lsDimBox"></div>
+    <p class="hint ls-note" id="lsDimNote"></p>
+
+    <div class="start-bar">
+      <button class="btn btn-primary" id="lsStartBtn" data-action="ls-start">開始聆聽</button>
+    </div>
+  </div>
+</section>
+
+<!-- 聆聽：播放畫面（自動變暗時蓋上一層全黑的畫面，點一下顯示控制） -->
+<section class="screen" id="lsRun" hidden>
+  <div class="run-inner ls-run-inner">
+    <div class="run-head"><span class="run-name">聆聽</span><span class="run-left" id="lsTop"></span></div>
+    <div class="progress" id="lsBar"><div class="progress-fill" id="lsProgress"></div></div>
+    <div class="stage ls-stage">
+      <div class="ls-orb"><div class="ls-glow"></div><svg viewBox="0 0 32 32"><path d="M6.5 19v-3.5a9.5 9.5 0 0 1 19 0V19M6.5 19h3.5v7H8a1.5 1.5 0 0 1-1.5-1.5V19ZM25.5 19H22v7h2a1.5 1.5 0 0 0 1.5-1.5V19Z"></path></svg></div>
+      <div class="ls-text"><span class="ls-names" id="lsNames"></span><span class="ls-status" id="lsStatus"></span></div>
+    </div>
+    <div class="panel ls-vols" id="lsRunVols"></div>
+    <div class="wh-actions ls-actions">
+      <button class="wh-btn" id="lsPauseBtn" data-action="ls-pause">暫停</button>
+      <button class="wh-btn wh-btn-primary" id="lsResumeBtn" data-action="ls-resume" hidden>繼續</button>
+      <button class="wh-btn" data-action="ls-dim">變暗</button>
+    </div>
+    <button class="wh-btn ls-stop" data-action="ls-stop">停止</button>
+  </div>
+  <div class="ls-dim" id="lsDim" data-action="ls-wake" hidden>
+    <div class="ls-dim-glow"></div>
+    <span class="ls-dim-time" id="lsDimTime"></span>
+    <span class="ls-dim-tip">點一下螢幕，顯示控制</span>
+  </div>
+</section>
+
+<!-- 聆聽：播放結束（開著自動變暗時，這個畫面也是暗的） -->
+<section class="screen screen-center" id="lsDone" hidden>
+  <div class="run-inner">
+    <div class="done-body">
+      <span class="done-tag">聆聽</span>
+      <span class="rb-done-title">播放結束</span>
+      <span class="rb-done-text" id="lsDoneText"></span>
+    </div>
+    <div class="done-actions">
+      <button class="btn btn-primary" data-action="ls-start">再聽一次</button>
+      <button class="btn btn-secondary" data-action="close">返回</button>
+    </div>
+  </div>
+</section>
+
+<script src="app.js?v=68"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

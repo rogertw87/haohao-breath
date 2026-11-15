@@ -21,6 +21,8 @@ const EX = [
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 8, '吐氣', '閉嘴，喉部略縮慢慢吐']] },
   // 重生呼吸有自己的設定、練習與完成畫面（見下方「重生呼吸」）：幾次小呼吸＋一次大呼吸，吸吐之間沒有空檔
   { id: 'rebirth', name: '重生呼吸', own: true },
+  // 聆聽：不做呼吸練習，單純聽聲音（見下方「聆聽」），不算練習次數
+  { id: 'listen', name: '聆聽', own: true },
 ];
 
 // 首頁小圖示：線條 path（32×32）或圖檔
@@ -30,6 +32,7 @@ const ICONS = {
   belly: 'M3 16C7 6 11 6 16 16S25 26 29 16',
   nostril: 'M14.5 4C14.5 9.5 13.5 13.5 10.5 17C7.5 20.5 8 24.5 11.5 25C13.2 25.2 14 23.8 16 23.8S18.8 25.2 20.5 25C24 24.5 24.5 20.5 21.5 17.5M12.3 20.8C13.4 21.3 14.3 22.3 14.7 23.4M19.7 20.8C18.6 21.3 17.7 22.3 17.3 23.4',
   rebirth: 'M16 25.5V13M16 18.5C16 14 12.5 10.5 7 10.5C7 15 10.5 18.5 16 18.5ZM16 15C16 10.5 19.5 7 25 7C25 11.5 21.5 15 16 15Z',   // 新芽
+  listen: 'M6.5 19v-3.5a9.5 9.5 0 0 1 19 0V19M6.5 19h3.5v7H8a1.5 1.5 0 0 1-1.5-1.5V19ZM25.5 19H22v7h2a1.5 1.5 0 0 0 1.5-1.5V19Z',   // 耳機
   wimhof: 'M16 4V28M5.6 10L26.4 22M5.6 22L26.4 10M13 6.5L16 9L19 6.5M13 25.5L16 23L19 25.5M7.5 7.7L8.2 11.5L4.5 12.9M24.5 24.3L23.8 20.5L27.5 19.1M27.5 12.9L23.8 11.5L24.5 7.7M4.5 19.1L8.2 20.5L7.5 24.3',
 };
 // 鯨豚式呼吸：波浪球＋兩圈漣漪，和練習畫面的聲波紋同一個語彙
@@ -53,7 +56,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath' });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -65,8 +68,8 @@ let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -477,6 +480,7 @@ function loadMine() {
     if (cur != null && !screens.setup.hidden) renderSetup();
     if (cur != null && !screens.rbSetup.hidden) rbRenderSetup();
     if (cur != null && !screens.whSetup.hidden) whRenderSetup();
+    if (cur != null && !screens.lsSetup.hidden) lsRenderSetup();
   });
 }
 function addMine(f) {
@@ -487,6 +491,8 @@ function addMine(f) {
     mine.push({ id, name: stripExt(f.name) });
     // 在冰人呼吸設定頁上傳的，就選為冰人呼吸的背景音樂；其他練習（包括重生呼吸）共用一般的背景音樂
     if (cur != null && EX[cur].id === 'wimhof') { whSet('music', 'mine:' + id); return; }
+    // 在聆聽設定頁上傳的，直接加進選的聲音（最多 3 種）
+    if (cur != null && EX[cur].id === 'listen') { const s = lsSel(); if (s.length < LS_MAX) state.lsSel = [...s, 'mine:' + id]; save(); lsRenderSetup(); return; }
     state.music = 'mine:' + id; save(); renderMusicSetup();
   }).catch(() => alert('無法儲存這個檔案，請換一個試試。'));
 }
@@ -498,10 +504,11 @@ function delMine(m) {
   mine = mine.filter(x => x.id !== m.id);
   if (state.music === 'mine:' + m.id) { state.music = 'none'; save(); }
   if (state.wh && state.wh.music === 'mine:' + m.id) { state.wh = { ...state.wh, music: 'none' }; save(); }
+  if (Array.isArray(state.lsSel) && state.lsSel.includes('mine:' + m.id)) { state.lsSel = state.lsSel.filter(k => k !== 'mine:' + m.id); save(); }
   renderMusicSetup();
 }
 // 上傳或刪除錄音後，重畫目前打開的設定頁
-function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else renderSetup(); }
+function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else if (cur != null && EX[cur].id === 'listen') lsRenderSetup(); else renderSetup(); }
 $('mineFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) addMine(f); });
 
 // ---------- 節拍音效（即時合成） ----------
@@ -512,7 +519,7 @@ function ctx() {
     try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
     ac = new (window.AudioContext || window.webkitAudioContext)();
     // 提示音被系統中斷時，背景音樂也一起停
-    ac.onstatechange = () => { if (ac.state !== 'running' && practicing() && !syncPaused) pauseAllAudio(); };
+    ac.onstatechange = () => { if (ac.state === 'running') return; if (ls) { lsSysPause(); return; } if (practicing() && !syncPaused) pauseAllAudio(); };
     // 在點擊當下播一段無聲，解鎖手機上的音效
     const s = ac.createBufferSource();
     s.buffer = ac.createBuffer(1, 1, ac.sampleRate);
@@ -649,7 +656,7 @@ function previewCues(set, belly) {
   const tok = previewTok;
   keepAlive.play().catch(() => {});
   clearTimeout(previewEnd);
-  previewEnd = setTimeout(() => { if (!practicing()) keepAlive.pause(); }, 6000);
+  previewEnd = setTimeout(() => { if (!practicing() && !ls) keepAlive.pause(); }, 6000);
   if (belly && set === 'beat') { const t0 = ac.currentTime + .05; drumFx(true, t0); drumFx(false, t0 + 1.2); return; }
   const keys = belly ? ['in', 'out'] : CUE_KEYS, gap = belly ? 1.2 : 1;
   Promise.all(keys.map(key => loadCue(key, set))).then(bufs => {
@@ -692,7 +699,7 @@ function stopCue() {
 }
 
 // ---------- 畫面 ----------
-const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone') };
+const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone'), lsSetup: $('lsSetup'), lsRun: $('lsRun'), lsDone: $('lsDone') };
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
@@ -830,13 +837,14 @@ function clearAll() {
 function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（Google 登入要用它開視窗）
   clearAll(); stopMusic(true);
   cur = i;
-  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else whOpen(); return; }
+  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else if (EX[i].id === 'listen') lsOpen(); else whOpen(); return; }
   renderSetup();
   show('setup');
   screens.setup.scrollTop = 0;
 }
 function closeEx() {
   if (rb) rbEnd();
+  lsStopAll();
   clearAll(); stopMusic(); releaseWake(); duck = 1;
   cur = null;
   renderToday();
@@ -1347,7 +1355,7 @@ function rbPreview(k) {
   ctx(); stopPreview(); rbStopPv();
   keepAlive.play().catch(() => {});
   clearTimeout(previewEnd);
-  previewEnd = setTimeout(() => { if (!practicing()) keepAlive.pause(); }, 5000);
+  previewEnd = setTimeout(() => { if (!practicing() && !ls) keepAlive.pause(); }, 5000);
   const g = ac.createGain(); g.connect(ac.destination); rbPvG = g;
   const t0 = ac.currentTime + .05, n = rbN();
   if (k === 'breath') { [['si', 0], ['so', .75], ['bi', 1.45], ['bo', 2.75]].forEach(([b, dt]) => rbBreath(g, b, t0 + dt)); return; }   // 一口小呼吸、一口大呼吸
@@ -1519,6 +1527,306 @@ function rbAction(a) {
 }
 $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Math.max(1, +e.target.value)); save(); rbRenderSetup(); });
 
+// ---------- 聆聽：不做呼吸練習，單純聽聲音 ----------
+// 最多同時 3 種聲音，各自調音量；時間 10–60 分鐘或不限，結束前慢慢變小聲（音量平方曲線，聽起來比較均勻）
+// 自動變暗：開始播放後 10 秒沒碰螢幕，蓋上一層全黑的畫面。不算練習次數、不給印章
+// 每種聲音一條音軌：同一個網站（或自己上傳）的音檔接到自己的 GainNode，iPhone 也能各自調音量、慢慢變小聲
+const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_AFTER = 10000;
+let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
+const lsKnown = k => typeof k === 'string' && (k.startsWith('mine:') ? !!myUrls[k.slice(5)] : k !== 'none' && MUSIC.some(([x]) => x === k));
+const lsSel = () => (Array.isArray(state.lsSel) ? state.lsSel : []).filter(lsKnown).slice(0, LS_MAX);
+const lsVolOf = k => { const v = (state.lsVol || {})[k]; return typeof v === 'number' ? v : .7; };
+function lsName(k) {
+  if (k.startsWith('mine:')) { const m = mine.find(x => x.id === k.slice(5)); return m ? m.name : '我的錄音'; }
+  const m = MUSIC.find(([x]) => x === k); return m ? m[1] : k;
+}
+function lsToggle(k) {
+  const sel = lsSel();
+  if (sel.includes(k)) { state.lsSel = sel.filter(x => x !== k); lsWarn = false; }
+  else if (sel.length < LS_MAX) state.lsSel = [...sel, k];
+  else { lsWarnGo(); return; }
+  save(); lsRenderSetup();
+}
+// 已經選了 3 種還點別的：提醒最多 3 種（說明變紅色 2.5 秒）
+function lsWarnGo() {
+  clearTimeout(lsWarnT); lsWarn = true; lsRenderSetup();
+  lsWarnT = setTimeout(() => { lsWarn = false; if (!screens.lsSetup.hidden) lsRenderSetup(); }, 2500);
+}
+function lsSetVol(k, v) {
+  state.lsVol = { ...(state.lsVol || {}), [k]: v }; save();
+  const t = ls && ls.tr.find(x => x.k === k);
+  if (t) { t.v = v; lsApply(t, .06); }
+}
+// 音量列：名稱、滑桿、（設定頁才有）× 取消
+function lsVolRows(box, items, canDel) {
+  box.innerHTML = '';
+  items.forEach(({ k, v }) => {
+    const row = document.createElement('div');
+    row.className = 'ls-vol';
+    row.innerHTML = '<span class="ls-vol-name"></span><input type="range" min="0" max="1" step="0.05" aria-label="音量">' + (canDel ? '<button class="ls-vol-del" aria-label="取消這個聲音">×</button>' : '');
+    row.firstChild.textContent = lsName(k);
+    const r = row.querySelector('input');
+    r.value = v;
+    r.addEventListener('input', () => lsSetVol(k, +r.value));
+    if (canDel) row.lastChild.addEventListener('click', () => lsToggle(k));
+    box.appendChild(row);
+  });
+}
+function lsOpts(box, opts, isOn, pick) {
+  box.innerHTML = '';
+  opts.forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + (isOn(k) ? ' on' : '');
+    b.textContent = l;
+    b.addEventListener('click', () => pick(k));
+    box.appendChild(b);
+  });
+}
+function lsRenderSetup() {
+  const sel = lsSel(), full = sel.length >= LS_MAX, min = +state.lsMin || 0, fd = +state.lsFade || 1, fm = min ? Math.min(fd, min / 2) : 0, warn = lsWarn && full;
+  $('lsSelNote').textContent = '最多選 ' + LS_MAX + ' 種' + (sel.length ? '・已選 ' + sel.length : '');
+  $('lsSelNote').classList.toggle('warn', warn);
+  const box = $('lsSounds');
+  box.innerHTML = '';
+  MUSIC.filter(([k]) => k !== 'none').concat(mine.map(m => ['mine:' + m.id, m.name])).forEach(([k, l]) => {
+    const on = sel.includes(k), b = document.createElement('button');
+    b.className = 'music-opt' + (on ? ' on' : '') + (!on && full ? ' ls-off' : '');
+    b.textContent = l; b.title = l; b.setAttribute('aria-pressed', on);
+    b.addEventListener('click', () => lsToggle(k));
+    box.appendChild(b);
+  });
+  if (mine.length < MINE_MAX) {
+    const b = document.createElement('button');
+    b.className = 'music-opt music-upload' + (full ? ' ls-off' : '');
+    b.textContent = '＋ 上傳錄音';
+    b.addEventListener('click', () => { if (lsSel().length >= LS_MAX) lsWarnGo(); else $('mineFile').click(); });
+    box.appendChild(b);
+  }
+  $('lsVolBox').hidden = !sel.length;
+  lsVolRows($('lsVols'), sel.map(k => ({ k, v: lsVolOf(k) })), true);
+  $('lsMixNote').textContent = !sel.length ? '先選一種聲音。最多可以選 3 種一起播，例如雨聲加手碟。'
+    : full ? (warn ? '最多只能選 3 種。' : '已經選了 3 種。') + '想換別的，先點一個已選的取消。'
+    : '可以再選，最多 3 種一起播。播放時也能調音量。';
+  $('lsMixNote').classList.toggle('warn', warn);
+  $('lsMineBox').hidden = !mine.length;
+  $('lsMineRows').innerHTML = '';
+  mine.forEach(m => {
+    const row = document.createElement('div');
+    row.className = 'mine-row';
+    row.innerHTML = '<span></span><button>刪除</button>';
+    row.firstChild.textContent = m.name;
+    row.lastChild.addEventListener('click', () => delMine(m));
+    $('lsMineRows').appendChild(row);
+  });
+  lsOpts($('lsMins'), LS_MINS.map(m => [m, m ? m + ' 分鐘' : '不限']), m => m === min, m => { state.lsMin = m; save(); lsRenderSetup(); });
+  $('lsFadeBox').hidden = !min;
+  lsOpts($('lsFades'), LS_FADES.map(f => [f, '最後 ' + f + ' 分鐘']), f => f === fd, f => { state.lsFade = f; save(); lsRenderSetup(); });
+  $('lsTimeNote').textContent = !min ? '不限時間：想停的時候按「停止」。'
+    : fm < fd ? '時間比較短，會在最後 ' + fm + ' 分鐘慢慢變小聲，時間到就停。' : '聲音會慢慢變小，時間到就停，不會突然斷掉。';
+  const dk = !!state.lsDim;
+  $('lsDimBox').innerHTML = '';
+  const t = document.createElement('button');
+  t.className = 'wh-toggle' + (dk ? ' on' : '');
+  t.setAttribute('role', 'switch'); t.setAttribute('aria-checked', dk);
+  t.innerHTML = '<span>自動變暗</span><span class="wh-switch"></span>';
+  t.addEventListener('click', () => { state.lsDim = !state.lsDim; save(); lsRenderSetup(); });
+  $('lsDimBox').appendChild(t);
+  $('lsDimNote').textContent = (dk ? '開始播放後，10 秒沒碰螢幕，畫面就會變暗，適合睡前。點一下螢幕就會顯示控制。' : '播放時也可以按「變暗」，讓畫面暗下來。') + '播放時螢幕不會自動關掉，播完才會。';
+  $('lsStartBtn').textContent = min ? '開始聆聽 · ' + min + ' 分鐘' : '開始聆聽';
+  $('lsStartBtn').classList.toggle('ls-off', !sel.length);
+}
+function lsOpen() {
+  lsWarn = false;
+  lsRenderSetup();
+  show('lsSetup');
+  screens.lsSetup.scrollTop = 0;
+}
+// 一條音軌：音檔（循環、輪播或自己上傳的）＋雨聲、水晶缽多一層當場合成的聲音
+function lsTrack(k, l) {
+  const a0 = ctx(), g = a0.createGain();
+  g.gain.value = 0; g.connect(a0.destination);
+  const t = { k, l, v: lsVolOf(k), g, els: [], nodes: [], ivs: [], cur: null, sw: false, direct: false };
+  const live = () => ls === l && !l.paused;
+  const list = MUSIC_LISTS[k] || (k.startsWith('mine:') ? [myUrls[k.slice(5)]] : null);
+  const srcs = list ? null : [].concat(MUSIC_FILES[k] || []);
+  const first = list ? list[0] : srcs[0];
+  // 同一個網站（或自己上傳）的音檔才接到 GainNode；別的網站的音檔直接調 volume，至少一定聽得到
+  try { const u = new URL(first, location.href); t.direct = !(u.protocol === 'blob:' || u.origin === location.origin); } catch (e) { t.direct = true; }
+  const mk = src => {
+    const a = new Audio();
+    a.preload = 'auto'; a.setAttribute('playsinline', '');
+    if (src) a.src = src;
+    if (!t.direct) { try { a0.createMediaElementSource(a).connect(g); } catch (e) { t.direct = true; } }
+    if (t.direct) a.volume = 0;
+    // 被系統停掉（來電、別的 App 開始播放…）：整個暫停，等使用者按「繼續」
+    a.addEventListener('pause', () => { if (t.cur === a && !a.ended && !t.sw && live()) lsSysPause(); });
+    t.els.push(a);
+    return a;
+  };
+  if (srcs) {
+    const a = mk(srcs.shift());
+    a.loop = true;
+    a.onerror = () => { if (srcs.length && ls === l) { a.src = srcs.shift(); if (live()) a.play().catch(() => {}); } };
+    const cut = LOOPCUT[k];
+    if (cut) {
+      // 頭尾有淡入淡出的音檔：跳過頭尾，兩個播放器接替
+      a.loop = false;
+      const b = mk();
+      t.ivs.push(setInterval(() => {
+        if (!b.src && a.currentSrc) b.src = a.currentSrc;
+        const c = t.cur;
+        if (!c || c.paused || !c.duration || c.currentTime < c.duration - cut[1]) return;
+        const nx = c === a ? b : a;
+        nx.currentTime = cut[0]; t.cur = nx; nx.play().catch(() => {}); c.pause();
+      }, 40));
+    }
+    t.cur = a; a.play().catch(() => {});
+  } else {
+    let i = 0;
+    const a = mk(list[0]);
+    const next = () => {
+      if (ls !== l) return;
+      i = (i + 1) % list.length;
+      t.sw = true;
+      if (a.src.endsWith(list[i])) a.currentTime = 0; else a.src = list[i];
+      t.sw = false;
+      if (live()) a.play().catch(() => {});
+    };
+    a.onended = next; a.onerror = () => { if (list.length > 1) next(); };
+    t.cur = a; a.play().catch(() => {});
+  }
+  const flt = (type, fr) => { const n = a0.createBiquadFilter(); n.type = type; n.frequency.value = fr; return n; };
+  const gn = v => { const n = a0.createGain(); n.gain.value = v; return n; };
+  if (k === 'rain') {
+    const s = noise(), hp = flt('highpass', 900), lp = flt('lowpass', 6000), gg = gn(.35);
+    s.connect(hp); hp.connect(lp); lp.connect(gg); gg.connect(g); s.start(); t.nodes.push(s);
+  }
+  if (k === 'bowl') {
+    [[196, .06], [294, .035], [392, .025], [523.25, .012]].forEach(([fr, v], i) => {
+      const o = a0.createOscillator(), gg = gn(v), lf = a0.createOscillator(), d = gn(v * .6);
+      o.type = 'sine'; o.frequency.value = fr; o.connect(gg); gg.connect(g);
+      lf.frequency.value = .07 + i * .03; lf.connect(d); d.connect(gg.gain);
+      o.start(); lf.start(); t.nodes.push(o, lf);
+    });
+  }
+  return t;
+}
+const lsEl = () => (ls ? ((ls.paused ? ls.pAt : performance.now()) - ls.t0) / 1000 : 0);
+// 整體音量：開頭 3 秒淡入；有設時間的，最後一段慢慢變小聲
+function lsLevel() {
+  if (!ls || ls.paused) return 0;
+  const el = lsEl();
+  let f = Math.min(1, el / 3);
+  if (ls.total) { const r = Math.max(0, Math.min(1, (ls.total - el) / ls.fade)); f *= r * r; }
+  return f;
+}
+function lsApply(t, tc) {
+  const v = t.v * lsLevel();
+  try { t.g.gain.setTargetAtTime(v, ac.currentTime, tc || .15); } catch (e) {}
+  if (t.direct) t.els.forEach(a => { a.volume = Math.max(0, Math.min(1, v)); });
+}
+function lsTick() {
+  const l = ls;
+  if (!l) return;
+  const el = lsEl();
+  if (l.total && el >= l.total) { lsEnd(); return; }
+  if (!l.paused) l.tr.forEach(t => lsApply(t));
+  if (!l.paused && state.lsDim && $('lsDim').hidden && performance.now() - l.poke > LS_DIM_AFTER) lsDimShow(true);
+  lsUpdate();
+}
+function lsUpdate() {
+  const l = ls;
+  if (!l) return;
+  const el = lsEl(), left = l.total ? Math.max(0, l.total - el) : 0, tt = l.total ? fmt(left) : fmt(Math.floor(el));
+  $('lsTop').textContent = (l.total ? '剩 ' : '已播 ') + tt;
+  $('lsBar').style.visibility = l.total ? 'visible' : 'hidden';
+  $('lsProgress').style.width = (l.total ? Math.min(100, el / l.total * 100) : 0) + '%';
+  $('lsStatus').textContent = l.paused ? (l.sys ? '聲音被系統暫停了，按「繼續」接著播放' : '已暫停') : l.total && left <= l.fade ? '正在慢慢變小聲' : '';
+  $('lsDimTime').textContent = l.paused ? '已暫停' : tt;
+  $('lsPauseBtn').hidden = l.paused; $('lsResumeBtn').hidden = !l.paused;
+  screens.lsRun.classList.toggle('ls-paused', l.paused);
+}
+function lsDimShow(on) { $('lsDim').hidden = !on; }
+function lsStart() {
+  const sel = lsSel();
+  if (!sel.length) return;
+  lsStopAll(); clearAll(); stopMusic(true);
+  ctx(); keepAlive.play().catch(() => {}); lockWake();
+  const m = +state.lsMin || 0, total = m * 60, now = performance.now();
+  const l = { tr: [], t0: now, paused: false, pAt: 0, sys: false, total, fade: total ? Math.min((+state.lsFade || 1) * 60, total / 2) : 0, poke: now };
+  ls = l;
+  l.tr = sel.map(k => lsTrack(k, l));
+  $('lsNames').textContent = sel.map(lsName).join('・');
+  lsVolRows($('lsRunVols'), l.tr.map(t => ({ k: t.k, v: t.v })), false);
+  lsDimShow(false);
+  lsIv = setInterval(lsTick, 200);
+  lsUpdate();
+  show('lsRun');
+  screens.lsRun.scrollTop = 0;
+}
+function lsPause() {
+  const l = ls;
+  if (!l || l.paused) return;
+  l.paused = true; l.pAt = performance.now();
+  l.tr.forEach(t => { try { t.g.gain.setTargetAtTime(0, ac.currentTime, .08); } catch (e) {} if (t.direct) t.els.forEach(a => { a.volume = 0; }); });
+  setTimeout(() => { if (ls === l && l.paused) l.tr.forEach(t => t.els.forEach(a => { if (!a.paused) a.pause(); })); }, 350);
+  lsDimShow(false);
+  lsUpdate();
+}
+function lsSysPause() { if (!ls || ls.paused) return; ls.sys = true; lsPause(); }
+function lsResume() {
+  const l = ls;
+  if (!l || !l.paused) return;
+  ctx(); keepAlive.play().catch(() => {});
+  const now = performance.now();
+  l.t0 += now - l.pAt; l.paused = false; l.sys = false; l.poke = now;
+  l.tr.forEach(t => { const a = t.cur; if (a && a.paused) a.play().catch(() => {}); lsApply(t, .4); });
+  lsUpdate();
+}
+// 停掉所有音軌：0.5 秒淡出後才真的停
+function lsStopAll() {
+  clearInterval(lsIv); lsIv = 0;
+  const l = ls;
+  ls = null;
+  if (!l) return;
+  const t0 = ac ? ac.currentTime : 0;
+  l.tr.forEach(t => {
+    try { t.g.gain.cancelScheduledValues(t0); t.g.gain.setValueAtTime(t.g.gain.value, t0); t.g.gain.linearRampToValueAtTime(0, t0 + .5); } catch (e) {}
+    t.ivs.forEach(clearInterval);
+    t.els.forEach(a => { a.onended = null; a.onerror = null; });
+  });
+  setTimeout(() => {
+    l.tr.forEach(t => {
+      t.els.forEach(a => { try { a.pause(); a.removeAttribute('src'); a.load(); } catch (e) {} });
+      t.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
+      try { t.g.disconnect(); } catch (e) {}
+    });
+  }, 600);
+  keepAlive.pause();
+  lsDimShow(false);
+  screens.lsRun.classList.remove('ls-paused');
+}
+function lsEnd() {
+  const l = ls;
+  if (!l) return;
+  lsStopAll(); releaseWake();
+  $('lsDoneText').textContent = '聽了 ' + Math.round(l.total / 60) + ' 分鐘。' + (state.lsDim ? '晚安。' : '');
+  screens.lsDone.classList.toggle('ls-dark', !!state.lsDim);
+  show('lsDone');
+}
+function lsStop() { lsStopAll(); releaseWake(); lsRenderSetup(); show('lsSetup'); }
+function lsAction(a) {
+  if (a === 'start') lsStart();
+  else if (a === 'pause') lsPause();
+  else if (a === 'resume') lsResume();
+  else if (a === 'stop') lsStop();
+  else if (a === 'dim') lsDimShow(true);
+  else if (a === 'wake') { if (ls) ls.poke = performance.now(); lsDimShow(false); }
+}
+// 碰到螢幕就重新計時，10 秒沒碰才變暗
+['pointerdown', 'input', 'keydown'].forEach(ev => $('lsRun').addEventListener(ev, () => { if (ls) ls.poke = performance.now(); }));
+document.addEventListener('visibilitychange', () => { if (!document.hidden && ls) { lockWake(); lsTick(); } });
+
 // ---------- 事件 ----------
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-action]');
@@ -1536,6 +1844,7 @@ document.addEventListener('click', e => {
   else if (a.startsWith('sync-')) syncAction(a.slice(5), b, e);
   else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a.startsWith('rb-')) rbAction(a.slice(3));
+  else if (a.startsWith('ls-')) lsAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id === '478' ? '478-' + fKey() : EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
@@ -1960,7 +2269,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
@@ -1980,6 +2289,8 @@ function setFlat(st) {
   SET_KEYS.forEach(k => {
     const v = st[k];
     if (k === 'custom' || k === 'wh') Object.keys(v || {}).forEach(j => put(k + '.' + j, v[j]));
+    // 聆聽選的聲音：自己上傳的錄音只在那台裝置上，不同步
+    else if (k === 'lsSel') put(k, (Array.isArray(v) ? v : []).filter(x => typeof x === 'string' && !x.startsWith('mine:')));
     else put(k, v);
   });
   return f;
@@ -2000,6 +2311,8 @@ function applySet(f) {
   state.wh = w;
   SET_KEYS.forEach(k => {
     if (k === 'custom' || k === 'wh' || !(k in o)) return;
+    // 聆聽：別台裝置選的聲音，加上這台自己上傳、正在選的錄音（最多 3 種）
+    if (k === 'lsSel') { const own = (Array.isArray(state.lsSel) ? state.lsSel : []).filter(x => typeof x === 'string' && x.startsWith('mine:')); state.lsSel = [...(Array.isArray(o[k]) ? o[k] : []), ...own].slice(0, 3); return; }
     state[k] = k === 'music' ? pick(o[k], state.music) : o[k];
   });
 }
@@ -2125,12 +2438,12 @@ function refreshSynced() {
 }
 function syncNow() {
   if (!syncOn || !sync || !tokenOk()) { paintSync(); return Promise.resolve(); }
-  if (syncBusy || practicing()) { syncAgain = true; return Promise.resolve(); }   // 練習中不動資料，練完再同步
+  if (syncBusy || practicing() || ls) { syncAgain = true; return Promise.resolve(); }   // 練習中不動資料，練完再同步
   syncBusy = true; syncErr = ''; paintSync();
   const t0 = Date.now();
   let id = null;
   return findFile().then(fid => { id = fid; return readRemote(fid); }).then(remote => {
-    if (practicing()) throw { code: 'later' };
+    if (practicing() || ls) throw { code: 'later' };
     if (remote && remote.app !== 'haohao-breath') remote = null;
     const sy = state.sy, me = sy.dev, others = {};
     Object.keys((remote && remote.dev) || {}).forEach(k => { if (k !== me) others[k] = remote.dev[k]; });
@@ -2163,7 +2476,7 @@ function syncNow() {
   }).then(() => {
     syncBusy = false;
     paintSync();
-    if (syncAgain && !practicing()) { syncAgain = false; syncNow(); }
+    if (syncAgain && !practicing() && !ls) { syncAgain = false; syncNow(); }
   });
 }
 function syncResume() { if (syncAgain && !syncBusy) { syncAgain = false; syncNow(); } }
