@@ -6,8 +6,10 @@ const IN = 'in', HOLD = 'hold', OUT = 'out';
 const EX = [
   { id: 'box', name: '方塊呼吸', desc: '吸氣、閉氣、吐氣、閉氣，各段等長。',
     base: [[IN, 4, '吸氣'], [HOLD, 4, '吸氣後閉氣', '閉氣'], [OUT, 4, '吐氣'], [HOLD, 4, '吐氣後閉氣', '閉氣']] },
-  { id: '478', name: '4-7-8 放鬆呼吸', label: '4-7-8', fixed: true, desc: '吸氣 4 秒、閉氣 7 秒、吐氣 8 秒。',
-    base: [[IN, 4, '吸氣'], [HOLD, 7, '閉氣'], [OUT, 8, '吐氣']] },
+  // 吸／吐後閉氣（原本的 4-7-8，id 不變，以前的紀錄和印章都還在）：4-7-8-0 是吸氣後閉氣，4-0-8-6 是吐氣後閉氣（fMode 選）。
+  // 秒數可以調，兩種方式各自記住：custom['478-4780']、custom['478-4086']，都是 [吸氣, 吸氣後閉氣, 吐氣, 吐氣後閉氣]
+  { id: '478', name: '吸／吐後閉氣', desc: '4-7-8-0 是吸氣後閉氣：吸氣 4 秒、閉氣 7 秒、吐氣 8 秒。4-0-8-6 是吐氣後閉氣：吸氣 4 秒、吐氣 8 秒、閉氣 6 秒。',
+    base: [[IN, 4, '吸氣'], [HOLD, 7, '吸氣後閉氣', '閉氣'], [OUT, 8, '吐氣'], [HOLD, 6, '吐氣後閉氣', '閉氣']] },
   { id: 'belly', name: '諧振式呼吸', bpm: 6, desc: '吸氣與吐氣等長，依每分鐘次數調整節奏。',
     base: [[IN, 4, '吸氣', '腹部吸氣'], [OUT, 6, '吐氣', '慢慢吐氣']] },
   { id: 'nostril', name: '鼻孔交替呼吸', desc: '左右鼻孔輪流吸氣與吐氣。',
@@ -17,18 +19,17 @@ const EX = [
   { id: 'wimhof', name: '冰人呼吸', own: true },
   { id: 'res', name: '鯨豚式呼吸', desc: '鼻子吸氣；閉上嘴巴，用鼻子慢慢吐氣。吐氣時將喉部肌肉略縮起來，提高呼吸的阻力。',
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 8, '吐氣', '閉嘴，喉部略縮慢慢吐']] },
-  // 重生呼吸：數次短促的小呼吸＋一次深呼吸；base 第 5 欄是吸氣的深度（波形高度，1 = 吸滿）
-  { id: 'rebirth', name: '重生呼吸', wip: true, desc: '吸氣與吐氣都用鼻子，相連不停頓。先做數次短促的小呼吸，再接一次較大的深呼吸，依序循環。',
-    base: [[IN, 1.5, '小吸氣', '小吸', .55], [OUT, 1.5, '小吐氣', '小吐'], [IN, 4, '大吸氣', '大吸氣'], [OUT, 4, '大吐氣', '大吐氣']] },
+  // 重生呼吸有自己的設定、練習與完成畫面（見下方「重生呼吸」）：幾次小呼吸＋一次大呼吸，吸吐之間沒有空檔
+  { id: 'rebirth', name: '重生呼吸', own: true },
 ];
 
 // 首頁小圖示：線條 path（32×32）或圖檔
 const ICONS = {
   box: 'M16 4L27 10V22L16 28L5 22V10ZM5 10L16 16L27 10M16 16V28',
-  478: 'M4 24C8 24 9 9 13 9H19C24 9 25 24 28 24',
+  478: 'M3 23H6.5C9 23 10 9 12.5 9H19.5C22 9 23 23 25.5 23H29',   // 上下都有一段平的：吸氣後閉氣、吐氣後閉氣
   belly: 'M3 16C7 6 11 6 16 16S25 26 29 16',
   nostril: 'M14.5 4C14.5 9.5 13.5 13.5 10.5 17C7.5 20.5 8 24.5 11.5 25C13.2 25.2 14 23.8 16 23.8S18.8 25.2 20.5 25C24 24.5 24.5 20.5 21.5 17.5M12.3 20.8C13.4 21.3 14.3 22.3 14.7 23.4M19.7 20.8C18.6 21.3 17.7 22.3 17.3 23.4',
-  rebirth: 'M16 10V24M16 9L13.5 5.5M16 9L18.5 5.5M16 15C13 9 7.5 6.5 5 8.5C3 10.5 5.5 15.5 16 15.5M16 15C19 9 24.5 6.5 27 8.5C29 10.5 26.5 15.5 16 15.5M16 16.5C10 16.5 6.5 19 8 22.5C9.5 25.5 14 22.5 16 18M16 16.5C22 16.5 25.5 19 24 22.5C22.5 25.5 18 22.5 16 18',
+  rebirth: 'M16 25.5V13M16 18.5C16 14 12.5 10.5 7 10.5C7 15 10.5 18.5 16 18.5ZM16 15C16 10.5 19.5 7 25 7C25 11.5 21.5 15 16 15Z',   // 新芽
   wimhof: 'M16 4V28M5.6 10L26.4 22M5.6 22L26.4 10M13 6.5L16 9L19 6.5M13 25.5L16 23L19 25.5M7.5 7.7L8.2 11.5L4.5 12.9M24.5 24.3L23.8 20.5L27.5 19.1M27.5 12.9L23.8 11.5L24.5 7.7M4.5 19.1L8.2 20.5L7.5 24.3',
 };
 // 鯨豚式呼吸：波浪球＋兩圈漣漪，和練習畫面的聲波紋同一個語彙
@@ -52,7 +53,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'hand' });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -64,8 +65,8 @@ let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -93,7 +94,7 @@ function logDone(id, sec) {
 const cnt = (id, k) => b => (b.n[id] || 0) >= k;
 const STAMPS = [
   ['first', '初息', '第一次完成練習', b => b.total >= 1], ['box', '方塊', '方塊呼吸 10 次', cnt('box', 10)],
-  ['478', '四七八', '4-7-8 放鬆呼吸 10 次', cnt('478', 10)], ['belly', '諧振', '諧振式呼吸 10 次', cnt('belly', 10)],
+  ['478', '四七八', '吸／吐後閉氣 10 次', cnt('478', 10)], ['belly', '諧振', '諧振式呼吸 10 次', cnt('belly', 10)],
   ['nostril', '交替', '鼻孔交替呼吸 10 次', cnt('nostril', 10)], ['res', '鯨豚', '鯨豚式呼吸 10 次', cnt('res', 10)],
   ['wimhof', '冰人', '冰人呼吸 10 次', cnt('wimhof', 10)],
   // 不設閉氣長度的勳章：閉氣不該為了拿勳章硬撐
@@ -275,10 +276,10 @@ function renderToday() {
 
 // ---------- 節奏計算 ----------
 const bpmOf = ex => { const c = state.custom[ex.id]; return c && c.length === 1 ? c[0] : ex.bpm; };
-// 重生呼吸設定的是「小呼吸」「大呼吸」各一吸一吐的總秒數
-const rbOf = () => { const c = state.custom.rebirth; return c && c.length === 2 ? c : [1.5, 4]; };
+const F478 = { 4780: [4, 7, 8, 0], 4086: [4, 0, 8, 6] };
+const fKey = () => (state.fMode === '4086' ? '4086' : '4780');
 function secsOf(ex) {
-  if (ex.id === 'rebirth') { const [a, b] = rbOf(); return [a / 2, a / 2, b / 2, b / 2]; }
+  if (ex.id === '478') { const m = fKey(), c = state.custom['478-' + m]; return c && c.length === 4 ? c : F478[m]; }
   if (ex.fixed) return ex.base.map(b => b[1]);
   if (ex.bpm) { const h = 30 / bpmOf(ex); return [h, h]; }
   const c = state.custom[ex.id];
@@ -287,19 +288,16 @@ function secsOf(ex) {
 }
 // 鼻孔交替呼吸可選三段（吸・閉・吐）或四段（吸・閉・吐・閉）；三段時略過吐氣後的閉氣
 const n3 = ex => ex.id === 'nostril' && state.nMode !== '4';
-function rbSeq() {
-  const q = [];
-  for (let j = 1; j <= (state.rMode === '9' ? 9 : 4); j++) q.push([0, '小吸 ' + j], [1, '小吐 ' + j]);
-  return q.concat([[2, '大吸氣'], [3, '大吐氣']]);
-}
-const seqOf = ex => ex.id === 'rebirth' ? rbSeq() : (n3(ex) ? ex.seq.filter(([bi]) => bi !== 3) : ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]));
+const seq478 = () => (fKey() === '4086' ? [[0, '吸氣'], [2, '吐氣'], [3, '閉氣']] : [[0, '吸氣'], [1, '閉氣'], [2, '吐氣']]);
+const seqOf = ex => ex.id === '478' ? seq478() : (n3(ex) ? ex.seq.filter(([bi]) => bi !== 3) : ex.seq || ex.base.map((b, i) => [i, b[3] || b[2]]));
 const cycleOf = ex => { const s = secsOf(ex); return seqOf(ex).reduce((a, [bi]) => a + s[bi], 0); };
 
 function adj(ex, i, d) {
-  if (ex.id === 'rebirth') {
-    const c = rbOf().slice();
-    c[i] = Math.min(20, Math.max(1, c[i] + d * .5));
-    state.custom = { ...state.custom, rebirth: c };
+  if (ex.id === '478') {
+    const s = secsOf(ex).slice(), n = d > 0 ? Math.floor(s[i]) + 1 : Math.ceil(s[i]) - 1;
+    s[i] = Math.min(60, Math.max(0, n));
+    if (seqOf(ex).every(([bi]) => s[bi] === 0)) return;
+    state.custom = { ...state.custom, ['478-' + fKey()]: s };
   } else if (ex.bpm) {
     const n = Math.min(12, Math.max(1, bpmOf(ex) + d));
     state.custom = { ...state.custom, [ex.id]: [n] };
@@ -524,7 +522,7 @@ function ctx() {
 // ---------- 背景音樂與提示音保持一致 ----------
 // 練習中只要其中一個被系統停掉，另一個也跟著停；回到網頁時兩個一起恢復
 let syncPaused = false;
-const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden;
+const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden || !$('rbRun').hidden;
 const showResumeTip = on => document.querySelectorAll('.resume-tip').forEach(b => { b.hidden = !on; });
 function pauseAllAudio() {
   if (!practicing() || syncPaused) return;
@@ -691,7 +689,7 @@ function stopCue() {
 }
 
 // ---------- 畫面 ----------
-const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone') };
+const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone') };
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
@@ -728,7 +726,7 @@ function renderHome() {
 
 const MODES = {
   nostril: { key: 'nMode', def: '3', opts: [['3', '三段（吸・閉・吐）'], ['4', '四段（吸・閉・吐・閉）']] },
-  rebirth: { key: 'rMode', def: '4', opts: [['4', '四小一大'], ['9', '九小一大']] },
+  478: { key: 'fMode', def: '4780', opts: [['4780', '4-7-8-0'], ['4086', '4-0-8-6']] },
 };
 // 背景音樂選項（一般練習和冰人呼吸共用）：內建音樂、我的錄音、「＋ 上傳錄音」
 function musicGrid(box, current, pick) {
@@ -759,12 +757,12 @@ function renderSetup() {
 
   $('adjust').hidden = !!ex.fixed;
   $('rhythmTitle').textContent = ex.bpm ? '呼吸次數' : '每段秒數';
-  const rows = ex.id === 'rebirth'
-    ? [['小呼吸（一吸一吐）', 0], ['大呼吸（一吸一吐）', 1]].map(([label, i]) => ({ label, val: fmtS(rbOf()[i]), i }))
+  const rows = ex.id === '478'
+    ? seqOf(ex).map(([bi]) => ({ label: ex.base[bi][2], val: fmtS(secs[bi]), i: bi }))
     : ex.bpm
     ? [{ label: '每分鐘', val: bpmOf(ex) + ' 次', i: 0 }]
     : (n3(ex) ? ex.base.slice(0, 3) : ex.base).map((b, i) => ({ label: b[2], val: fmtS(secs[i]), i }));
-  // 練習方式：鼻孔交替呼吸（三段／四段）、重生呼吸（四小一大／九小一大）
+  // 練習方式：鼻孔交替呼吸（三段／四段）、吸／吐後閉氣（4-7-8-0／4-0-8-6）
   const modes = MODES[ex.id];
   $('nModeBox').hidden = !modes;
   $('nModes').innerHTML = '';
@@ -829,18 +827,20 @@ function clearAll() {
 function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（Google 登入要用它開視窗）
   clearAll(); stopMusic(true);
   cur = i;
-  if (EX[i].own) { whOpen(); return; }
+  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else whOpen(); return; }
   renderSetup();
   show('setup');
   screens.setup.scrollTop = 0;
 }
 function closeEx() {
+  if (rb) rbEnd();
   clearAll(); stopMusic(); releaseWake(); duck = 1;
   cur = null;
   renderToday();
   show(null);
   syncResume();   // 練習中沒做的同步，回到首頁再做
   $('whSafety').hidden = true;
+  $('rbSafety').hidden = true;
 }
 
 function dotEl(ex) { return ex.id === 'box' ? $('boxDot') : ex.id === 'nostril' ? $('nDot') : null; }
@@ -1199,6 +1199,286 @@ function whAction(a) {
   }
 }
 
+// ---------- 重生呼吸 ----------
+// 用鼻子輕鬆吸、爽快吐，吸吐之間沒有空檔：幾口小呼吸（四小一大或九小一大）＋一口大呼吸（吸長一點、爽快吐掉、放鬆一下），一直循環到時間到。
+// custom.rebirth = [小呼吸一吸一吐秒數, 大呼吸（吸、吐、放鬆）秒數]；每次 0.1 秒，0 秒就不做那一種呼吸，兩個不能都是 0
+const rbOf = () => { const c = state.custom.rebirth; return c && c.length === 2 ? c : [1.5, 4]; };
+const rbN = () => (state.rMode === '9' ? 9 : 4);
+// 吐氣提示音：手鼓（預設）、水滴、拇指琴，都是當場合成；以前存過其他選項的一律當成手鼓
+const RBSNDS = [['hand', '手鼓'], ['drop', '水滴'], ['kalimba', '拇指琴']];
+const rbSndOf = k => (RBSNDS.some(([x]) => x === k) ? k : 'hand');
+const RB_N4 = [523.25, 587.33, 659.25, 783.99], RB_N9 = [392, 440, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66];
+// big 是大呼吸那一口（聲音深一點、長一點）；j 是第幾口小呼吸，n 是一組幾口小呼吸。每一聲的音高、音量隨機差一點點，重複幾百次也不會像機器
+function rbSynthFx(out, k, big, j, n, t, nz) {
+  const rv = a => 1 + (Math.random() - .5) * a;
+  const tone = (type, f0, f1, glide, v, dec) => {
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + glide);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .004); g.gain.exponentialRampToValueAtTime(.0008, t + dec);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + dec + .05);
+  };
+  if (k === 'drop') {
+    const f = (big ? 620 : 900) * rv(.12), v = 1.25 * rv(.2);
+    tone('sine', f, f * (big ? 2.1 : 1.9), big ? .09 : .06, .34 * v, big ? .17 : .11);   // 水泡的聲音：音高很快往上
+    tone('sine', f * .45, f * .4, .02, .06 * v, .04);                                    // 落水那一下
+  } else if (k === 'kalimba') {
+    const L = n === 9 ? RB_N9 : RB_N4, f = big ? 261.63 : L[Math.min(Math.max(j || 0, 0), L.length - 1)], v = .8 * rv(.15);
+    tone('sine', f, f, 0, .42 * v, big ? 1 : .55);                  // 簧片的主音
+    tone('sine', f * 2, f * 2, 0, (big ? .16 : .06) * v, big ? .5 : .25);  // 高八度：低音 Do 在手機喇叭上也聽得到
+    tone('sine', f * 5.95, f * 5.95, 0, .07 * v, .035);            // 手指撥下去那一下
+  } else {
+    const f = (big ? 200 : 245) * rv(.05), v = .8 * rv(.2);
+    tone('sine', f * 1.25, f, .09, .5 * v, big ? .55 : .32);        // 鼓皮的主音：敲下去音高往下掉，像把氣放掉
+    tone('sine', f * 1.62, f * 1.5, .06, .16 * v, big ? .28 : .16); // 鼓身的共鳴
+    tone('triangle', f * 2.3, f * 2.2, .03, .05 * v, .08);
+    if (nz) {                                                       // 手掌碰到鼓皮
+      const bp = ac.createBiquadFilter(), ng = ac.createGain();
+      bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = .7;
+      ng.gain.setValueAtTime(.07 * v, t); ng.gain.exponentialRampToValueAtTime(.001, t + .03);
+      nz.connect(bp); bp.connect(ng); ng.connect(out); nz.start(t); nz.stop(t + .05);
+    }
+  }
+}
+let rb = null, rbRaf = 0, rbOutG = null, rbPvG = null;
+const rbNow = () => (rb.pausedAt != null ? rb.pausedAt - rb.offset : performance.now() - rb.offset);
+// 一組：n 口小呼吸（吸 60%、吐 40%）＋大呼吸（吸 47.5%、吐 22.5%、放鬆 30%）；設成 0 秒的那一種呼吸就跳過
+function rbSegs() {
+  const [a, b] = rbOf(), n = rbN(), q = [];
+  for (let j = 0; j < n; j++) q.push({ ph: 'sin', d: a * .6, j }, { ph: 'sout', d: a * .4, j });
+  q.push({ ph: 'bin', d: b * .475, j: n }, { ph: 'bout', d: b * .225, j: n }, { ph: 'brest', d: b * .3, j: n });
+  return q.filter(x => x.d > 0);
+}
+const rbKind = () => { const [a, b] = rbOf(); return a === 0 ? '只做大呼吸' : b === 0 ? '只做小呼吸' : rbN() === 9 ? '九小一大' : '四小一大'; };
+
+function rbOpen() {
+  rbRenderSetup();
+  show('rbSetup');
+  screens.rbSetup.scrollTop = 0;
+  if (!state.rbAck) rbSafety(true);
+}
+function rbSafety(on) {
+  $('rbSafety').hidden = !on;
+  $('rbChk').checked = false; $('rbAckBtn').disabled = true;
+  $('rbAckBox').hidden = !!state.rbAck;
+  $('rbSafetyClose').hidden = !state.rbAck;
+}
+$('rbChk').addEventListener('change', e => { $('rbAckBtn').disabled = !e.target.checked; });
+function rbOpts(box, list, isOn, pick) {
+  box.innerHTML = '';
+  list.forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + (isOn(k) ? ' on' : '');
+    b.textContent = l;
+    b.addEventListener('click', () => pick(k));
+    box.appendChild(b);
+  });
+}
+function rbRenderSetup() {
+  const [a, b] = rbOf();
+  bind('minutes', state.minutes);
+  $('rbMinutes').value = state.minutes;
+  rbOpts($('rbModes'), [['4', '四小一大'], ['9', '九小一大']], k => (state.rMode || '4') === k, k => { state.rMode = k; save(); rbRenderSetup(); });
+  $('rbRows').innerHTML = '';
+  [['小呼吸', 0], ['大呼吸', 1]].forEach(([label, i]) => {
+    const row = document.createElement('div');
+    row.className = 'phase-row';
+    row.innerHTML = '<span class="phase-row-label"></span><div class="stepper"><button class="step" aria-label="減少">−</button><span class="step-val"></span><button class="step" aria-label="增加">+</button></div>';
+    row.querySelector('.phase-row-label').textContent = label;
+    row.querySelector('.step-val').textContent = fmtS([a, b][i]);
+    const [dec, inc] = row.querySelectorAll('.step');
+    dec.addEventListener('click', () => rbAdj(i, -1));
+    inc.addEventListener('click', () => rbAdj(i, 1));
+    $('rbRows').appendChild(row);
+  });
+  $('rbReset').hidden = a === 1.5 && b === 4;
+  const snd = rbSndOf(state.rbSnd);
+  rbOpts($('rbSnds'), RBSNDS, k => snd === k, k => { state.rbSnd = k; save(); rbRenderSetup(); rbPreview(k); });
+  $('rbSndNote').textContent = '每次吐氣響一聲，點一下可以試聽。' + (snd === 'kalimba'
+    ? (rbN() === 9 ? '九口小呼吸從低音 Sol 一路往上彈，大呼吸回到更低的 Do。' : '四口小呼吸是 Do、Re、Mi、Sol 往上走，大呼吸回到低音 Do。閉著眼睛也知道做到第幾口。')
+    : '大呼吸那一口會深一點、長一點。');
+}
+// 速度：每次 0.1 秒，小 0～3 秒、大 0～8 秒
+function rbAdj(i, d) {
+  const c = rbOf().slice(), v = Math.min(i ? 8 : 3, Math.max(0, Math.round((c[i] + d * .1) * 10) / 10));
+  if (v === 0 && c[1 - i] === 0) return;
+  c[i] = v; state.custom = { ...state.custom, rebirth: c }; save(); rbRenderSetup();
+}
+// 試聽：手鼓、水滴是小、小、大；拇指琴把一整組的音彈一遍
+function rbStopPv() {
+  const g = rbPvG; if (!g) return;
+  rbPvG = null;
+  try { const t = ac.currentTime; g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + .08); setTimeout(() => { try { g.disconnect(); } catch (e) {} }, 150); } catch (e) {}
+}
+function rbPreview(k) {
+  ctx(); stopPreview(); rbStopPv();
+  keepAlive.play().catch(() => {});
+  clearTimeout(previewEnd);
+  previewEnd = setTimeout(() => { if (!practicing()) keepAlive.pause(); }, 5000);
+  const g = ac.createGain(); g.connect(ac.destination); rbPvG = g;
+  const t0 = ac.currentTime + .05, n = rbN();
+  if (k === 'kalimba') { for (let j = 0; j < n; j++) rbSynthFx(g, k, false, j, n, t0 + j * .32, null); rbSynthFx(g, k, true, n, n, t0 + n * .32 + .1, null); return; }
+  [0, 1, 2].forEach(i => rbSynthFx(g, k, i === 2, i, n, t0 + i * .5, noise()));
+}
+function rbFadeOut() {
+  const g = rbOutG; if (!g) return;
+  rbOutG = null;
+  try { const t = ac.currentTime; g.gain.setValueAtTime(g.gain.value, t); g.gain.linearRampToValueAtTime(0, t + .12); setTimeout(() => { try { g.disconnect(); } catch (e) {} }, 250); } catch (e) {}
+}
+
+// 練習
+function rbStart() {
+  clearAll(); stopMusic(true); rbStopPv(); cancelAnimationFrame(rbRaf);
+  $('rbSafety').hidden = true;
+  ctx(); keepAlive.play().catch(() => {}); lockWake();
+  rbFadeOut(); rbOutG = ac.createGain(); rbOutG.connect(ac.destination);
+  rb = { offset: 0, pausedAt: null, ph: 'ready', segI: 0, segs: null, segT: 0, phT: 0, hit: false, ripT: null };
+  rb.phT = rbNow();
+  rbPausedUi(false);
+  $('rbSub').textContent = rbOf()[0] === 0 ? '大呼吸 ' + fmtS(rbOf()[1]) : '小呼吸 ' + fmtS(rbOf()[0]);
+  $('rbLeft').textContent = fmt(state.minutes * 60);
+  $('rbProgress').style.transition = 'none'; $('rbProgress').style.width = '0%'; void $('rbProgress').offsetWidth; $('rbProgress').style.transition = '';
+  rbText('準備', '坐好或平躺，放鬆肩膀');
+  $('rbDots').style.visibility = 'hidden';
+  show('rbRun');
+  const tick = () => { rbTick(); rbRaf = requestAnimationFrame(tick); };
+  rbRaf = requestAnimationFrame(tick);
+}
+function rbText(label, hint) {
+  if ($('rbLabel').textContent !== label) $('rbLabel').textContent = label;
+  if ($('rbHint').textContent !== hint) $('rbHint').textContent = hint;
+}
+function rbTick() {
+  const r = rb;
+  if (!r || r.pausedAt != null) return;
+  const now = rbNow(), el = (now - r.phT) / 1000;
+  if (r.ph === 'ready') { rbBall(1, 1, .45 + .06 * Math.sin(el * 2.2), 0, false); rbRip(now); if (el >= 3) rbGo(r.phT + 3000); return; }
+  let s = r.segs[r.segI], e = (now - r.segT) / 1000, moved = false, missed = null;
+  while (e >= s.d) {
+    if (rbIsOut(s) && !r.hit) missed = s;   // 很快的速度下，一整段吐氣可能在兩個畫面之間就過去了：還是要響一聲
+    r.segT += s.d * 1000; r.segI++; moved = true; r.hit = false;
+    if (r.segI >= r.segs.length) { if (r.segT >= r.endAt) { rbFinish(r.segT); return; } r.segI = 0; r.segs = rbSegs(); }   // 時間到了就在這一組做完時結束
+    s = r.segs[r.segI]; e = (now - r.segT) / 1000;
+  }
+  if (moved) rbSegStart(s);
+  const left = Math.max(0, Math.ceil((r.endAt - now) / 1000));
+  if (left !== r.left) {
+    r.left = left;
+    $('rbLeft').textContent = fmt(left);
+    $('rbProgress').style.width = Math.min(100, 100 - left / (state.minutes * 60) * 100) + '%';
+  }
+  const k = Math.min(1, e / s.d), d = rbDrop(s.ph, k);
+  rbBall(d.y, d.op, d.sc, d.st, d.big);
+  // 水滴落到底的那一刻：響提示音、濺起水珠
+  if (rbIsOut(s) && !r.hit && k >= rbKh(s.ph)) { r.hit = true; rbHit(s, r.segT + rbKh(s.ph) * s.d * 1000); }
+  else if (missed) rbHit(missed, now);
+  rbRip(now);
+}
+function rbGo(at) {
+  const r = rb;
+  r.ph = 'go'; r.goT = at; r.endAt = at + state.minutes * 60000; r.segs = rbSegs(); r.segI = 0; r.segT = at; r.phT = at; r.left = null;
+  $('rbDots').style.visibility = 'visible';
+  rbSegStart(r.segs[0]);
+}
+function rbSegStart(s) {
+  const lab = s.ph === 'sin' || s.ph === 'sout' ? '第 ' + (s.j + 1) + ' 口' : s.ph === 'brest' ? '放鬆' : '大呼吸';
+  const hint = rbNow() >= rb.endAt ? '最後一組，做完就結束' : s.ph === 'bin' ? '吸長一點' : s.ph === 'bout' ? '爽快地吐出去' : s.ph === 'brest' ? '放鬆一下，接著下一組' : '鼻子輕鬆吸、爽快吐，吸吐之間沒有空檔';
+  rbText(lab, hint);
+  rbDots(s);
+}
+// 水滴只從上面往下掉：吸氣時在上面慢慢聚成一滴（大呼吸聚得比較大），吐氣時掉下來，落地就消失、濺起小水珠
+const rbIsOut = s => s.ph === 'sout' || s.ph === 'bout';
+const rbKh = ph => (ph === 'bout' ? .17 : .3);   // 吐氣這一段的前 30%（大呼吸 17%，掉得比較快）水滴就落到底
+function rbDrop(ph, k) {
+  const grow = q => Math.sin(Math.min(1, q / .9) * Math.PI / 2);
+  if (ph === 'sin') return { y: 1, op: Math.min(1, k / .2), sc: .2 + .55 * grow(k), st: 0, big: false };
+  if (ph === 'bin') return { y: 1, op: Math.min(1, k / .15), sc: .25 + .9 * grow(k), st: 0, big: true };
+  if (ph === 'sout' || ph === 'bout') {
+    const big = ph === 'bout', kh = rbKh(ph), s0 = big ? 1.15 : .75;
+    if (k < kh) { const q = k / kh; return { y: 1 - q * q, op: 1, sc: s0, st: .9 * Math.sin(Math.PI * q), big }; }
+    return { y: 0, op: 0, sc: s0, st: 0, big };
+  }
+  return { y: 0, op: 0, sc: 1, st: 0, big: false };
+}
+// 落地：決定這次濺起的小水珠（小呼吸 4 顆、大呼吸 7 顆，方向和力道每次都有一點不同），響提示音
+function rbHit(s, t) {
+  const big = s.ph === 'bout', n = big ? 7 : 4;
+  rb.ripT = t; rb.ripBig = big;
+  rb.spl = Array.from({ length: n }, (_, i) => ({ a: ((i + .5) / n - .5) * 2.3 + (Math.random() - .5) * .25, v: (big ? 240 : 160) * (.8 + .4 * Math.random()) }));
+  if (syncPaused || !rbOutG) return;
+  rbSynthFx(rbOutG, rbSndOf(state.rbSnd), big, s.j, rbN(), ac.currentTime, noise());
+}
+// y 是高度（0 底下、1 上面），op 透明度，sc 大小，st 掉落時拉長，big 是大呼吸那一滴（帶一點金光）
+function rbBall(y, op, sc, st, big) {
+  const b = $('rbDrop'), sy = sc * (1 + .25 * st), sx = sc * (1 - .1 * st);
+  b.style.transform = 'translateY(' + (2 + 160 * (1 - y)).toFixed(1) + 'px) scale(' + sx.toFixed(3) + ',' + sy.toFixed(3) + ')';
+  b.style.opacity = op;
+  b.style.filter = big ? 'drop-shadow(0 0 14px rgba(243,197,106,.45))' : 'drop-shadow(0 0 4px rgba(90,170,192,.25))';
+  const sh = $('rbShadow');
+  sh.style.opacity = (.25 * (1 - y) * op).toFixed(2);
+  sh.style.transform = 'scale(' + (1 - .6 * y).toFixed(2) + ')';
+}
+// 濺起的小水珠，大呼吸中間還會彈起一小柱水
+function rbRip(now) {
+  const ds = document.querySelectorAll('#rbSplash [data-s]'), jet = $('rbJet');
+  if (!rb || rb.ripT == null || reducedMotion()) { ds.forEach(el => { el.style.opacity = 0; }); jet.style.opacity = 0; return; }
+  const tt = (now - rb.ripT) / 1000, g = 1100, spl = rb.spl || [];
+  ds.forEach((el, i) => {
+    const q = spl[i];
+    if (!q || tt < 0) { el.style.opacity = 0; return; }
+    const vx = q.v * Math.sin(q.a), vy = q.v * Math.cos(q.a), T = 2 * vy / g;
+    if (tt > T) { el.style.opacity = 0; return; }
+    el.style.opacity = (1 - Math.pow(tt / T, 4)).toFixed(2);
+    el.style.transform = 'translate(' + (vx * tt).toFixed(1) + 'px,' + (-vy * tt + g * tt * tt / 2).toFixed(1) + 'px)';
+  });
+  const T = .55;
+  if (rb.ripBig && tt >= 0 && tt < T) { const v = Math.sin(Math.PI * tt / T); jet.style.opacity = (.9 * Math.min(1, v * 3)).toFixed(2); jet.style.transform = 'scaleY(' + v.toFixed(3) + ')'; }
+  else jet.style.opacity = 0;
+}
+// 下方的小點：數到第幾口，金色那顆是大呼吸
+function rbDots(s) {
+  const n = rbN(), [a, b] = rbOf();
+  document.querySelectorAll('#rbDots [data-d]').forEach((el, i) => {
+    el.style.display = (i < 9 && (i >= n || a === 0)) || (i === 9 && b === 0) ? 'none' : '';
+    const idx = i === 9 ? n : i, on = s && idx <= s.j;
+    el.style.background = on ? (i === 9 ? '#e0a94a' : '#5aaac0') : 'transparent';
+  });
+}
+function rbPausedUi(on) { $('rbPauseBtn').hidden = on; $('rbResumeBtn').hidden = !on; }
+function rbPause() { if (!rb || rb.pausedAt != null) return; rb.pausedAt = performance.now(); rbPausedUi(true); rbText('已暫停', '按「繼續」接著練習'); }
+function rbResume() {
+  if (!rb || rb.pausedAt == null) return;
+  rb.offset += performance.now() - rb.pausedAt; rb.pausedAt = null; rbPausedUi(false);
+  if (rb.ph === 'go') rbSegStart(rb.segs[rb.segI]); else rbText('準備', '坐好或平躺，放鬆肩膀');
+}
+function rbEnd() { cancelAnimationFrame(rbRaf); releaseWake(); rbFadeOut(); keepAlive.pause(); rb = null; }
+// 練完：時間到、最後一組做完才算一次；中途停止不記錄
+function rbFinish(at) {
+  const sec = Math.max(1, Math.round((at - rb.goT) / 1000));
+  rbEnd();
+  if (!syncPaused) { ctx(); [[1, .14, 2.6], [2.76, .04, 1.5], [5.4, .015, .8]].forEach(([m, v, d]) => {
+    const now = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 523.25 * m; g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(v, now + .01); g.gain.exponentialRampToValueAtTime(.0001, now + d);
+    o.connect(g); g.connect(ac.destination); o.start(now); o.stop(now + d + .05);
+  }); }
+  logDone('rebirth', sec);
+  $('rbDoneText').textContent = mins(sec) + ' 分鐘・' + rbKind();
+  show('rbDone');
+  showAward();
+}
+function rbStop() { rbEnd(); syncPaused = false; showResumeTip(false); rbRenderSetup(); show('rbSetup'); }
+function rbAction(a) {
+  if (a === 'start') rbStart();
+  else if (a === 'stop') rbStop();
+  else if (a === 'pause') rbPause();
+  else if (a === 'resume') rbResume();
+  else if (a === 'safety') rbSafety(true);
+  else if (a === 'safety-close') $('rbSafety').hidden = true;
+  else if (a === 'ack') { if ($('rbChk').checked) { state.rbAck = true; save(); $('rbSafety').hidden = true; } }
+  else if (a === 'reset') { const c = { ...state.custom }; delete c.rebirth; state.custom = c; save(); rbRenderSetup(); }
+}
+$('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Math.max(1, +e.target.value)); save(); rbRenderSetup(); });
+
 // ---------- 事件 ----------
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-action]');
@@ -1215,7 +1495,8 @@ document.addEventListener('click', e => {
   else if (a.startsWith('install-')) installAction(a.slice(8), e);
   else if (a.startsWith('sync-')) syncAction(a.slice(5), b, e);
   else if (a.startsWith('wh-')) whAction(a.slice(3));
-  else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id]; state.custom = c; save(); renderSetup(); }
+  else if (a.startsWith('rb-')) rbAction(a.slice(3));
+  else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id === '478' ? '478-' + fKey() : EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
   state.minutes = Math.min(30, Math.max(1, +e.target.value));
@@ -1639,7 +1920,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;

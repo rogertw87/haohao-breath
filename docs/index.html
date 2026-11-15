@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>好好呼吸</title>
-<meta name="description" content="好好呼吸是一個免費的呼吸練習網站：方塊呼吸、4-7-8、諧振式呼吸、鼻孔交替呼吸等，跟著動畫與聲音一起練習。">
+<meta name="description" content="好好呼吸是一個免費的呼吸練習網站：方塊呼吸、吸／吐後閉氣、諧振式呼吸、鼻孔交替呼吸等，跟著動畫與聲音一起練習。">
 <script>try{var t=(JSON.parse(localStorage.getItem('haohao-breath-settings'))||{}).theme;if(t&&t!=='light')document.documentElement.dataset.theme=t}catch(e){}</script>
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="144x144" href="icons/favicon-144.png">
@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=50">
+<link rel="stylesheet" href="styles.css?v=51">
 </head>
 <body>
 <main class="home">
@@ -386,7 +386,105 @@
   </div>
 </div>
 
-<script src="app.js?v=62"></script>
+<!-- 重生呼吸：設定頁 -->
+<section class="screen" id="rbSetup" hidden>
+  <div class="setup-inner">
+    <button class="back" data-action="close">← 返回</button>
+    <h2 class="ex-name">重生呼吸</h2>
+    <p class="desc wh-desc">用鼻子輕鬆吸氣、爽快吐氣（吐氣有點用力），吸吐之間沒有空檔。先做幾次短呼吸，再做一次大呼吸：吸長一點，再爽快地吐出去。</p>
+    <button class="wh-safety-btn" data-action="rb-safety"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3ZM12 10v4.5M12 17.5h.01"></path></svg><span>練習前請先閱讀</span></button>
+
+    <span class="section-title music-title">練習方式</span>
+    <div class="n-modes rb-modes" id="rbModes"></div>
+
+    <div class="section-head">
+      <span class="section-title">總練習長度</span>
+      <span class="minutes-val"><span data-bind="minutes"></span> 分鐘</span>
+    </div>
+    <div class="panel slider-panel">
+      <input type="range" id="rbMinutes" min="1" max="30" step="1">
+      <div class="ticks"><span>1</span><span>10</span><span>20</span><span>30</span></div>
+    </div>
+    <p class="hint rb-hint">建議 5 到 10 分鐘。時間到時，會把正在做的那一組做完再結束。</p>
+
+    <span class="section-title music-title">速度</span>
+    <div class="panel rows rb-rows" id="rbRows"></div>
+    <div class="rb-note-row"><span>設成 0 秒就不做那一種呼吸。</span><button class="rb-reset" id="rbReset" data-action="rb-reset">恢復預設</button></div>
+
+    <span class="section-title music-title">提示音</span>
+    <div class="music-grid" id="rbSnds"></div>
+    <p class="hint rb-hint" id="rbSndNote"></p>
+
+    <div class="start-bar">
+      <button class="btn btn-primary" data-action="rb-start">開始 · <span data-bind="minutes"></span> 分鐘</button>
+    </div>
+  </div>
+</section>
+
+<!-- 重生呼吸：練習畫面（水滴在上面聚成一滴，吐氣時掉下來、濺起水珠） -->
+<section class="screen screen-center" id="rbRun" hidden>
+  <div class="run-inner">
+    <div class="run-head">
+      <span class="run-name">重生呼吸</span>
+      <span class="rb-head-right"><span class="rb-sub" id="rbSub"></span><span class="run-left">剩 <span id="rbLeft">0:00</span></span></span>
+    </div>
+    <div class="progress"><div class="progress-fill" id="rbProgress"></div></div>
+    <div class="stage rb-stage">
+      <div class="rb-box" data-fxvis>
+        <div class="rb-shadow" id="rbShadow"></div>
+        <div class="rb-splash" id="rbSplash"><span class="rb-jet" id="rbJet"></span><span data-s="0"></span><span data-s="1"></span><span data-s="2"></span><span data-s="3"></span><span data-s="4"></span><span data-s="5"></span><span data-s="6"></span></div>
+        <svg class="rb-drop" id="rbDrop" width="46" height="56" viewBox="0 0 46 56"><defs><radialGradient id="rbDropG" cx="40%" cy="62%" r="62%"><stop offset="0" stop-color="#ffffff"></stop><stop offset=".38" stop-color="#bfe3ec"></stop><stop offset="1" stop-color="#4f9fb6"></stop></radialGradient></defs><path d="M23 1C23 1 5 23 5 37a18 18 0 0 0 36 0C41 23 23 1 23 1Z" fill="url(#rbDropG)"></path><ellipse cx="16" cy="37" rx="3.5" ry="7" fill="#ffffff" opacity=".75" transform="rotate(18 16 37)"></ellipse></svg>
+      </div>
+      <div class="wh-text" data-fxclear><span class="wh-label" id="rbLabel"></span><span class="wh-hint rb-hint-run" id="rbHint"></span></div>
+    </div>
+    <button class="resume-tip" data-action="resume" hidden>聲音已暫停，點一下繼續</button>
+    <div class="rb-dots" id="rbDots"><span data-d="0"></span><span data-d="1"></span><span data-d="2"></span><span data-d="3"></span><span data-d="4"></span><span data-d="5"></span><span data-d="6"></span><span data-d="7"></span><span data-d="8"></span><span data-d="9" class="rb-big-dot"></span></div>
+    <div class="rb-actions">
+      <button class="wh-btn" id="rbPauseBtn" data-action="rb-pause">暫停</button>
+      <button class="wh-btn wh-btn-primary" id="rbResumeBtn" data-action="rb-resume" hidden>繼續</button>
+      <button class="wh-btn rb-stop" data-action="rb-stop">停止</button>
+    </div>
+  </div>
+</section>
+
+<!-- 重生呼吸：完成 -->
+<section class="screen screen-center" id="rbDone" hidden>
+  <div class="run-inner">
+    <div class="done-body">
+      <span class="done-tag">完成</span>
+      <span class="rb-done-title">練完了</span>
+      <span class="rb-done-text" id="rbDoneText"></span>
+    </div>
+    <div class="done-actions">
+      <button class="btn btn-primary" data-action="rb-start">再練一次</button>
+      <button class="btn btn-secondary" data-action="close">返回</button>
+    </div>
+  </div>
+</section>
+
+<!-- 重生呼吸：練習前請先閱讀 -->
+<div class="wh-sheet-bg" id="rbSafety" hidden>
+  <div class="wh-sheet" role="dialog" aria-modal="true" aria-labelledby="rbSafetyTitle">
+    <h3 id="rbSafetyTitle">練習前請先閱讀</h3>
+    <ul>
+      <li>這個呼吸比較快，可能覺得人有點飄、手腳麻麻的。這時先暫停，正常呼吸一下；下次可以在設定裡把速度調慢一點。</li>
+      <li>坐好或平躺，燈光調暗一點，蓋條毯子。晚上沒有時間壓力時最適合，想睡就讓自己睡。</li>
+      <li>鼻塞的話，舌頭輕放在上下齒之間，改用嘴巴。</li>
+      <li><strong>不要在開車、操作機械，或在浴缸、泳池等水裡練習，也不要站著練。</strong></li>
+      <li>孕婦、癲癇、心臟或血管相關疾病、恐慌症，或有其他健康狀況的人，請先詢問醫師。</li>
+    </ul>
+    <div id="rbAckBox">
+      <label class="wh-check"><input type="checkbox" id="rbChk"><span>我了解</span></label>
+      <div class="wh-sheet-actions">
+        <button class="wh-btn" data-action="close">返回</button>
+        <button class="wh-btn wh-btn-primary" id="rbAckBtn" data-action="rb-ack" disabled>繼續</button>
+      </div>
+    </div>
+    <button class="wh-btn wh-btn-primary" id="rbSafetyClose" data-action="rb-safety-close" hidden>關閉</button>
+  </div>
+</div>
+
+<script src="app.js?v=63"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

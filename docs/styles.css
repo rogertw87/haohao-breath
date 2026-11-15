@@ -680,3 +680,29 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .bnext-desc { font-size: 13px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
 .bnext-left { flex: none; align-self: flex-start; padding: 4px 10px; border-radius: 999px; background: #f6ead2; color: #7a5418; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .bgal-text p[hidden] { display: none; }
+
+/* 重生呼吸 */
+.rb-hint { margin: 10px 4px 24px; line-height: 1.6; }
+.rb-modes { margin-bottom: 24px; }
+.rb-rows .step-val { min-width: 64px; }
+.rb-note-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 10px 4px 24px; font-size: 12px; line-height: 1.6; color: var(--muted-2); }
+.rb-reset { flex: none; min-height: 36px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: 18px; background: none; font: inherit; font-size: 12px; color: var(--ink-2); cursor: pointer; }
+.rb-head-right { display: flex; gap: 10px; align-items: baseline; white-space: nowrap; }
+.rb-sub { font: 400 12px var(--mono); color: var(--muted-2); }
+.rb-stage { gap: 14px; min-height: 0; }
+.rb-box { position: relative; width: 240px; height: 240px; flex: none; }
+.rb-shadow { position: absolute; left: 50%; top: 216px; width: 34px; height: 8px; margin-left: -17px; border-radius: 50%; background: #2f6475; filter: blur(3px); opacity: 0; }
+.rb-splash { position: absolute; left: 50%; top: 218px; width: 0; height: 0; }
+.rb-splash [data-s] { position: absolute; left: -2.5px; top: -2.5px; width: 5px; height: 5px; border-radius: 50%; background: #8fcadb; opacity: 0; will-change: transform; }
+.rb-jet { position: absolute; left: -4px; top: -44px; width: 8px; height: 44px; border-radius: 4px 4px 2px 2px; background: linear-gradient(#eef8fb, #86c4d6); opacity: 0; transform-origin: 50% 100%; transform: scaleY(0); }
+.rb-drop { position: absolute; left: 50%; top: 0; margin-left: -23px; overflow: visible; will-change: transform; transform-origin: 50% 0%; transform: translateY(2px) scale(.45); }
+.rb-hint-run { line-height: 1.6; min-height: 46px; max-width: 300px; text-wrap: pretty; }
+.rb-dots { display: flex; align-items: center; justify-content: center; gap: 7px; height: 22px; margin-bottom: 12px; }
+.rb-dots span { width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid #9fc6d1; box-sizing: border-box; }
+.rb-dots .rb-big-dot { width: 18px; height: 18px; border: 2px solid #e0a94a; margin-left: 4px; }
+.rb-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.rb-actions .rb-stop { background: none; }
+.rb-done-title { font-size: 26px; font-weight: 500; }
+.rb-done-text { font-size: 15px; color: var(--muted); }
+#rbSetup .slider-panel { margin-bottom: 0; }
+.rb-actions .wh-btn:not(.wh-btn-primary):not(.rb-stop) { background: var(--card); }
