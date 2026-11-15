@@ -706,3 +706,4 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .rb-done-text { font-size: 15px; color: var(--muted); }
 #rbSetup .slider-panel { margin-bottom: 0; }
 .rb-actions .wh-btn:not(.wh-btn-primary):not(.rb-stop) { background: var(--card); }
+.rb-snds { grid-template-columns: repeat(4, 1fr); }
