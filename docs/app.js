@@ -1209,7 +1209,7 @@ const rbOf = () => { const c = state.custom.rebirth; return c && c.length === 2 
 const rbN = () => (state.rMode === '9' ? 9 : 4);
 // 吐氣提示音：吐氣聲（預設，真人錄的用力吐氣：小呼吸用短的、大呼吸用長的）、手鼓、水滴、拇指琴（後三個當場合成）
 const RBSNDS = [['breath', '吐氣聲'], ['hand', '手鼓'], ['drop', '水滴'], ['kalimba', '拇指琴']];
-const RB_EXHALE = { s: 'audio/rb-exhale-short.wav', l: 'audio/rb-exhale-long.wav' };
+const RB_EXHALE = { s: 'audio/rb-exhale-short.wav?v=2', l: 'audio/rb-exhale-long.wav' };   // v=2：換成新錄的短吐氣聲
 const rbSndOf = k => (RBSNDS.some(([x]) => x === k) ? k : 'breath');
 const rbExBufs = {};
 function rbExBuf(b) {
