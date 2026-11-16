@@ -750,3 +750,100 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 @keyframes lsGlow { 0%, 100% { transform: scale(.84); opacity: .45; } 50% { transform: scale(1.04); opacity: 1; } }
 @keyframes lsIn { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .ls-glow, .ls-dim-glow, .ls-dim { animation: none; } }
+
+/* 白骨觀（楊定一博士帶的方法）：白骨1 月白、白骨2 白描、白骨3 燭光 */
+:root[data-theme="bone1"] { /* 白骨1 月白：深夜的藍黑色，大拇趾像在月光下 */
+  --page: #0a1016;
+  --screen: #080d12;
+  --ink: #e8eef2;
+  --ink-2: #dce8ef;
+  --accent: #c9dbe6;
+  --accent-2: #d6e6f0;
+  --line-2: #24313b;
+  --line: #1a242c;
+  --soft-2: #121b22;
+  --chip: #16212a;
+  --soft: #0a1016;
+  --line-3: #16212a;
+  --muted-2: #9fb0ba;
+  --muted: #bccad2;
+  --track: #4a6070;
+  --guide: #121b22;
+  --figure: #16212a;
+  --fade: rgba(8,13,18,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #101920;
+  --sel: #c9dbe6;
+  --selfg: #0a1016;
+  --dot: #d6e6f0;
+  --dot-glow: 0 0 0 2px #0a1016, 0 0 0 7px rgba(214,230,240,.2), 0 0 22px 4px rgba(200,225,255,.35);
+  --sky-pos: center;
+  --img-filter: brightness(1.9);
+}
+:root[data-theme="bone1"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+:root[data-theme="bone2"] { /* 白骨2 白描：米白的宣紙，細墨線勾出腳趾 */
+  --page: #f6f1e7;
+  --screen: #f3eee3;
+  --ink: #2b2722;
+  --ink-2: #5a3a2c;
+  --accent: #7a3b2e;
+  --accent-2: #9a5a46;
+  --line-2: #e2d8c6;
+  --line: #e9e1d2;
+  --soft-2: #efe6d6;
+  --chip: #e8e4d8;
+  --soft: #f6f1e7;
+  --line-3: #e8e4d8;
+  --muted-2: #6f665b;
+  --muted: #5a5248;
+  --track: #c9a27a;
+  --guide: #efe6d6;
+  --figure: #e8e4d8;
+  --fade: rgba(243,238,227,0);
+  --shadow: rgba(43,39,34,.14);
+  --card: #fbf8f1;
+  --sel: #7a3b2e;
+  --selfg: #fbf6ec;
+  --dot: #7a3b2e;
+  --dot-glow: 0 0 0 2px #f3eee3, 0 0 0 7px rgba(122,59,46,.16);
+  --sky-pos: center;
+}
+:root[data-theme="bone2"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+:root[data-theme="bone3"] { /* 白骨3 燭光：暖暖的燭光，白骨從頭到尾透出來 */
+  --page: #15110d;
+  --screen: #120e0b;
+  --ink: #f1e8da;
+  --ink-2: #f3d7a8;
+  --accent: #f0c98a;
+  --accent-2: #f0c98a;
+  --line-2: #3a2f24;
+  --line: #2a221a;
+  --soft-2: #201913;
+  --chip: #261d15;
+  --soft: #15110d;
+  --line-3: #261d15;
+  --muted-2: #b3a48f;
+  --muted: #cdbfa9;
+  --track: #8a6a3a;
+  --guide: #201913;
+  --figure: #261d15;
+  --fade: rgba(18,14,11,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #1d1712;
+  --sel: #f0c98a;
+  --selfg: #15110d;
+  --dot: #f0c98a;
+  --dot-glow: 0 0 0 2px #15110d, 0 0 0 7px rgba(240,201,138,.22), 0 0 22px 4px rgba(255,190,110,.38);
+  --sky-pos: center;
+  --img-filter: brightness(1.9);
+}
+:root[data-theme="bone3"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+/* 聆聽：中間的耳機和光圈換成大拇趾（畫在背景的畫布上）；變暗時放一個淡淡的大拇趾 */
+:root[data-theme^="bone"] .ls-orb { height: 230px; }
+:root[data-theme^="bone"] .ls-orb > * { display: none; }
+.ls-dim-bone { display: none; width: 220px; height: 270px; margin: -20px 0; opacity: .6; }
+:root[data-theme^="bone"] .ls-dim-glow { display: none; }
+:root[data-theme^="bone"] .ls-dim-bone { display: block; }
+/* 設定頁的「白骨觀」選項：自動撥皮肉／直接露出骨頭 */
+.bone-grid { grid-template-columns: repeat(2, 1fr); }
+#rbSetup .bone-opt .cue-title, #lsSetup .bone-opt .cue-title { margin-top: 0; }

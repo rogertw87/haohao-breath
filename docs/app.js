@@ -56,7 +56,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, bnOpen: false });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -68,8 +68,8 @@ let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -204,7 +204,7 @@ function renderBadges() {
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
-  const dk = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold'].includes(state.theme);
+  const dk = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'bone1', 'bone3'].includes(state.theme);
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -1732,6 +1732,7 @@ function lsTick() {
   if (l.total && el >= l.total) { lsEnd(); return; }
   if (!l.paused) l.tr.forEach(t => lsApply(t));
   if (!l.paused && state.lsDim && $('lsDim').hidden && performance.now() - l.poke > LS_DIM_AFTER) lsDimShow(true);
+  if (!$('lsDim').hidden && BONE[state.theme]) lsDimDraw();
   lsUpdate();
 }
 function lsUpdate() {
@@ -1741,12 +1742,13 @@ function lsUpdate() {
   $('lsTop').textContent = (l.total ? '剩 ' : '已播 ') + tt;
   $('lsBar').style.visibility = l.total ? 'visible' : 'hidden';
   $('lsProgress').style.width = (l.total ? Math.min(100, el / l.total * 100) : 0) + '%';
-  $('lsStatus').textContent = l.paused ? (l.sys ? '聲音被系統暫停了，按「繼續」接著播放' : '已暫停') : l.total && left <= l.fade ? '正在慢慢變小聲' : '';
+  $('lsStatus').textContent = l.paused ? (l.sys ? '聲音被系統暫停了，按「繼續」接著播放' : '已暫停') : l.total && left <= l.fade ? '正在慢慢變小聲'
+    : BONE[state.theme] ? (state.bnOpen ? BN_TXT[4] : bnTxtOf(el)) : '';
   $('lsDimTime').textContent = l.paused ? '已暫停' : tt;
   $('lsPauseBtn').hidden = l.paused; $('lsResumeBtn').hidden = !l.paused;
   screens.lsRun.classList.toggle('ls-paused', l.paused);
 }
-function lsDimShow(on) { $('lsDim').hidden = !on; }
+function lsDimShow(on) { $('lsDim').hidden = !on; if (on && BONE[state.theme]) lsDimDraw(); }
 function lsStart() {
   const sel = lsSel();
   if (!sel.length) return;
@@ -1898,10 +1900,11 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪、中脈；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'gold'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪、中脈、白骨1～3；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'gold', 'bone1', 'bone2', 'bone3'];
 const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
-  chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)' };
+  chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
+  bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)' };
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -1935,6 +1938,7 @@ function applyTheme() {
   else if (SKY[t]) root.style.setProperty('--sky', SKY[t]);
   else root.style.removeProperty('--sky');
   syncSparks();
+  boneRender();
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
 }
 document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => {
@@ -1946,7 +1950,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', gold: 'goldbeam' };
+const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -2047,6 +2051,355 @@ let _gbDot=null;const gbDot=()=>{if(_gbDot)return _gbDot;const c=document.create
 let _gbBeam=null;const gbBeam=()=>{if(_gbBeam)return _gbBeam;const c=document.createElement('canvas');c.width=64;c.height=256;const g=c.getContext('2d'),im=g.createImageData(64,256);
   for(let y=0;y<256;y++)for(let x=0;x<64;x++){const d=(x-31.5)/13,v=y/255,a=Math.exp(-d*d)*Math.min(1,v*8,(1-v)*10),i=(y*64+x)*4;im.data[i]=255;im.data[i+1]=196;im.data[i+2]=110;im.data[i+3]=Math.round(a*255);}
   g.putImageData(im,0,0);return _gbBeam=c;};
+// ---------- 白骨觀主題（白骨1 月白、白骨2 白描、白骨3 燭光）----------
+// 左腳的大拇趾：皮、肉、筋膜從趾尖沿著中線一層層往兩邊撥開，只撥開前兩節，到第三節停住，撥開後不再合回去；露出的白骨會發亮
+// 首頁右邊、呼吸練習的圖形後面淡淡放一個；聆聽時放在畫面正中間。設定頁可以選「自動撥皮肉」或「直接露出骨頭」（所有練習共用）
+const BONE = { bone1: 'moon', bone2: 'ink', bone3: 'candle' };
+// 白骨觀主題：左腳的大拇趾（腳趾朝上，像低頭看自己的腳），皮、肉、筋膜三層從趾尖往腳背一層層剝除，最後只剩骨頭
+// 座標：趾尖 y=0，往下到腳背 y≈1.2；x=0 是中線。S＝1 個單位的像素
+function bnSm(a, b, x) { var t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+function bnEz(u) { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }
+// 大拇趾的寬度（一半）：趾尖圓、趾間關節稍微收、往腳背慢慢變寬
+function bnHw(y) {
+  var cap = .23;
+  if (y < cap) { var u = (cap - y) / cap; return .275 * Math.sqrt(Math.max(0, 1 - u * u)); }
+  return .275 - .024 * Math.exp(-Math.pow((y - .5) / .12, 2)) + .065 * bnSm(.66, 1.15, y);
+}
+// 中線：趾尖稍微往外側（左邊）偏，像真的大拇趾
+function bnCx(y) { return -.035 * Math.pow(Math.max(0, 1 - y), 2); }
+// 一層的外形：d 是往內縮的距離（皮 0、肉 .035、筋膜 .075）
+function bnLayerPath(g, X, Y, S, d, y1) {
+  var L = [], R = [], y;
+  for (y = 0; y <= y1; y += .01) {
+    var w = bnHw(y) - d; if (w <= 0) continue;
+    var wl = w * (.94 + .03 * bnSm(.4, .8, y));
+    L.push([X + (bnCx(y) - wl) * S, Y + y * S]); R.push([X + (bnCx(y) + w) * S, Y + y * S]);
+  }
+  if (!L.length) return;
+  g.beginPath(); g.moveTo(L[0][0], L[0][1]);
+  for (var i = 1; i < L.length; i++) g.lineTo(L[i][0], L[i][1]);
+  for (i = R.length - 1; i >= 0; i--) g.lineTo(R[i][0], R[i][1]);
+  g.closePath();
+}
+// 骨頭：遠節趾骨、近節趾骨、第一蹠骨（往腳背淡出）
+var BN_BONES = [
+  // [上端 y, 下端 y, [[y, 半寬]...], 上端凸出, 下端凸出]
+  [.075, .395, [[.08, .062], [.1, .094], [.14, .09], [.2, .068], [.27, .078], [.34, .122], [.385, .138]], .02, -.01],
+  [.43, .79, [[.44, .1], [.47, .126], [.52, .108], [.6, .08], [.68, .086], [.74, .124], [.78, .152]], .02, -.014],
+  [.83, 1.22, [[.84, .132], [.88, .172], [.95, .142], [1.02, .112], [1.12, .1], [1.22, .1]], .03, 0]
+];
+function bnBonePath(g, X, Y, S, b) {
+  var pts = b[2], top = b[0], bot = b[1], L = [], R = [];
+  function hwAt(y) {
+    if (y <= pts[0][0]) return pts[0][1];
+    for (var i = 1; i < pts.length; i++) if (y <= pts[i][0]) { var a = pts[i - 1], c = pts[i], u = (y - a[0]) / (c[0] - a[0]); u = u * u * (3 - 2 * u); return a[1] + (c[1] - a[1]) * u; }
+    return pts[pts.length - 1][1];
+  }
+  for (var y = top; y <= bot + 1e-6; y += .008) { var w = hwAt(y), cx = bnCx(y); L.push([X + (cx - w) * S, Y + y * S]); R.push([X + (cx + w) * S, Y + y * S]); }
+  g.beginPath();
+  var tc = bnCx(top);
+  g.moveTo(L[0][0], L[0][1]);
+  g.quadraticCurveTo(X + tc * S, Y + (top - b[3] * 2) * S, R[0][0], R[0][1]);
+  for (var i = 1; i < R.length; i++) g.lineTo(R[i][0], R[i][1]);
+  var bc = bnCx(bot);
+  g.quadraticCurveTo(X + bc * S, Y + (bot - b[4] * 2) * S, L[L.length - 1][0], L[L.length - 1][1]);
+  for (i = L.length - 2; i >= 0; i--) g.lineTo(L[i][0], L[i][1]);
+  g.closePath();
+}
+// 趾甲（只在皮那一層）
+function bnNailPath(g, X, Y, S) {
+  var L = [], R = [], y;
+  for (y = .05; y <= .27; y += .01) { var w = Math.min(.165, bnHw(y) - .06) * (1 - .25 * bnSm(.18, .27, y)); if (w <= 0) continue; L.push([X + (bnCx(y) - w * .95) * S, Y + y * S]); R.push([X + (bnCx(y) + w) * S, Y + y * S]); }
+  g.beginPath(); g.moveTo(L[0][0], L[0][1]);
+  for (var i = 1; i < L.length; i++) g.lineTo(L[i][0], L[i][1]);
+  g.bezierCurveTo(L[L.length - 1][0], Y + .33 * S, R[R.length - 1][0], Y + .33 * S, R[R.length - 1][0], R[R.length - 1][1]);
+  for (i = R.length - 2; i >= 0; i--) g.lineTo(R[i][0], R[i][1]);
+  g.closePath();
+}
+// 三種畫法
+var BN_ST = {
+  moon: { bone: ['#ffffff', '#e7e6e1'], boneLine: 'rgba(255,255,255,.0)', glow: 'rgba(214,232,255,.75)', glowA: .9,
+    layer: [['#c9a691', 'rgba(255,232,214,.45)'], ['#a0707a', 'rgba(240,180,186,.38)'], ['rgba(170,192,214,.5)', 'rgba(232,242,252,.5)']],
+    nail: 'rgba(245,225,215,.45)', edge: '255,255,255', fade: 'rgba(5,9,13,1)' },
+  ink: { bone: ['#ffffff', '#f5f0e6'], boneLine: 'rgba(52,44,36,.72)', glow: 'rgba(0,0,0,.12)', glowA: 0,
+    layer: [['#ead6c0', 'rgba(80,58,40,.55)'], ['#e2bcb2', 'rgba(120,62,50,.42)'], ['rgba(200,212,218,.72)', 'rgba(70,86,96,.42)']],
+    nail: 'rgba(255,250,244,.75)', edge: '120,90,60', fade: 'rgba(243,238,227,1)' },
+  candle: { bone: ['#fffbf2', '#f2e3c8'], boneLine: 'rgba(255,236,200,.0)', glow: 'rgba(255,196,120,.65)', glowA: .85,
+    layer: [['rgba(255,206,160,.16)', 'rgba(255,214,160,.72)'], ['rgba(255,176,130,.14)', 'rgba(255,190,140,.6)'], ['rgba(255,232,205,.1)', 'rgba(255,230,200,.5)']],
+    nail: null, edge: '255,220,170', fade: 'rgba(21,17,13,1)' }
+};
+var BN_D = [0, .036, .078];
+// 畫一層（還沒剝的部分）。p＝剝除進度 0–1：從趾尖往腳背剝，剝開的邊緣有一道淡淡的光
+function bnLayer(g, k, i, X, Y, S, p, cvs) {
+  var st = BN_ST[k], c = cvs, x = c.getContext('2d');
+  x.setTransform(1, 0, 0, 1, 0, 0); x.clearRect(0, 0, c.width, c.height);
+  x.setTransform(c.__d, 0, 0, c.__d, 0, 0);
+  if (k === 'candle') {
+    // 燭光：不畫皮肉，只畫三條輪廓線；剝的時候輪廓往骨頭收、慢慢淡掉
+    bnLayerPath(x, X, Y, S, BN_D[i], 1.32);
+    x.fillStyle = st.layer[i][0]; x.fill();
+    x.strokeStyle = st.layer[i][1]; x.lineWidth = i === 0 ? 1.4 : 1; x.setLineDash(i === 2 ? [3, 4] : []); x.stroke(); x.setLineDash([]);
+  } else {
+    bnLayerPath(x, X, Y, S, BN_D[i], 1.32);
+    var gr = x.createLinearGradient(X - .3 * S, 0, X + .3 * S, 0);
+    gr.addColorStop(0, st.layer[i][0]); gr.addColorStop(.55, st.layer[i][0]); gr.addColorStop(1, st.layer[i][0]);
+    x.fillStyle = gr; x.fill();
+    if (k === 'ink') { x.strokeStyle = st.layer[i][1]; x.lineWidth = i === 0 ? 1.3 : .9; x.stroke(); }
+    else { x.strokeStyle = st.layer[i][1]; x.lineWidth = .8; x.stroke(); }
+    if (i === 0 && st.nail) { bnNailPath(x, X, Y, S); x.fillStyle = st.nail; x.fill(); if (k === 'ink') { x.strokeStyle = 'rgba(80,58,40,.5)'; x.lineWidth = .9; x.stroke(); } }
+    if (i === 2) {
+      // 筋膜：幾條順著腳趾的細線（伸趾肌腱）
+      x.save(); bnLayerPath(x, X, Y, S, BN_D[2], 1.32); x.clip();
+      x.strokeStyle = st.layer[2][1]; x.lineWidth = .7;
+      [-.11, -.05, 0, .05, .11].forEach(function (o, j) { x.globalAlpha = j === 2 ? 1 : .6; x.beginPath(); for (var y = .06; y <= 1.18; y += .02) { var xx = X + (bnCx(y) + o * (bnHw(y) / .3)) * S; if (y === .06) x.moveTo(xx, Y + y * S); else x.lineTo(xx, Y + y * S); } x.stroke(); });
+      x.globalAlpha = 1; x.restore();
+    }
+    if (i === 1) {
+      // 肉：淡淡的紋理
+      x.save(); bnLayerPath(x, X, Y, S, BN_D[1], 1.32); x.clip();
+      x.strokeStyle = st.layer[1][1]; x.globalAlpha = .35; x.lineWidth = .6;
+      for (var j = 0; j < 9; j++) { var o = -.22 + j * .055; x.beginPath(); for (var y = .03; y <= 1.18; y += .03) { var xx = X + (bnCx(y) + o * (bnHw(y) / .3) + .006 * Math.sin(y * 20 + j)) * S; if (y === .03) x.moveTo(xx, Y + y * S); else x.lineTo(xx, Y + y * S); } x.stroke(); }
+      x.globalAlpha = 1; x.restore();
+    }
+  }
+  // 往腳背淡出
+  x.globalCompositeOperation = 'destination-out';
+  var fo = x.createLinearGradient(0, Y + .98 * S, 0, Y + 1.24 * S); fo.addColorStop(0, 'rgba(0,0,0,0)'); fo.addColorStop(1, 'rgba(0,0,0,1)');
+  x.fillStyle = fo; x.fillRect(0, Y + .98 * S, c.width, .5 * S);
+  x.globalCompositeOperation = 'source-over';
+  if (p <= 0) { g.drawImage(c, 0, 0, c.width / c.__d, c.height / c.__d); return; }
+  bnSplit(g, k, i, X, Y, S, p, c);
+}
+// 撥開：從趾尖沿著中線裂開，左右兩半往外翻開（外側不動、往外收、再往外拉一點），裂口一路往腳背延伸；
+// 翻開的邊緣有一道內面的顏色，底下那層靠近邊緣有一點陰影，看起來是一層一層被撥開
+var BN_FOLD = {
+  moon: [['rgba(255,236,224,.85)', 'rgba(0,0,0,.42)'], ['rgba(246,196,204,.75)', 'rgba(0,0,0,.36)'], ['rgba(240,248,255,.7)', 'rgba(0,0,0,.26)']],
+  ink: [['rgba(70,50,35,.7)', 'rgba(90,64,40,.16)'], ['rgba(110,56,46,.6)', 'rgba(110,56,46,.14)'], ['rgba(60,78,88,.55)', 'rgba(60,78,88,.12)']],
+  candle: [['rgba(255,226,180,.85)', 'rgba(0,0,0,.1)'], ['rgba(255,200,160,.75)', 'rgba(0,0,0,.08)'], ['rgba(255,236,210,.65)', 'rgba(0,0,0,.06)']]
+};
+var BN_STOP = .92;   // 裂口最後停在 y≈.86（第二節和第三節之間）
+function bnSplit(g, k, i, X, Y, S, p, c) {
+  // 裂口從趾尖往下，只撥開前兩節，到第三節（連著腳背那一段）上緣就停住；撥開後不再合回去
+  var d = c.__d, front = -.06 + BN_STOP * bnEz(p), step = 2, eL = [], eR = [], yEnd = 1.34 * S;
+  // 先在另一張畫布上拼好（不透明地拼，接縫才不會有條紋），最後整張用同一個透明度畫上去
+  var T = c.__tmp, t = T.getContext('2d');
+  t.setTransform(1, 0, 0, 1, 0, 0); t.clearRect(0, 0, T.width, T.height); t.setTransform(d, 0, 0, d, 0, 0);
+  var Y0 = Math.round(Y), py, lastY = 0;
+  for (py = 0; py < yEnd; py += step) {
+    var y = py / S;
+    if (y >= front) break;
+    lastY = py + step;
+    var w = bnHw(y) - BN_D[i]; if (w <= 0) continue;
+    var u = bnEz((front - y) / .1), sx = 1 - .9 * u, sh = .06 * S * u;
+    var cx = X + bnCx(y) * S, xl = cx - w * (.94 + .03 * bnSm(.4, .8, y)) * S - 3, xr = cx + w * S + 3, yy = Y0 + py;
+    var wL = cx - xl, wR = xr - cx;
+    // 左半邊：外側不動、往外收；右半邊一樣
+    t.drawImage(c, xl * d, yy * d, wL * d, step * d, xl - sh, yy, wL * sx, step);
+    t.drawImage(c, cx * d, yy * d, wR * d, step * d, xr + sh - wR * sx, yy, wR * sx, step);
+    if (u > .03) { eL.push([xl - sh + wL * sx, yy + step / 2]); eR.push([xr + sh - wR * sx, yy + step / 2]); }
+  }
+  // 還沒裂開的部分一次畫
+  var y1 = Y0 + lastY;
+  if (y1 * d < c.height) t.drawImage(c, 0, y1 * d, c.width, c.height - y1 * d, 0, y1, c.width / d, c.height / d - y1);
+  // 翻開的邊緣（內面的顏色）和底下那層的陰影
+  var f = BN_FOLD[k][i];
+  if (f[0] && eL.length > 1) {
+    [eL, eR].forEach(function (E, side) {
+      var dir = side ? -1 : 1;
+      t.save();
+      t.globalCompositeOperation = 'destination-over';
+      t.strokeStyle = f[1]; t.lineWidth = k === 'ink' ? 5 : 7; t.filter = 'blur(3px)'; t.lineCap = 'round';
+      t.beginPath(); E.forEach(function (q, j) { var x = q[0] + dir * 4; if (j) t.lineTo(x, q[1]); else t.moveTo(x, q[1]); }); t.stroke();
+      t.filter = 'none'; t.globalCompositeOperation = 'source-over';
+      t.strokeStyle = f[0]; t.lineWidth = k === 'ink' ? 1.1 : 1.8;
+      t.beginPath(); E.forEach(function (q, j) { if (j) t.lineTo(q[0], q[1]); else t.moveTo(q[0], q[1]); }); t.stroke();
+      t.restore();
+    });
+  }
+  g.drawImage(T, 0, 0, T.width / d, T.height / d);
+}
+// 骨頭；pulse 0–1 讓光慢慢亮暗
+function bnBone(g, k, X, Y, S, a, pulse) {
+  var st = BN_ST[k];
+  if (a <= 0) return;
+  g.save(); g.globalAlpha = a;
+  if (st.glowA) {
+    var gl = g.createRadialGradient(X, Y + .55 * S, 0, X, Y + .55 * S, .75 * S);
+    var ga = st.glowA * (.35 + .3 * (pulse || 0));
+    gl.addColorStop(0, st.glow.replace(/[\d.]+\)$/, (ga * .55).toFixed(3) + ')')); gl.addColorStop(.5, st.glow.replace(/[\d.]+\)$/, (ga * .18).toFixed(3) + ')')); gl.addColorStop(1, st.glow.replace(/[\d.]+\)$/, '0)'));
+    g.save(); g.translate(X, Y + .55 * S); g.scale(.62, 1); g.translate(-X, -(Y + .55 * S)); g.fillStyle = gl; g.fillRect(X - S, Y - .3 * S, 2 * S, 1.8 * S); g.restore();
+  }
+  BN_BONES.forEach(function (b, j) {
+    bnBonePath(g, X, Y, S, b);
+    var gr = g.createLinearGradient(X - .2 * S, 0, X + .2 * S, 0); gr.addColorStop(0, st.bone[1]); gr.addColorStop(.42, st.bone[0]); gr.addColorStop(1, st.bone[1]);
+    g.fillStyle = gr;
+    if (st.glowA) { g.shadowColor = st.glow; g.shadowBlur = 10 + 10 * (pulse || 0); }
+    else { g.shadowColor = 'rgba(60,45,30,.18)'; g.shadowBlur = 6; g.shadowOffsetY = 2; }
+    g.fill(); g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
+    if (st.boneLine && k === 'ink') { g.strokeStyle = st.boneLine; g.lineWidth = 1.1; g.stroke(); }
+    // 骨頭上的一點紋理
+    g.save(); bnBonePath(g, X, Y, S, b); g.clip();
+    g.strokeStyle = k === 'ink' ? 'rgba(60,50,40,.16)' : 'rgba(150,140,125,.22)'; g.lineWidth = .7;
+    var mid = (b[0] + b[1]) / 2; g.beginPath(); g.moveTo(X + (bnCx(mid) - .015) * S, Y + (b[0] + .04) * S); g.quadraticCurveTo(X + (bnCx(mid) + .02) * S, Y + mid * S, X + (bnCx(mid) - .01) * S, Y + (b[1] - .04) * S); g.stroke();
+    g.restore();
+  });
+  // 蹠骨往腳背淡出
+  g.globalCompositeOperation = 'destination-out';
+  var fo = g.createLinearGradient(0, Y + .98 * S, 0, Y + 1.2 * S); fo.addColorStop(0, 'rgba(0,0,0,0)'); fo.addColorStop(1, 'rgba(0,0,0,1)');
+  g.fillStyle = fo; g.fillRect(X - .4 * S, Y + .98 * S, .8 * S, .3 * S);
+  g.globalCompositeOperation = 'source-over';
+  g.restore();
+}
+// 完整的一幀：ph＝剝除進度 0–3（0 皮還在、1 皮剝完、2 肉剝完、3 只剩骨頭）
+function bnToe(g, k, X, Y, S, ph, pulse, layerCanvas, boneA) {
+  // 骨頭畫在自己的一層，避免「往腳背淡出」把底下的背景也挖掉
+  var bc = layerCanvas.__bone, bx = bc.getContext('2d');
+  bx.setTransform(1, 0, 0, 1, 0, 0); bx.clearRect(0, 0, bc.width, bc.height); bx.setTransform(bc.__d, 0, 0, bc.__d, 0, 0);
+  bnBone(bx, k, X, Y, S, 1, pulse);
+  g.globalAlpha = boneA == null ? 1 : boneA; g.drawImage(bc, 0, 0, bc.width / bc.__d, bc.height / bc.__d); g.globalAlpha = 1;
+  for (var i = 2; i >= 0; i--) bnLayer(g, k, i, X, Y, S, Math.max(0, Math.min(1, ph - i)), layerCanvas);
+  // 撥開後露出的前兩節白骨再亮一點：筋膜撥開時慢慢亮起來（燭光一開始就透出來，跟著撥開慢慢變亮）
+  bnBloom(g, k, X, Y, S, k === 'candle' ? .35 + .65 * bnEz(ph / 3) : bnEz(ph - 2), pulse);
+}
+var BN_GLOW = { moon: '214,232,255', candle: '255,204,140', ink: '255,255,255' };
+function bnBloom(g, k, X, Y, S, r, pulse) {
+  if (r <= 0) return;
+  var c = BN_GLOW[k], pl = .75 + .25 * (pulse || 0), cy = Y + .42 * S;
+  g.save();
+  // 只在撥開的範圍（前兩節）裡亮，第三節還包著皮肉，不讓光蓋上去
+  g.beginPath(); g.rect(X - S, Y - .4 * S, 2 * S, 1.2 * S); g.clip();
+  if (k === 'ink') {
+    // 白描：在米色的紙上，骨頭四周暈出一圈白光，再把骨頭和墨線重畫在最上面，看起來更白、更亮
+    [50, 30, 14].forEach(function (b) {
+      [0, 1].forEach(function (j) { bnBonePath(g, X, Y, S, BN_BONES[j]); g.shadowColor = 'rgba(255,255,255,' + (r * pl).toFixed(3) + ')'; g.shadowBlur = b; g.fillStyle = '#ffffff'; g.fill(); });
+    });
+    g.shadowColor = 'transparent'; g.shadowBlur = 0;
+    [0, 1].forEach(function (j) {
+      var b = BN_BONES[j]; bnBonePath(g, X, Y, S, b);
+      var gr = g.createLinearGradient(X - .2 * S, 0, X + .2 * S, 0); gr.addColorStop(0, '#f7f3ea'); gr.addColorStop(.45, '#ffffff'); gr.addColorStop(1, '#f7f3ea');
+      g.fillStyle = gr; g.fill(); g.strokeStyle = 'rgba(52,44,36,.72)'; g.lineWidth = 1.1; g.stroke();
+      g.save(); bnBonePath(g, X, Y, S, b); g.clip(); g.strokeStyle = 'rgba(60,50,40,.16)'; g.lineWidth = .7;
+      var mid = (b[0] + b[1]) / 2; g.beginPath(); g.moveTo(X + (bnCx(mid) - .015) * S, Y + (b[0] + .04) * S); g.quadraticCurveTo(X + (bnCx(mid) + .02) * S, Y + mid * S, X + (bnCx(mid) - .01) * S, Y + (b[1] - .04) * S); g.stroke(); g.restore();
+    });
+  } else {
+    // 月白、燭光：用「疊加」的方式畫一圈光暈，再讓骨頭本身發光
+    g.globalCompositeOperation = 'lighter';
+    var rg = g.createRadialGradient(X, cy, 0, X, cy, .6 * S);
+    rg.addColorStop(0, 'rgba(' + c + ',' + (.3 * r * pl).toFixed(3) + ')'); rg.addColorStop(.55, 'rgba(' + c + ',' + (.1 * r * pl).toFixed(3) + ')'); rg.addColorStop(1, 'rgba(' + c + ',0)');
+    g.save(); g.translate(X, cy); g.scale(.68, 1); g.translate(-X, -cy); g.fillStyle = rg; g.fillRect(X - S, cy - S, 2 * S, 2 * S); g.restore();
+    [0, 1].forEach(function (j) {
+      bnBonePath(g, X, Y, S, BN_BONES[j]);
+      g.shadowColor = 'rgba(' + c + ',' + (.8 * r).toFixed(3) + ')'; g.shadowBlur = 14 + 10 * pl;
+      g.fillStyle = 'rgba(255,255,255,' + (.13 * r * pl).toFixed(3) + ')'; g.fill();
+    });
+  }
+  g.restore();
+}
+function bnOff(W, H, d) { var c = document.createElement('canvas'); c.width = W * d; c.height = H * d; c.__d = d; var b = document.createElement('canvas'); b.width = W * d; b.height = H * d; b.__d = d; c.__bone = b; var t = document.createElement('canvas'); t.width = W * d; t.height = H * d; c.__tmp = t; return c; }
+
+// 撥開後的三層會停住不動，只有白骨的光在變：把三層先畫成一張，沒變就直接貼上，手機比較省力
+function bnToeC(g, k, X, Y, S, ph, pulse, off, cache) {
+  const bc = off.__bone, bx = bc.getContext('2d');
+  bx.setTransform(1, 0, 0, 1, 0, 0); bx.clearRect(0, 0, bc.width, bc.height); bx.setTransform(bc.__d, 0, 0, bc.__d, 0, 0);
+  bnBone(bx, k, X, Y, S, 1, pulse);
+  g.drawImage(bc, 0, 0, bc.width / bc.__d, bc.height / bc.__d);
+  const key = [k, X.toFixed(1), Y.toFixed(1), S.toFixed(1), ph.toFixed(3), off.width, off.height].join('|');
+  if (cache.key !== key) {
+    const C = cache.c || (cache.c = document.createElement('canvas'));
+    C.width = off.width; C.height = off.height;
+    const cx = C.getContext('2d'); cx.setTransform(off.__d, 0, 0, off.__d, 0, 0);
+    for (let i = 2; i >= 0; i--) bnLayer(cx, k, i, X, Y, S, Math.max(0, Math.min(1, ph - i)), off);
+    cache.key = key;
+  }
+  g.drawImage(cache.c, 0, 0, cache.c.width / off.__d, cache.c.height / off.__d);
+  bnBloom(g, k, X, Y, S, k === 'candle' ? .35 + .65 * bnEz(ph / 3) : bnEz(ph - 2), pulse);
+}
+// 白描的宣紙：纖維、斑點和四角稍暗，先畫好一張
+function bnGrain(W, H, d) {
+  const c = document.createElement('canvas'); c.width = W * d; c.height = H * d;
+  const g = c.getContext('2d'); g.scale(d, d);
+  let s = 5; const R = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
+  for (let i = 0; i < W * H / 260; i++) { g.fillStyle = 'rgba(120,100,70,' + (.03 + R() * .05).toFixed(3) + ')'; g.fillRect(R() * W, R() * H, .6 + R(), .6 + R()); }
+  g.strokeStyle = 'rgba(140,120,90,.06)'; g.lineWidth = .5;
+  for (let i = 0; i < W * H / 3300; i++) { const x = R() * W, y = R() * H, a = R() * 6.28, l = 6 + R() * 22; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a) * l * .5 + R() * 4, y + Math.sin(a) * l * .5, x + Math.cos(a) * l, y + Math.sin(a) * l); g.stroke(); }
+  const v = g.createRadialGradient(W / 2, H / 2, H * .3, W / 2, H / 2, H * .75); v.addColorStop(0, 'rgba(160,130,90,0)'); v.addColorStop(1, 'rgba(160,130,90,.12)');
+  g.fillStyle = v; g.fillRect(0, 0, W, H);
+  return c;
+}
+// 節奏：先 8 秒完整的腳趾，皮、肉、筋膜各 15 秒撥開（約 1 分鐘），之後停住。開了「減少動態效果」就直接是撥開後的樣子
+const BN_T0 = 8, BN_LAYER = 15;
+const bnPhOf = el => reducedMotion() ? 3 : Math.max(0, Math.min(3, (el - BN_T0) / BN_LAYER));
+const BN_TXT = ['觀想左腳的大拇趾', '慢慢剝去皮', '剝去肉', '剝去筋膜', '只剩白骨。只專注在這裡，其他一概不理'];
+const bnTxtOf = el => BN_TXT[reducedMotion() ? 4 : el < BN_T0 ? 0 : Math.min(4, 1 + Math.floor((el - BN_T0) / BN_LAYER))];
+// 這次練習已經練了幾秒（暫停不算；聆聽用自己的計時）；不在練習就是 null。開始一次新的練習就從 0 算
+let bnE = 0, bnLast = null, bnWas = false;
+function bnEl() {
+  if (ls && !screens.lsRun.hidden) return lsEl();
+  if (!practicing()) { bnWas = false; bnLast = null; return null; }
+  const now = performance.now();
+  if (!bnWas) { bnWas = true; bnE = 0; bnLast = now; }
+  const dt = bnLast == null ? 0 : Math.min(1, Math.max(0, now - bnLast) / 1000); bnLast = now;
+  if (!(syncPaused || wh.paused || (rb && rb.pausedAt != null))) bnE += dt;
+  return bnE;
+}
+// 會動的背景：白描是宣紙，月白、燭光有幾點很淡的微塵，燭光的光微微晃動；再畫大拇趾
+function bnFx(k) {
+  return {
+    lay: true,
+    init(st, W, H) { st.m = []; for (let i = 0; i < 26; i++) st.m.push({ x: Math.random() * W, y: Math.random() * H, v: 4 + Math.random() * 8, r: .5 + Math.random() * 1.1, ph: Math.random() * 6.28 }); },
+    move(st, dt, W, H) { if (k === 'ink') return; for (const q of st.m) { q.y -= q.v * dt; q.ph += dt; if (q.y < -4) { q.y = H + 4; q.x = Math.random() * W; } } },
+    draw(st, g, W, H, t) {
+      const cw = g.canvas.width, ch = g.canvas.height, d = cw / W;
+      if (!st.off || st.offW !== cw || st.offH !== ch) { st.off = bnOff(W, H, d); st.tmp = bnOff(W, H, d); st.cache = {}; st.offW = cw; st.offH = ch; st.grain = null; }
+      if (k === 'ink') { if (!st.grain) st.grain = bnGrain(W, H, d); g.drawImage(st.grain, 0, 0, W, H); }
+      else { g.fillStyle = k === 'moon' ? 'rgb(200,220,240)' : 'rgb(255,214,160)'; for (const q of st.m) { g.globalAlpha = .12 + .14 * Math.pow(Math.sin(q.ph), 2); g.beginPath(); g.arc(q.x + Math.sin(q.ph * .6) * 3, q.y, q.r, 0, 6.2832); g.fill(); } g.globalAlpha = 1; }
+      if (k === 'candle') { const fl = .85 + .1 * Math.sin(t * 2.3) * Math.sin(t * 1.1 + 1) + .05 * Math.sin(t * 7.1); glowC(g, W / 2, H * .42, H * .55, '255,170,90', .1 * fl); }
+      const l = st.lay || {}, v = l.vis, pulse = .5 + .5 * Math.sin(t * 2 * Math.PI / 10);
+      let X, Y, S, A, ph = 3;
+      if (v && st.ls) { S = Math.min(170, v.h * .78); X = v.x + v.w / 2; Y = v.y + v.h / 2 - .6 * S; A = 1; }
+      else if (v) { S = Math.max(150, Math.min(200, v.h * .78)); X = v.x + v.w / 2; Y = v.y + v.h / 2 - .6 * S; A = .4; }
+      else if (l.home) { S = 170; X = W - 50; Y = 170; A = .55; }
+      else return;
+      // 練習中：選「自動撥皮肉」就照這次練習的時間撥開；選「直接露出骨頭」或不在練習，就是撥好的樣子
+      if (v && st.el != null && !st.open) ph = bnPhOf(st.el);
+      if (A >= 1) { bnToeC(g, k, X, Y, S, ph, pulse, st.off, st.cache); return; }
+      const T = st.tmp, tx = T.getContext('2d');
+      tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, T.width, T.height); tx.setTransform(d, 0, 0, d, 0, 0);
+      bnToeC(tx, k, X, Y, S, ph, pulse, st.off, st.cache);
+      g.globalAlpha = A; g.drawImage(T, 0, 0, W, H); g.globalAlpha = 1;
+      if (v) fxClear(g, l.clear);
+    }
+  };
+}
+// 設定頁的「白骨觀」選項（只在白骨1／2／3 出現）：自動撥皮肉／直接露出骨頭，所有練習共用
+function boneRender() {
+  const on = !!BONE[state.theme], open = !!state.bnOpen;
+  document.querySelectorAll('.bone-opt').forEach(box => {
+    box.hidden = !on;
+    if (!on) return;
+    const grid = box.querySelector('.bone-grid');
+    grid.innerHTML = '';
+    [[false, '自動撥皮肉'], [true, '直接露出骨頭']].forEach(([val, label]) => {
+      const b = document.createElement('button');
+      b.className = 'music-opt' + (open === val ? ' on' : '');
+      b.textContent = label; b.setAttribute('aria-pressed', open === val);
+      b.addEventListener('click', () => { state.bnOpen = val; save(); boneRender(); });
+      grid.appendChild(b);
+    });
+    box.querySelector('.bone-note').textContent = (open ? '一開始就是撥好、露出白骨的樣子，不播撥開的過程。' : '開始後先看完整的左腳大拇趾，皮、肉、筋膜再一層層撥開，約 1 分鐘撥完，之後停住。') + '所有練習一起用這個設定。';
+  });
+}
+// 聆聽變暗的畫面：放一個淡淡的大拇趾，跟著同樣的節奏撥開
+let bnDim = null;
+function lsDimDraw() {
+  const c = $('lsDimCv'), k = BONE[state.theme];
+  if (!c || !k || !ls) return;
+  const W = 220, H = 270, d = Math.min(2, window.devicePixelRatio || 1);
+  if (c.width !== W * d || !bnDim) { c.width = W * d; c.height = H * d; bnDim = { off: bnOff(W, H, d), cache: {} }; }
+  const g = c.getContext('2d'), t = performance.now() / 1000;
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.setTransform(d, 0, 0, d, 0, 0);
+  bnToeC(g, k, W / 2, 36, 164, state.bnOpen ? 3 : bnPhOf(lsEl()), .5 + .5 * Math.sin(t * 2 * Math.PI / 10), bnDim.off, bnDim.cache);
+}
 // 每一種有 init（一打開就鋪滿）、move（移動）、draw（畫出來）；br 是練習時吸飽的程度，不在練習時是 null
 const FXS = {
   // 營火：火星從下方火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定
@@ -2204,7 +2557,8 @@ const FXS = {
     g.fillStyle='rgba(255,240,205,'+(.6*K).toFixed(3)+')';g.fillRect(x-5,top+6,10,bot-top-12);
     glowC(g,x,top+4,80,'255,196,110',.34*K);glowC(g,x,top+4,26,'255,240,210',.7*K,.5);
     const img=gbDot();for(const q of st.p){const e=Math.max(0,Math.min(1,(q.y-top)/60,(bot-q.y)/60));if(e<=0)continue;g.globalAlpha=e*(.45+.55*Math.pow(Math.sin(q.ph),2))*K;g.drawImage(img,x+q.dx+Math.sin(q.ph*.7)*2-q.r*2,q.y-q.r*2,q.r*4,q.r*4);}
-    g.globalAlpha=1;g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}}
+    g.globalAlpha=1;g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}},
+ bone1:bnFx('moon'),bone2:bnFx('ink'),bone3:bnFx('candle')
 };
 // 脈輪、中脈：量出呼吸圖形和「吸氣／數字」在畫面上的位置（看不見的不算），中脈的光才知道要放哪、避開哪裡
 function fxLay(host, c) {
@@ -2219,7 +2573,7 @@ function fxHost() {
 }
 function drawFx(now) {
   fx.raf = requestAnimationFrame(drawFx);
-  const host = fxHost(), c = fx.c;
+  const host = fxHost(), c = fx.c, bnT = bnEl();
   if (!host) { c.hidden = true; fx.last = null; return; }
   if (c.parentNode !== host) host.prepend(c);
   c.hidden = false;
@@ -2233,6 +2587,7 @@ function drawFx(now) {
   const dt = still || fx.last == null ? 0 : Math.min(.05, Math.max(0, now - fx.last) / 1000); fx.last = now;
   const t = now / 1000, br = breathNow(), F = FXS[fx.kind];
   if (F.lay && (fx.layHost !== host || now - (fx.layT || 0) > 300)) { fx.layHost = host; fx.layT = now; fx.st.lay = fxLay(host, c); }
+  fx.st.el = bnT; fx.st.ls = !!(ls && !screens.lsRun.hidden); fx.st.open = !!state.bnOpen;
   F.move(fx.st, dt, W, H, t, br);
   const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); F.draw(fx.st, g, W, H, t, br);
   fx.drawn = host;
@@ -2269,7 +2624,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'bnOpen'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
