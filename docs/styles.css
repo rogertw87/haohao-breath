@@ -844,7 +844,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 /* 聆聽：中間的耳機和光圈換成大拇趾（畫在背景的畫布上）；變暗時放一個淡淡的大拇趾 */
 :root[data-theme^="bone"] .ls-orb { height: 230px; }
 :root[data-theme^="bone"] .ls-orb > * { display: none; }
-.ls-dim-bone { display: none; width: 220px; height: 270px; margin: -20px 0; opacity: .6; }
+.ls-dim-bone { display: none; width: 300px; height: 270px; margin: -20px 0; opacity: .6; }
 :root[data-theme^="bone"] .ls-dim-glow { display: none; }
 :root[data-theme^="bone"] .ls-dim-bone { display: block; }
 /* 設定頁的「白骨觀」選項：自動撥皮肉／直接露出骨頭 */
