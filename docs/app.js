@@ -68,6 +68,7 @@ let cur = null;        // 目前練習
 let timers = [];       // 整段練習的計時器
 let phaseTimers = [];  // 單一階段的計時器
 let raf = 0, waveStart = null, totalLeft = 0, left = null;
+let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停的時間點、目前這一段（暫停用）
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
@@ -848,6 +849,7 @@ function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（G
 function closeEx() {
   if (rb) rbEnd();
   if (bp) bpEnd();
+  g = null; gPause0 = null; gPausedUi(false);
   lsStopAll();
   clearAll(); stopMusic(); releaseWake(); duck = 1;
   cur = null;
@@ -866,6 +868,12 @@ function setDot(el, x, y, dur) {
   if (!dur) void el.offsetWidth;
 }
 
+// 方塊、鼻孔交替：第 i 段圓點要走到哪個角
+function dotTarget(ex, i) {
+  const by = ex.id === 'nostril' ? 218 : 216;
+  const BL = [0, by], TL = [0, 0], TR = [216, 0], BR = [216, by];
+  return ex.id === 'nostril' ? (n3(ex) ? [TL, TR, BR, TR, TL, BL] : [TL, TR, BR, BR, TR, TL, BL, BL])[i] : [TL, TR, BR, BL][i % 4];
+}
 // 跑第 i 個階段；0 秒的階段直接跳過
 function run(i) {
   const ex = EX[cur], seq = seqOf(ex), secs = secsOf(ex), [bi, label] = seq[i], t = secs[bi];
@@ -876,13 +884,12 @@ function run(i) {
   if (i === 0) waveStart = performance.now();
   const el = dotEl(ex);
   if (el) {
-    const by = ex.id === 'nostril' ? 218 : 216;
-    const BL = [0, by], TL = [0, 0], TR = [216, 0], BR = [216, by];
-    const nc = ex.id === 'nostril' ? (n3(ex) ? [TL, TR, BR, TR, TL, BL] : [TL, TR, BR, BR, TR, TL, BL, BL])[i] : [TL, TR, BR, BL][i % 4];
-    if (i === 0) setDot(el, BL[0], BL[1], 0); // 每輪從左下角出發
+    const nc = dotTarget(ex, i);
+    if (i === 0) setDot(el, 0, ex.id === 'nostril' ? 218 : 216, 0); // 每輪從左下角出發
     setDot(el, nc[0], nc[1], t);
   }
   if (!t) { run((i + 1) % seq.length); return; }
+  gPh = { t, t0: performance.now(), next: (i + 1) % seq.length, label, nc: el ? dotTarget(ex, i) : null };   // 暫停後要接著走：這一段多長、什麼時候開始、下一段、圓點要走到哪
   brPhase = { k, prev: k === HOLD ? prevKind(ex, seq, i) : null, t0: performance.now(), dur: t };  // 螢火蟲跟著呼吸亮暗用
   $('phaseLabel').textContent = label;
   left = t >= 1 ? Math.ceil(t) : null;
@@ -930,13 +937,52 @@ function start() {
 
   waveStart = null;
   raf = requestAnimationFrame(tick);
-  timers.push(setTimeout(() => run(0), LEAD));
-  timers.push(setInterval(() => { totalLeft = Math.min(total, (end - Date.now()) / 1000); updateTotal(); }, 1000));
-  timers.push(setTimeout(() => { clearAll(); stopMusic(); logDone(ex.id, total); show('done'); showAward(); }, LEAD + total * 1000));
+  // g：這次練習的時間表（暫停時整個往後挪）。goAt 準備好、開始第一段，endAt 練完
+  const now = performance.now();
+  g = { total, exId: ex.id, goAt: now + LEAD, endAt: now + LEAD + total * 1000, go: false }; gPause0 = null; gPh = null;
+  gPausedUi(false);
+  gSched();
+}
+// 照時間表排好：開始第一段、每秒更新剩下的時間、時間到練完
+function gSched() {
+  const now = performance.now(), G = g;
+  if (!G.go) timers.push(setTimeout(() => { G.go = true; run(0); }, Math.max(0, G.goAt - now)));
+  timers.push(setInterval(() => { totalLeft = Math.min(G.total, (G.endAt - performance.now()) / 1000); updateTotal(); }, 1000));
+  timers.push(setTimeout(() => { clearAll(); stopMusic(); g = null; gPause0 = null; logDone(G.exId, G.total); show('done'); showAward(); }, Math.max(0, G.endAt - now)));
+}
+function gPausedUi(on) { $('gPauseBtn').hidden = on; $('gResumeBtn').hidden = !on; }
+// 暫停：倒數、圓點、波形、主題的動態背景都停在原地，提示音收掉（背景音樂照常，和其他練習一樣）
+function gPause() {
+  if (!g || gPause0 || screens.run.hidden) return;
+  const now = performance.now(); gPause0 = now;
+  clearPhase(); timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; cancelAnimationFrame(raf); stopBreath(); stopCue();
+  totalLeft = Math.min(g.total, (g.endAt - now) / 1000); updateTotal();
+  const el = dotEl(EX[cur]);
+  if (el) { const m = new DOMMatrixReadOnly(getComputedStyle(el).transform); setDot(el, m.m41, m.m42, 0); }
+  $('phaseLabel').textContent = '已暫停';
+  gPausedUi(true);
+}
+// 繼續：時間表往後挪暫停的時間，這一段剩下的部分接著走完，再進下一段
+function gResume() {
+  if (!g || !gPause0) return;
+  const now = performance.now(), dt = now - gPause0; gPause0 = null;
+  g.goAt += dt; g.endAt += dt; if (waveStart != null) waveStart += dt; if (brPhase) brPhase.t0 += dt;
+  gSched();
+  const ph = gPh;
+  if (g.go && ph) {
+    ph.t0 += dt;
+    const rem = Math.max(0, ph.t0 + ph.t * 1000 - now), el = dotEl(EX[cur]);
+    if (el && ph.nc) setDot(el, ph.nc[0], ph.nc[1], rem / 1000);
+    $('phaseLabel').textContent = ph.label;
+    if (ph.t >= 1) { left = Math.max(1, Math.ceil(rem / 1000)); $('countText').textContent = left; phaseTimers.push(setInterval(() => { if (left > 1) left--; $('countText').textContent = left; }, 1000)); }
+    phaseTimers.push(setTimeout(() => run(ph.next), rem));
+  } else $('phaseLabel').textContent = '';
+  raf = requestAnimationFrame(tick);
+  gPausedUi(false);
 }
 
 function stopEx() {
-  clearAll(); stopMusic();
+  clearAll(); stopMusic(); g = null; gPause0 = null; gPausedUi(false);
   renderSetup();
   show('setup');
 }
@@ -1546,7 +1592,7 @@ $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Mat
 
 // ---------- 白骨觀：靜坐觀想左腳的大拇趾（方法參考楊定一博士） ----------
 // 安定 30 秒（自然呼吸）→ 觀想 8 秒 → 皮、肉、筋膜各 15 秒撥開（選「直接露出骨頭」或減少動態效果就跳過）→ 只剩白骨，只專注在這裡（每 3 分鐘換一句提醒）→ 最後 30 秒回到呼吸 → 響一聲鐘結束
-// 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面：淺色主題用白描、深色主題用月白，白骨主題照主題本身
+// 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面用主題自己的背景和顏色；左腳的畫法：淺色主題用白描、深色主題用月白，白骨主題照主題本身
 const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
 let bp = null, bpRaf = 0;
 const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold'].includes(state.theme) ? 'moon' : 'ink');
@@ -1607,7 +1653,6 @@ function bpStart() {
   const m = state.bnMin || 10;
   bp = { t0: performance.now(), off: 0, pAt: null, T: m * 60, open: !!state.bnOpen, cv: null, last: null, left: -1 };
   bpPausedUi(false);
-  $('bpRun').dataset.look = bpLook();
   $('bpLeft').textContent = fmt(m * 60);
   $('bpProgress').style.transition = 'none'; $('bpProgress').style.width = '0%'; void $('bpProgress').offsetWidth; $('bpProgress').style.transition = '';
   bpText('安定下來', '坐好，放鬆肩膀，先自然地呼吸幾口');
@@ -1627,44 +1672,28 @@ function bpTick() {
   }
   bpDraw(st);
 }
-// 畫面：整片底色（白描是宣紙、月白和燭光有幾點很淡的微塵）＋左腳，大拇趾在正中間偏上，只有大拇趾亮；回到呼吸時整隻腳慢慢淡一點、白骨的光收起來
+// 畫面：主題自己的背景照常（和其他練習一樣），這張透明的畫布上只畫左腳，大拇趾在正中間偏上，只有大拇趾亮；回到呼吸時整隻腳慢慢淡一點、白骨的光收起來
+// 其他腳趾偏暗時往主題的底色沉（白骨主題用原本的顏色）
+function bpVeil() {
+  if (BONE[state.theme]) return '';
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--screen').trim(), m = /^#([0-9a-f]{6})$/i.exec(c);
+  if (!m) return '';
+  const n = parseInt(m[1], 16);
+  return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',.62)';
+}
 function bpDraw(st) {
   const c = $('bpCv'), W = c.clientWidth, H = c.clientHeight;
   if (!W || !H) return;
-  const d = Math.min(2, window.devicePixelRatio || 1), k = $('bpRun').dataset.look || 'ink', now = performance.now(), t = now / 1000;
-  const dt = bp.last == null ? 0 : Math.min(.05, (now - bp.last) / 1000); bp.last = now;
-  if (!bp.cv || bp.cv.k !== k || c.width !== Math.round(W * d) || c.height !== Math.round(H * d)) {
+  const d = Math.min(2, window.devicePixelRatio || 1), k = bpLook(), veil = bpVeil(), t = performance.now() / 1000;
+  if (!bp.cv || bp.cv.k !== k || bp.cv.veil !== veil || c.width !== Math.round(W * d) || c.height !== Math.round(H * d)) {
     c.width = Math.round(W * d); c.height = Math.round(H * d);
-    const bg = document.createElement('canvas'); bg.width = c.width; bg.height = c.height;
-    const x = bg.getContext('2d'); x.scale(d, d);
-    if (k === 'ink') { x.fillStyle = '#f3eee3'; x.fillRect(0, 0, W, H); x.drawImage(bnGrain(W, H, d), 0, 0, W, H); }
-    else {
-      const gr = x.createLinearGradient(0, 0, 0, H);
-      if (k === 'moon') { gr.addColorStop(0, '#0c131a'); gr.addColorStop(.6, '#0a1016'); gr.addColorStop(1, '#070b10'); } else { gr.addColorStop(0, '#17120e'); gr.addColorStop(1, '#0f0c09'); }
-      x.fillStyle = gr; x.fillRect(0, 0, W, H);
-      if (k === 'moon') glowC(x, W / 2, H * .25, H * .6, '120,150,180', .1);
-    }
-    const ms = [];
-    for (let i = 0; i < 26; i++) ms.push({ x: Math.random() * W, y: Math.random() * H, v: 4 + Math.random() * 8, r: .5 + Math.random() * 1.1, ph: Math.random() * 6.28 });
-    bp.cv = { k, bg, off: bnOff(W, H, d), tmp: bnOff(W, H, d), cache: {}, ms };
+    bp.cv = { k, veil, off: bnOff(W, H, d), cache: {} };
   }
-  const g = c.getContext('2d');
-  g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(bp.cv.bg, 0, 0); g.setTransform(d, 0, 0, d, 0, 0);
-  if (k !== 'ink') {
-    g.fillStyle = k === 'moon' ? 'rgb(200,220,240)' : 'rgb(255,214,160)';
-    const mv = !reducedMotion() && bp.pAt == null;
-    for (const q of bp.cv.ms) {
-      if (mv) { q.y -= q.v * dt; q.ph += dt; if (q.y < -4) { q.y = H + 4; q.x = Math.random() * W; } }
-      g.globalAlpha = .12 + .14 * Math.pow(Math.sin(q.ph), 2); g.beginPath(); g.arc(q.x + Math.sin(q.ph * .6) * 3, q.y, q.r, 0, 6.2832); g.fill();
-    }
-    g.globalAlpha = 1;
-  }
-  if (k === 'candle') { const fl = .85 + .1 * Math.sin(t * 2.3) * Math.sin(t * 1.1 + 1) + .05 * Math.sin(t * 7.1); glowC(g, W / 2, H * .28, H * .55, '255,170,90', .1 * fl); }
+  const g2 = c.getContext('2d');
+  g2.setTransform(1, 0, 0, 1, 0, 0); g2.clearRect(0, 0, c.width, c.height); g2.setTransform(d, 0, 0, d, 0, 0);
   const S = Math.min(160, W * .4, H * .2), X = W / 2, Y = Math.max(84, H * .15), pulse = (reducedMotion() ? .5 : .5 + .5 * Math.sin(t * 2 * Math.PI / 10)) * (1 - st.fade);
-  const T = bp.cv.tmp, tx = T.getContext('2d');
-  tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, T.width, T.height); tx.setTransform(d, 0, 0, d, 0, 0);
-  bnToeC(tx, k, X, Y, S, st.ph, pulse, bp.cv.off, bp.cv.cache, 1);
-  g.globalAlpha = 1 - .45 * st.fade; g.drawImage(T, 0, 0, W, H); g.globalAlpha = 1;
+  c.style.opacity = (1 - .45 * st.fade).toFixed(3);
+  bnToeC(g2, k, X, Y, S, st.ph, pulse, bp.cv.off, bp.cv.cache, 1, veil);
 }
 function bpPause() { if (!bp || bp.pAt != null) return; bp.pAt = performance.now(); bpPausedUi(true); bpText('已暫停', '按「繼續」接著練習'); }
 function bpResume() { if (!bp || bp.pAt == null) return; bp.off += performance.now() - bp.pAt; bp.pAt = null; bpPausedUi(false); }
@@ -2005,6 +2034,8 @@ document.addEventListener('click', e => {
   if (a === 'close') closeEx();
   else if (a === 'start') start();
   else if (a === 'stop') stopEx();
+  else if (a === 'g-pause') gPause();
+  else if (a === 'g-resume') gResume();
   else if (a === 'resume') resumeAllAudio();
   else if (a === 'badges-open') { setMenu(false); renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
   else if (a === 'badges-close') show(null);
@@ -2124,7 +2155,7 @@ let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）�
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
 function breathNow() {
   if (!brPhase || screens.run.hidden || cur == null || EX[cur].id === 'wimhof') return null;
-  const u = Math.min(1, Math.max(0, (performance.now() - brPhase.t0) / (brPhase.dur * 1000)));
+  const u = Math.min(1, Math.max(0, ((gPause0 || performance.now()) - brPhase.t0) / (brPhase.dur * 1000)));   // 暫停時停在原地
   return brPhase.k === IN ? u : brPhase.k === OUT ? 1 - u : (brPhase.prev === OUT ? 0 : 1);
 }
 // 光點、花瓣先畫好，之後每格直接貼上
@@ -2797,7 +2828,7 @@ function fxLay(host, c) {
 // 要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
 function fxHost() {
   const open = Object.values(screens).find(s => !s.hidden);
-  return open ? (open.classList.contains('wh-hold') || open.classList.contains('bp-run') ? null : open) : document.querySelector('.home');
+  return open ? (open.classList.contains('wh-hold') ? null : open) : document.querySelector('.home');
 }
 function drawFx(now) {
   fx.raf = requestAnimationFrame(drawFx);
