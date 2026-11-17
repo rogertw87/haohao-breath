@@ -21,6 +21,8 @@ const EX = [
     base: [[IN, 2, '吸氣', '鼻子吸氣'], [OUT, 8, '吐氣', '閉嘴，喉部略縮慢慢吐']] },
   // 重生呼吸有自己的設定、練習與完成畫面（見下方「重生呼吸」）：幾次小呼吸＋一次大呼吸，吸吐之間沒有空檔
   { id: 'rebirth', name: '重生呼吸', own: true },
+  // 白骨觀：靜坐觀想左腳的大拇趾（見下方「白骨觀」），算練習次數
+  { id: 'bone', name: '白骨觀', own: true },
   // 聆聽：不做呼吸練習，單純聽聲音（見下方「聆聽」），不算練習次數
   { id: 'listen', name: '聆聽', own: true },
 ];
@@ -33,6 +35,7 @@ const ICONS = {
   nostril: 'M14.5 4C14.5 9.5 13.5 13.5 10.5 17C7.5 20.5 8 24.5 11.5 25C13.2 25.2 14 23.8 16 23.8S18.8 25.2 20.5 25C24 24.5 24.5 20.5 21.5 17.5M12.3 20.8C13.4 21.3 14.3 22.3 14.7 23.4M19.7 20.8C18.6 21.3 17.7 22.3 17.3 23.4',
   rebirth: 'M16 25.5V13M16 18.5C16 14 12.5 10.5 7 10.5C7 15 10.5 18.5 16 18.5ZM16 15C16 10.5 19.5 7 25 7C25 11.5 21.5 15 16 15Z',   // 新芽
   listen: 'M6.5 19v-3.5a9.5 9.5 0 0 1 19 0V19M6.5 19h3.5v7H8a1.5 1.5 0 0 1-1.5-1.5V19ZM25.5 19H22v7h2a1.5 1.5 0 0 0 1.5-1.5V19Z',   // 耳機
+  bone: 'M11.33 17.07L18.6 11.98A2.9 2.9 0 1 1 22.77 11.26A2.9 2.9 0 1 1 20.67 14.93L13.4 20.02A2.9 2.9 0 1 1 9.23 20.74A2.9 2.9 0 1 1 11.33 17.07Z',   // 斜放的卡通狗骨頭
   wimhof: 'M16 4V28M5.6 10L26.4 22M5.6 22L26.4 10M13 6.5L16 9L19 6.5M13 25.5L16 23L19 25.5M7.5 7.7L8.2 11.5L4.5 12.9M24.5 24.3L23.8 20.5L27.5 19.1M27.5 12.9L23.8 11.5L24.5 7.7M4.5 19.1L8.2 20.5L7.5 24.3',
 };
 // 鯨豚式呼吸：波浪球＋兩圈漣漪，和練習畫面的聲波紋同一個語彙
@@ -56,7 +59,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, bnOpen: false });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, bnOpen: false, bnMin: 10, bnAck: false });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -68,8 +71,8 @@ let raf = 0, waveStart = null, totalLeft = 0, left = null;
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen, bnMin, bnAck } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen, bnMin, bnAck })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -508,7 +511,7 @@ function delMine(m) {
   renderMusicSetup();
 }
 // 上傳或刪除錄音後，重畫目前打開的設定頁
-function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else if (cur != null && EX[cur].id === 'listen') lsRenderSetup(); else renderSetup(); }
+function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else if (cur != null && EX[cur].id === 'listen') lsRenderSetup(); else if (cur != null && EX[cur].id === 'bone') bpRenderSetup(); else renderSetup(); }
 $('mineFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) addMine(f); });
 
 // ---------- 節拍音效（即時合成） ----------
@@ -532,7 +535,7 @@ function ctx() {
 // ---------- 背景音樂與提示音保持一致 ----------
 // 練習中只要其中一個被系統停掉，另一個也跟著停；回到網頁時兩個一起恢復
 let syncPaused = false;
-const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden || !$('rbRun').hidden;
+const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden || !$('rbRun').hidden || !$('bpRun').hidden;
 const showResumeTip = on => document.querySelectorAll('.resume-tip').forEach(b => { b.hidden = !on; });
 function pauseAllAudio() {
   if (!practicing() || syncPaused) return;
@@ -699,7 +702,7 @@ function stopCue() {
 }
 
 // ---------- 畫面 ----------
-const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone'), lsSetup: $('lsSetup'), lsRun: $('lsRun'), lsDone: $('lsDone') };
+const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone'), lsSetup: $('lsSetup'), lsRun: $('lsRun'), lsDone: $('lsDone'), bpSetup: $('bpSetup'), bpRun: $('bpRun'), bpDone: $('bpDone') };
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
@@ -837,13 +840,14 @@ function clearAll() {
 function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（Google 登入要用它開視窗）
   clearAll(); stopMusic(true);
   cur = i;
-  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else if (EX[i].id === 'listen') lsOpen(); else whOpen(); return; }
+  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else if (EX[i].id === 'listen') lsOpen(); else if (EX[i].id === 'bone') bpOpen(); else whOpen(); return; }
   renderSetup();
   show('setup');
   screens.setup.scrollTop = 0;
 }
 function closeEx() {
   if (rb) rbEnd();
+  if (bp) bpEnd();
   lsStopAll();
   clearAll(); stopMusic(); releaseWake(); duck = 1;
   cur = null;
@@ -852,6 +856,7 @@ function closeEx() {
   syncResume();   // 練習中沒做的同步，回到首頁再做
   $('whSafety').hidden = true;
   $('rbSafety').hidden = true;
+  $('bpSafety').hidden = true;
 }
 
 function dotEl(ex) { return ex.id === 'box' ? $('boxDot') : ex.id === 'nostril' ? $('nDot') : null; }
@@ -1539,6 +1544,157 @@ function rbAction(a) {
 }
 $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Math.max(1, +e.target.value)); save(); rbRenderSetup(); });
 
+// ---------- 白骨觀：靜坐觀想左腳的大拇趾（方法參考楊定一博士） ----------
+// 安定 30 秒（自然呼吸）→ 觀想 8 秒 → 皮、肉、筋膜各 15 秒撥開（選「直接露出骨頭」或減少動態效果就跳過）→ 只剩白骨，只專注在這裡（每 3 分鐘換一句提醒）→ 最後 30 秒回到呼吸 → 響一聲鐘結束
+// 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面：淺色主題用白描、深色主題用月白，白骨主題照主題本身
+const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
+let bp = null, bpRaf = 0;
+const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold'].includes(state.theme) ? 'moon' : 'ink');
+function bpOpen() {
+  bpRenderSetup();
+  show('bpSetup');
+  screens.bpSetup.scrollTop = 0;
+  if (!state.bnAck) bpSafety(true);
+}
+function bpSafety(on) {
+  $('bpSafety').hidden = !on;
+  $('bpChk').checked = false; $('bpAckBtn').disabled = true;
+  $('bpAckBox').hidden = !!state.bnAck;
+  $('bpSafetyClose').hidden = !state.bnAck;
+}
+$('bpChk').addEventListener('change', e => { $('bpAckBtn').disabled = !e.target.checked; });
+function bpRenderSetup() {
+  const m = state.bnMin || 10, open = !!state.bnOpen;
+  $('bpMinutes').value = m; $('bpMinVal').textContent = m; $('bpMinBtn').textContent = m;
+  rbOpts($('bpOpenOpts'), [[false, '自動撥皮肉'], [true, '直接露出骨頭']], v => open === v, v => { state.bnOpen = v; save(); bpRenderSetup(); });
+  $('bpOpenNote').textContent = open ? '安定下來以後，直接是撥好、露出白骨的樣子。' : '安定下來以後，皮、肉、筋膜一層層撥開，約 1 分鐘撥完，之後停住。';
+  // 背景音樂：和其他練習共用同一個設定
+  musicGrid($('bpMusic'), state.music, k => { state.music = k; save(); bpRenderSetup(); });
+  $('bpMineBox').hidden = !mine.length;
+  $('bpMineRows').innerHTML = '';
+  mine.forEach(mm => {
+    const row = document.createElement('div');
+    row.className = 'mine-row';
+    row.innerHTML = '<span></span><button>刪除</button>';
+    row.firstChild.textContent = mm.name;
+    row.lastChild.addEventListener('click', () => delMine(mm));
+    $('bpMineRows').appendChild(row);
+  });
+  $('bpMusicHint').hidden = state.music === 'none';
+}
+$('bpMinutes').addEventListener('input', e => { state.bnMin = Math.min(30, Math.max(3, +e.target.value)); save(); bpRenderSetup(); });
+const bpEl = () => (bp ? ((bp.pAt != null ? bp.pAt : performance.now()) - bp.t0 - bp.off) / 1000 : 0);
+function bpAt(el) {
+  const T = bp.T, quick = bp.open || reducedMotion();
+  if (el >= T - 30) return { ph: 3, lab: '回到呼吸', hint: '慢慢把注意力帶回呼吸，再感覺整個身體', fade: Math.min(1, (el - (T - 30)) / 10) };
+  if (el < 30) return { ph: quick ? 3 : 0, lab: '安定下來', hint: '坐好，放鬆肩膀，先自然地呼吸幾口', fade: 0 };
+  const e = el - 30, P = BN_T0 + 3 * BN_LAYER;
+  if (!quick && e < P) {
+    if (e < BN_T0) return { ph: 0, lab: '觀想', hint: '把注意力放到左腳的大拇趾', fade: 0 };
+    const p = (e - BN_T0) / BN_LAYER, n = ['皮', '肉', '筋膜'][Math.min(2, Math.floor(p))];
+    return { ph: p, lab: '剝去' + n, hint: '想像大拇趾的' + n + '一層層剝開，不急，慢慢來', fade: 0 };
+  }
+  const f = e - (quick ? 0 : P), k = Math.floor(f / 180), rem = k > 0 && f - k * 180 < 20;
+  return { ph: 3, lab: '只剩白骨', hint: rem ? BP_REM[(k - 1) % BP_REM.length] : '只專注在這裡，其他一概不理', fade: 0 };
+}
+function bpText(l, h) { if ($('bpLabel').textContent !== l) $('bpLabel').textContent = l; if ($('bpHint').textContent !== h) $('bpHint').textContent = h; }
+function bpPausedUi(on) { $('bpPauseBtn').hidden = on; $('bpResumeBtn').hidden = !on; }
+function bpStart() {
+  clearAll(); stopMusic(true); stopPreview(); cancelAnimationFrame(bpRaf);
+  $('bpSafety').hidden = true;
+  ctx(); keepAlive.play().catch(() => {}); lockWake();
+  if (state.music !== 'none') playMusic(state.music);   // 背景音樂：和其他練習一樣，開始時播放
+  const m = state.bnMin || 10;
+  bp = { t0: performance.now(), off: 0, pAt: null, T: m * 60, open: !!state.bnOpen, cv: null, last: null, left: -1 };
+  bpPausedUi(false);
+  $('bpRun').dataset.look = bpLook();
+  $('bpLeft').textContent = fmt(m * 60);
+  $('bpProgress').style.transition = 'none'; $('bpProgress').style.width = '0%'; void $('bpProgress').offsetWidth; $('bpProgress').style.transition = '';
+  bpText('安定下來', '坐好，放鬆肩膀，先自然地呼吸幾口');
+  show('bpRun');
+  const tick = () => { bpTick(); bpRaf = requestAnimationFrame(tick); };
+  bpRaf = requestAnimationFrame(tick);
+}
+function bpTick() {
+  if (!bp) return;
+  const el = bpEl();
+  if (bp.pAt == null && el >= bp.T) { bpFinish(); return; }
+  const st = bpAt(Math.min(el, bp.T));
+  if (bp.pAt == null) {
+    bpText(st.lab, st.hint);
+    const left = Math.max(0, Math.ceil(bp.T - el));
+    if (left !== bp.left) { bp.left = left; $('bpLeft').textContent = fmt(left); $('bpProgress').style.width = Math.min(100, el / bp.T * 100) + '%'; }
+  }
+  bpDraw(st);
+}
+// 畫面：整片底色（白描是宣紙、月白和燭光有幾點很淡的微塵）＋左腳，大拇趾在正中間偏上，只有大拇趾亮；回到呼吸時整隻腳慢慢淡一點、白骨的光收起來
+function bpDraw(st) {
+  const c = $('bpCv'), W = c.clientWidth, H = c.clientHeight;
+  if (!W || !H) return;
+  const d = Math.min(2, window.devicePixelRatio || 1), k = $('bpRun').dataset.look || 'ink', now = performance.now(), t = now / 1000;
+  const dt = bp.last == null ? 0 : Math.min(.05, (now - bp.last) / 1000); bp.last = now;
+  if (!bp.cv || bp.cv.k !== k || c.width !== Math.round(W * d) || c.height !== Math.round(H * d)) {
+    c.width = Math.round(W * d); c.height = Math.round(H * d);
+    const bg = document.createElement('canvas'); bg.width = c.width; bg.height = c.height;
+    const x = bg.getContext('2d'); x.scale(d, d);
+    if (k === 'ink') { x.fillStyle = '#f3eee3'; x.fillRect(0, 0, W, H); x.drawImage(bnGrain(W, H, d), 0, 0, W, H); }
+    else {
+      const gr = x.createLinearGradient(0, 0, 0, H);
+      if (k === 'moon') { gr.addColorStop(0, '#0c131a'); gr.addColorStop(.6, '#0a1016'); gr.addColorStop(1, '#070b10'); } else { gr.addColorStop(0, '#17120e'); gr.addColorStop(1, '#0f0c09'); }
+      x.fillStyle = gr; x.fillRect(0, 0, W, H);
+      if (k === 'moon') glowC(x, W / 2, H * .25, H * .6, '120,150,180', .1);
+    }
+    const ms = [];
+    for (let i = 0; i < 26; i++) ms.push({ x: Math.random() * W, y: Math.random() * H, v: 4 + Math.random() * 8, r: .5 + Math.random() * 1.1, ph: Math.random() * 6.28 });
+    bp.cv = { k, bg, off: bnOff(W, H, d), tmp: bnOff(W, H, d), cache: {}, ms };
+  }
+  const g = c.getContext('2d');
+  g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(bp.cv.bg, 0, 0); g.setTransform(d, 0, 0, d, 0, 0);
+  if (k !== 'ink') {
+    g.fillStyle = k === 'moon' ? 'rgb(200,220,240)' : 'rgb(255,214,160)';
+    const mv = !reducedMotion() && bp.pAt == null;
+    for (const q of bp.cv.ms) {
+      if (mv) { q.y -= q.v * dt; q.ph += dt; if (q.y < -4) { q.y = H + 4; q.x = Math.random() * W; } }
+      g.globalAlpha = .12 + .14 * Math.pow(Math.sin(q.ph), 2); g.beginPath(); g.arc(q.x + Math.sin(q.ph * .6) * 3, q.y, q.r, 0, 6.2832); g.fill();
+    }
+    g.globalAlpha = 1;
+  }
+  if (k === 'candle') { const fl = .85 + .1 * Math.sin(t * 2.3) * Math.sin(t * 1.1 + 1) + .05 * Math.sin(t * 7.1); glowC(g, W / 2, H * .28, H * .55, '255,170,90', .1 * fl); }
+  const S = Math.min(160, W * .4, H * .2), X = W / 2, Y = Math.max(84, H * .15), pulse = (reducedMotion() ? .5 : .5 + .5 * Math.sin(t * 2 * Math.PI / 10)) * (1 - st.fade);
+  const T = bp.cv.tmp, tx = T.getContext('2d');
+  tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, T.width, T.height); tx.setTransform(d, 0, 0, d, 0, 0);
+  bnToeC(tx, k, X, Y, S, st.ph, pulse, bp.cv.off, bp.cv.cache, 1);
+  g.globalAlpha = 1 - .45 * st.fade; g.drawImage(T, 0, 0, W, H); g.globalAlpha = 1;
+}
+function bpPause() { if (!bp || bp.pAt != null) return; bp.pAt = performance.now(); bpPausedUi(true); bpText('已暫停', '按「繼續」接著練習'); }
+function bpResume() { if (!bp || bp.pAt == null) return; bp.off += performance.now() - bp.pAt; bp.pAt = null; bpPausedUi(false); }
+function bpEnd() { cancelAnimationFrame(bpRaf); releaseWake(); stopMusic(); keepAlive.pause(); bp = null; }
+// 練完：時間到響一聲鐘，記進今天的練習；中途停止不記錄
+function bpFinish() {
+  const sec = Math.round(bp.T);
+  bpEnd();
+  if (!syncPaused) { ctx(); [[1, .14, 2.6], [2.76, .04, 1.5], [5.4, .015, .8]].forEach(([m, v, d]) => {
+    const now = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 523.25 * m; g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(v, now + .01); g.gain.exponentialRampToValueAtTime(.0001, now + d);
+    o.connect(g); g.connect(ac.destination); o.start(now); o.stop(now + d + .05);
+  }); }
+  logDone('bone', sec);
+  $('bpDoneText').textContent = mins(sec) + ' 分鐘・白骨觀';
+  show('bpDone');
+  showAward();
+}
+function bpStop() { bpEnd(); syncPaused = false; showResumeTip(false); bpRenderSetup(); show('bpSetup'); }
+function bpAction(a) {
+  if (a === 'start') bpStart();
+  else if (a === 'stop') bpStop();
+  else if (a === 'pause') bpPause();
+  else if (a === 'resume') bpResume();
+  else if (a === 'safety') bpSafety(true);
+  else if (a === 'safety-close') $('bpSafety').hidden = true;
+  else if (a === 'ack') { if ($('bpChk').checked) { state.bnAck = true; save(); $('bpSafety').hidden = true; } }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && bp) lockWake(); });
+
 // ---------- 聆聽：不做呼吸練習，單純聽聲音 ----------
 // 最多同時 3 種聲音，各自調音量；時間 10–60 分鐘或不限，結束前慢慢變小聲（音量平方曲線，聽起來比較均勻）
 // 自動變暗：開始播放後 10 秒沒碰螢幕，蓋上一層全黑的畫面。不算練習次數、不給印章
@@ -1755,7 +1911,7 @@ function lsUpdate() {
   $('lsBar').style.visibility = l.total ? 'visible' : 'hidden';
   $('lsProgress').style.width = (l.total ? Math.min(100, el / l.total * 100) : 0) + '%';
   $('lsStatus').textContent = l.paused ? (l.sys ? '聲音被系統暫停了，按「繼續」接著播放' : '已暫停') : l.total && left <= l.fade ? '正在慢慢變小聲'
-    : BONE[state.theme] ? (state.bnOpen ? BN_TXT[4] : bnTxtOf(el)) : '';
+    : BONE[state.theme] ? BN_TXT[4] : '';
   $('lsDimTime').textContent = l.paused ? '已暫停' : tt;
   $('lsPauseBtn').hidden = l.paused; $('lsResumeBtn').hidden = !l.paused;
   screens.lsRun.classList.toggle('ls-paused', l.paused);
@@ -1859,6 +2015,7 @@ document.addEventListener('click', e => {
   else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a.startsWith('rb-')) rbAction(a.slice(3));
   else if (a.startsWith('ls-')) lsAction(a.slice(3));
+  else if (a.startsWith('bp-')) bpAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id === '478' ? '478-' + fKey() : EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
@@ -1950,7 +2107,6 @@ function applyTheme() {
   else if (SKY[t]) root.style.setProperty('--sky', SKY[t]);
   else root.style.removeProperty('--sky');
   syncSparks();
-  boneRender();
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
 }
 document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => {
@@ -2446,8 +2602,7 @@ function bnFx(k) {
       else if (v) { S = Math.max(150, Math.min(200, v.h * .78)); X = v.x + v.w / 2; Y = v.y + v.h / 2 - .6 * S; A = .4; }
       else if (l.home) { S = 140; X = W - 46; Y = 180; A = .55; dim = .45; }
       else return;
-      // 練習中：選「自動撥皮肉」就照這次練習的時間撥開；選「直接露出骨頭」或不在練習，就是撥好的樣子
-      if (v && st.el != null && !st.open) ph = bnPhOf(st.el);
+      // 撥開皮肉的動畫只在「白骨觀」練習；這裡（首頁、其他練習、聆聽）一律是撥好、露出白骨的樣子
       if (A >= 1) { bnToeC(g, k, X, Y, S, ph, pulse, st.off, st.cache, dim); return; }
       const T = st.tmp, tx = T.getContext('2d');
       tx.setTransform(1, 0, 0, 1, 0, 0); tx.clearRect(0, 0, T.width, T.height); tx.setTransform(d, 0, 0, d, 0, 0);
@@ -2457,25 +2612,7 @@ function bnFx(k) {
     }
   };
 }
-// 設定頁的「白骨觀」選項（只在白骨1／2／3 出現）：自動撥皮肉／直接露出骨頭，所有練習共用
-function boneRender() {
-  const on = !!BONE[state.theme], open = !!state.bnOpen;
-  document.querySelectorAll('.bone-opt').forEach(box => {
-    box.hidden = !on;
-    if (!on) return;
-    const grid = box.querySelector('.bone-grid');
-    grid.innerHTML = '';
-    [[false, '自動撥皮肉'], [true, '直接露出骨頭']].forEach(([val, label]) => {
-      const b = document.createElement('button');
-      b.className = 'music-opt' + (open === val ? ' on' : '');
-      b.textContent = label; b.setAttribute('aria-pressed', open === val);
-      b.addEventListener('click', () => { state.bnOpen = val; save(); boneRender(); });
-      grid.appendChild(b);
-    });
-    box.querySelector('.bone-note').textContent = (open ? '一開始就是撥好、露出白骨的樣子，不播撥開的過程。' : '開始後先看完整的左腳大拇趾，皮、肉、筋膜再一層層撥開，約 1 分鐘撥完，之後停住。') + '所有練習一起用這個設定。';
-  });
-}
-// 聆聽變暗的畫面：放一隻淡淡的左腳，大拇趾在中間，跟著同樣的節奏撥開；這個畫面一律是深色，其他腳趾和前腳掌往黑暗裡沉（白描也一樣）
+// 聆聽變暗的畫面：放一隻淡淡的左腳，大拇趾在中間，已經撥好、露出白骨；這個畫面一律是深色，其他腳趾和前腳掌往黑暗裡沉（白描也一樣）
 let bnDim = null;
 function lsDimDraw() {
   const c = $('lsDimCv'), k = BONE[state.theme];
@@ -2484,7 +2621,7 @@ function lsDimDraw() {
   if (c.width !== W * d || !bnDim) { c.width = W * d; c.height = H * d; bnDim = { off: bnOff(W, H, d), cache: {} }; }
   const g = c.getContext('2d'), t = performance.now() / 1000;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height); g.setTransform(d, 0, 0, d, 0, 0);
-  bnToeC(g, k, W / 2, 36, 150, state.bnOpen ? 3 : bnPhOf(lsEl()), .5 + .5 * Math.sin(t * 2 * Math.PI / 10), bnDim.off, bnDim.cache, 1, 'rgba(4,6,8,.7)');
+  bnToeC(g, k, W / 2, 36, 150, 3, .5 + .5 * Math.sin(t * 2 * Math.PI / 10), bnDim.off, bnDim.cache, 1, 'rgba(4,6,8,.7)');
   // 左邊和下面慢慢淡掉，不會被畫布切出一條邊
   g.globalCompositeOperation = 'destination-out';
   let f = g.createLinearGradient(0, 0, 80, 0); f.addColorStop(0, 'rgba(0,0,0,1)'); f.addColorStop(1, 'rgba(0,0,0,0)'); g.fillStyle = f; g.fillRect(0, 0, 80, H);
@@ -2660,7 +2797,7 @@ function fxLay(host, c) {
 // 要畫在哪個畫面：目前打開的練習畫面，沒有的話就是首頁（冰人呼吸的閉氣畫面不畫）
 function fxHost() {
   const open = Object.values(screens).find(s => !s.hidden);
-  return open ? (open.classList.contains('wh-hold') ? null : open) : document.querySelector('.home');
+  return open ? (open.classList.contains('wh-hold') || open.classList.contains('bp-run') ? null : open) : document.querySelector('.home');
 }
 function drawFx(now) {
   fx.raf = requestAnimationFrame(drawFx);
@@ -2678,7 +2815,7 @@ function drawFx(now) {
   const dt = still || fx.last == null ? 0 : Math.min(.05, Math.max(0, now - fx.last) / 1000); fx.last = now;
   const t = now / 1000, br = breathNow(), F = FXS[fx.kind];
   if (F.lay && (fx.layHost !== host || now - (fx.layT || 0) > 300)) { fx.layHost = host; fx.layT = now; fx.st.lay = fxLay(host, c); }
-  fx.st.el = bnT; fx.st.ls = !!(ls && !screens.lsRun.hidden); fx.st.open = !!state.bnOpen;
+  fx.st.el = bnT; fx.st.ls = !!(ls && !screens.lsRun.hidden);
   F.move(fx.st, dt, W, H, t, br);
   const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); F.draw(fx.st, g, W, H, t, br);
   fx.drawn = host;
@@ -2715,7 +2852,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'bnOpen'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'bnOpen', 'bnMin', 'bnAck'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
