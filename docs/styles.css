@@ -841,6 +841,35 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   --img-filter: brightness(1.9);
 }
 :root[data-theme="bone3"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+:root[data-theme="senko"] { /* 仙女棒：近乎全黑的夜，一顆橘金色的小火球，火星像松葉一樣分岔散開 */
+  --page: #14110f;
+  --screen: #12100e;
+  --ink: #f3ead9;
+  --ink-2: #f0cf9f;
+  --accent: #ffb86b;
+  --accent-2: #ffd27a;
+  --line-2: #33291f;
+  --line: #261f18;
+  --soft-2: #1d1814;
+  --chip: #241d17;
+  --soft: #14110f;
+  --line-3: #241d17;
+  --muted-2: #a59582;
+  --muted: #c9bba6;
+  --track: #7a5a34;
+  --guide: #1d1814;
+  --figure: #241d17;
+  --fade: rgba(18,16,14,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #1a1512;
+  --sel: #ffb86b;
+  --selfg: #1a120a;
+  --dot: #ffd27a;
+  --dot-glow: 0 0 0 2px #14110f, 0 0 0 7px rgba(255,190,100,.24), 0 0 22px 5px rgba(255,160,60,.5);
+  --sky-pos: center;
+  --img-filter: brightness(1.9);
+}
+:root[data-theme="senko"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
 /* 聆聽：中間的耳機和光圈換成大拇趾（畫在背景的畫布上）；變暗時放一個淡淡的大拇趾 */
 :root[data-theme^="bone"] .ls-orb { height: 230px; }
 :root[data-theme^="bone"] .ls-orb > * { display: none; }

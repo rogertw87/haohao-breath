@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=60">
+<link rel="stylesheet" href="styles.css?v=61">
 </head>
 <body>
 <main class="home">
@@ -40,6 +40,7 @@
           <button class="menu-theme-opt" data-theme-pick="bone1">白骨1</button>
           <button class="menu-theme-opt" data-theme-pick="bone2">白骨2</button>
           <button class="menu-theme-opt" data-theme-pick="bone3">白骨3</button>
+          <button class="menu-theme-opt" data-theme-pick="senko">仙女棒</button>
         </div>
       </div>
       <button class="menu-item" data-action="badges-open"><svg viewBox="0 0 24 24"><path d="M8.5 3l2.6 6.4M15.5 3l-2.6 6.4M12 9.5a5.5 5.5 0 1 0 0 11a5.5 5.5 0 1 0 0-11"></path></svg><span>勳章</span></button>
@@ -131,12 +132,12 @@
     <div class="stage">
       <!-- 方塊呼吸 -->
       <div class="anim anim-box" id="animBox" data-fxvis hidden>
-        <div class="box-frame"><div class="dot" id="boxDot"></div></div>
+        <div class="box-frame"><div class="dot" id="boxDot" data-fxdot></div></div>
       </div>
 
       <!-- 鼻孔交替呼吸 -->
       <div class="anim anim-n" id="animN" data-fxvis hidden>
-        <div class="n-frame"><div class="dot" id="nDot"></div></div>
+        <div class="n-frame"><div class="dot" id="nDot" data-fxdot></div></div>
         <div class="n-labels"><span>左</span><span>右</span></div>
       </div>
 
@@ -157,7 +158,7 @@
             <g id="waveG" transform="translate(150 0)"><path id="wavePath" class="wave-line" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></g>
             <line class="wave-guide" x1="150" y1="0" x2="150" y2="160" stroke-width="1"></line>
           </svg>
-          <div class="dot" id="waveDot" style="transform:translate(150px,140px)"></div>
+          <div class="dot" id="waveDot" data-fxdot style="transform:translate(150px,140px)"></div>
         </div>
         <div class="wave-cycle">一輪 <span id="cycleSec"></span></div>
       </div>
@@ -671,7 +672,7 @@
   </div>
 </section>
 
-<script src="app.js?v=73"></script>
+<script src="app.js?v=74"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
