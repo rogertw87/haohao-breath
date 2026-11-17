@@ -849,12 +849,11 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 :root[data-theme^="bone"] .ls-dim-bone { display: block; }
 /* 設定頁的「白骨觀」選項：自動撥皮肉／直接露出骨頭 */
 .bone-grid { grid-template-columns: repeat(2, 1fr); }
-/* 白骨觀練習：整片換成白描（宣紙）／月白／燭光的底，文字和按鈕跟著換色 */
-.bp-run { color: var(--ink); background: var(--screen); }
-.bp-run[data-look="ink"] { --ink: #2b2722; --ink-2: #2b2722; --muted: #6f665b; --muted-2: #6f665b; --line: rgba(43,39,34,.12); --line-2: rgba(43,39,34,.16); --dot: #7a3b2e; --card: rgba(255,255,255,.62); --screen: #f3eee3; }
-.bp-run[data-look="moon"] { --ink: #e8eef2; --ink-2: #e8eef2; --muted: #9fb0ba; --muted-2: #9fb0ba; --line: rgba(220,232,240,.16); --line-2: rgba(220,232,240,.2); --dot: #c9dbe6; --card: rgba(14,22,30,.6); --screen: #0a1016; }
-.bp-run[data-look="candle"] { --ink: #f1e8da; --ink-2: #f1e8da; --muted: #b3a48f; --muted-2: #b3a48f; --line: rgba(240,220,190,.16); --line-2: rgba(240,220,190,.2); --dot: #f0c98a; --card: rgba(30,24,18,.6); --screen: #15110d; }
+/* 白骨觀練習：和其他練習一樣用主題自己的背景和顏色，左腳畫在透明的畫布上 */
 .bp-cv { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+/* 一般練習的暫停／繼續／停止 */
+.run-btns { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.run-btns .run-stop { background: none; }
 .bp-run .run-inner { position: relative; }
 .bp-stage { justify-content: flex-end; padding-bottom: 28px; }
 .bp-credit { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
