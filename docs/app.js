@@ -208,7 +208,7 @@ function renderBadges() {
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
-  const dk = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'bone1', 'bone3'].includes(state.theme);
+  const dk = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'bone1', 'bone3', 'senko'].includes(state.theme);
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -1595,7 +1595,7 @@ $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Mat
 // 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面用主題自己的背景和顏色；左腳的畫法：淺色主題用白描、深色主題用月白，白骨主題照主題本身
 const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
 let bp = null, bpRaf = 0;
-const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold'].includes(state.theme) ? 'moon' : 'ink');
+const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
 function bpOpen() {
   bpRenderSetup();
   show('bpSetup');
@@ -2100,11 +2100,12 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪、中脈、白骨1～3；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'gold', 'bone1', 'bone2', 'bone3'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
 const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
   chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
-  bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)' };
+  bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)',
+  senko: 'linear-gradient(180deg,#14141d 0%,#131110 55%,#12100e 100%)' };
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -2149,7 +2150,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3' };
+const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -2660,7 +2661,59 @@ function lsDimDraw() {
   g.globalCompositeOperation = 'source-over';
 }
 // 每一種有 init（一打開就鋪滿）、move（移動）、draw（畫出來）；br 是練習時吸飽的程度，不在練習時是 null
+// ── 動態背景共用的小工具 ──
+const axBlob=(g,x,y,r,c0,c1)=>{const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,c0);gr.addColorStop(1,c1);g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,6.2832);g.fill();};
+const axEase=u=>{u=u<0?0:u>1?1:u;return u*u*(3-2*u);};
+const axRand=seed=>{let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};};
+const axCol=W=>{const w=Math.min(W,480);return [(W-w)/2,w];};   // 內容那一欄（最寬 480）的左邊和寬度
+// ── 仙女棒（線香花火）：火星的多寡照自己的節奏，不跟著呼吸 ──
+// 火星往外飛，飛到一半分岔成兩三條，有的再分一次；偶爾掉下一顆小火屑
+function skStep(st,x,y,inten,dt){const R=Math.random,sp=st.sp;st.acc+=dt*58*inten;
+  while(st.acc>=1){st.acc-=1;const a=R()*6.2832,v=(170+R()*170)*(.45+.55*inten);sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:.26+R()*.24,gen:0,fk:.5+R()*.3,done:false,len:16+R()*16});}
+  for(let i=sp.length-1;i>=0;i--){const p=sp[i];p.t+=dt;if(p.t>=p.life){sp.splice(i,1);continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;
+    if(!p.done&&p.t>p.life*p.fk&&p.gen<2){p.done=true;const n=p.gen===0?2+Math.floor(R()*3):(R()<.55?2:0),a0=Math.atan2(p.vy,p.vx),v0=Math.hypot(p.vx,p.vy)*.8;
+      for(let j=0;j<n;j++){const a2=a0+(R()*2-1)*.95;sp.push({x:p.x,y:p.y,vx:Math.cos(a2)*v0,vy:Math.sin(a2)*v0,t:0,life:.12+R()*.14,gen:p.gen+1,fk:.55,done:false,len:p.len*.62});}}}
+  st.et-=dt;if(st.et<=0){st.et=.5+R()*1.4;st.em.push({x,y,vx:(R()-.5)*30,vy:10,t:0});}
+  for(let i=st.em.length-1;i>=0;i--){const p=st.em[i];p.t+=dt;if(p.t>1.3){st.em.splice(i,1);continue;}p.vy+=260*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}}
+function skDraw(st,g){g.globalCompositeOperation='lighter';g.lineCap='round';
+  for(const p of st.sp){const v=Math.hypot(p.vx,p.vy)||1,L=Math.min(p.len,p.t*v),k=p.t/p.life,a=1-k*k,x0=p.x-p.vx/v*L,y0=p.y-p.vy/v*L;
+    g.strokeStyle='rgba(255,150,50,'+(.3*a).toFixed(3)+')';g.lineWidth=2.6;g.beginPath();g.moveTo(x0,y0);g.lineTo(p.x,p.y);g.stroke();
+    g.strokeStyle='rgba(255,236,190,'+(.95*a).toFixed(3)+')';g.lineWidth=1;g.beginPath();g.moveTo(x0,y0);g.lineTo(p.x,p.y);g.stroke();}
+  for(const p of st.em){g.fillStyle='rgba(255,170,80,'+(.9*(1-p.t/1.3)).toFixed(3)+')';g.beginPath();g.arc(p.x,p.y,1.3,0,6.2832);g.fill();}
+  g.globalCompositeOperation='source-over';}
+// 靜止的一束火星（開了「減少動態效果」時用）
+function skStill(g,x,y){const R=axRand(11);g.globalCompositeOperation='lighter';g.lineCap='round';
+  for(let i=0;i<22;i++){const a=R()*6.2832,r0=10+R()*26,r1=r0+18+R()*26,x0=x+Math.cos(a)*r0,y0=y+Math.sin(a)*r0,x1=x+Math.cos(a)*r1,y1=y+Math.sin(a)*r1,n=2+Math.floor(R()*2);
+    g.strokeStyle='rgba(255,150,50,.26)';g.lineWidth=2.6;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);g.stroke();
+    g.strokeStyle='rgba(255,236,190,.85)';g.lineWidth=1;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);
+    for(let j=0;j<n;j++){const a2=a+(R()*2-1)*.9,l=8+R()*10;g.moveTo(x1,y1);g.lineTo(x1+Math.cos(a2)*l,y1+Math.sin(a2)*l);}g.stroke();}
+  g.globalCompositeOperation='source-over';}
 const FXS = {
+ // 仙女棒：一顆小火球，火星像松葉一樣一段一段分岔散開。有呼吸圓點的練習，圓點就是那顆火球；其他畫面是一根紙捻從上面垂下來，火球掛在尾端。
+ // 火星的多寡照自己的節奏（一輪 26 秒：剛點著 → 越來越旺 → 最旺 → 慢慢變小 → 只剩細細幾點），不跟著呼吸。開了「減少動態效果」就是一束靜止的火星
+ senko:{lay:true,
+  init(st){st.sp=[];st.em=[];st.acc=0;st.et=1;st.t=Math.random()*26;st.x=null;st.y=0;st.top=null;st.inten=.6;st.cv=null;st.dotEl=null;st.layQ=null;},
+  level(T){const c=T%26,b=c<4?.25+.2*axEase(c/4):c<9?.45+.55*axEase((c-4)/5):c<15?1:c<22?1-.8*axEase((c-15)/7):.2;return b*(.92+.08*Math.sin(T*2.3));},
+  // 呼吸的圓點現在在畫面的哪裡（這個畫面沒有圓點就是 null）
+  dot(st){const c=st.cv;if(st.layQ!==st.lay||(st.dotEl&&!st.dotEl.isConnected)){st.layQ=st.lay;st.dotEl=(c.parentElement?[...c.parentElement.querySelectorAll('[data-fxdot]')]:[]).find(e=>e.getBoundingClientRect().width>0)||null;}   // 看得見的那一個
+    const e=st.dotEl;if(!e)return null;const r=e.getBoundingClientRect(),cr=c.getBoundingClientRect();if(!r.width||!cr.width)return null;const k=c.clientWidth/cr.width;return [(r.left+r.width/2-cr.left)*k,(r.top+r.height/2-cr.top)*k];},
+  move(st,dt,W,H){const rm=reducedMotion();
+    if(!rm&&!(st.cv&&st.cv.isConnected)){st.sp.length=0;st.em.length=0;st.x=null;return;}   // 剛換畫面：等畫布接上再開始
+    if(!rm)st.t+=dt;const T=st.t,v=(st.lay||{}).vis,col=axCol(W),d=rm?null:this.dot(st);
+    if(d){st.x=d[0];st.y=d[1];st.top=null;}
+    else if(v){st.x=col[0]+col[1]-46+(rm?0:3*Math.sin(T*.8));st.y=Math.max(104,v.y-4);st.top=64;}   // 沒有圓點的練習：掛在呼吸圖形的右上方
+    else if((st.lay||{}).home){st.x=col[0]+col[1]*.8+(rm?0:3*Math.sin(T*.8));st.y=Math.min(H*.37,320);st.top=-4;}   // 首頁：從最上面垂下來，掛在右邊
+    else{st.x=col[0]+col[1]-46+(rm?0:3*Math.sin(T*.8));st.y=Math.min(H*.37,320);st.top=88;}   // 其他畫面（白骨觀練習、設定頁）：靠右邊，從標題列下面垂下來，不穿過右上角的時間
+    st.inten=rm?.8:this.level(T);if(!rm)skStep(st,st.x,st.y,st.inten,dt);},
+  draw(st,g,W,H){st.cv=g.canvas;if(st.x==null)return;const L=st.lay||{},x=st.x,y=st.y,it=st.inten,rm=reducedMotion();
+    if(rm)skStill(g,x,y);else skDraw(st,g);
+    if(L.vis)fxClear(g,L.clear);
+    // 火光最後才畫，文字後面只清掉火星，不會留下一塊暗影
+    axBlob(g,x,y,150,'rgba(255,140,50,'+(.14*it).toFixed(3)+')','rgba(255,140,50,0)');axBlob(g,x,y,40,'rgba(255,176,84,'+(.55*it).toFixed(3)+')','rgba(255,176,84,0)');
+    if(st.top!=null){const x0=x-(rm?0:3*Math.sin(st.t*.8));   // 紙捻和火球
+      g.strokeStyle='rgba(214,190,160,.5)';g.lineWidth=1;g.beginPath();g.moveTo(x0,st.top);g.quadraticCurveTo(x0,(st.top+y)/2,x,y-26);g.stroke();
+      g.strokeStyle='rgba(128,96,66,.9)';g.lineWidth=1.4;g.beginPath();g.moveTo(x,y-26);g.lineTo(x,y-4);g.stroke();
+      axBlob(g,x,y,11,'rgba(255,214,140,1)','rgba(255,170,70,0)');g.fillStyle='#fff6dc';g.beginPath();g.arc(x,y,4.2,0,6.2832);g.fill();}}},
   // 營火：火星從下方火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定
   sparks: {
     init(st, W, H) { st.p = []; st.acc = 0; for (let i = 0; i < 200; i++) this.move(st, .05, W, H); },
