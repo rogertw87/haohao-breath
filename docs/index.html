@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=58">
+<link rel="stylesheet" href="styles.css?v=59">
 </head>
 <body>
 <main class="home">
@@ -110,12 +110,6 @@
       <div id="cueBox">
         <span class="section-title cue-title">提示音</span>
         <div class="music-grid" id="cueGrid"></div>
-      </div>
-
-      <div class="bone-opt" hidden>
-        <span class="section-title cue-title">白骨觀</span>
-        <div class="music-grid bone-grid"></div>
-        <p class="hint bone-note"></p>
       </div>
 
       <div class="start-bar">
@@ -313,12 +307,6 @@
       </div>
     </div>
 
-    <div class="bone-opt" hidden>
-      <span class="section-title cue-title">白骨觀</span>
-      <div class="music-grid bone-grid"></div>
-      <p class="hint bone-note"></p>
-    </div>
-
     <div class="start-bar">
       <button class="btn btn-primary" data-action="wh-start">開始</button>
     </div>
@@ -439,12 +427,6 @@
     <div class="music-grid rb-snds" id="rbSnds"></div>
     <p class="hint rb-hint" id="rbSndNote"></p>
 
-    <div class="bone-opt" hidden>
-      <span class="section-title cue-title">白骨觀</span>
-      <div class="music-grid bone-grid"></div>
-      <p class="hint bone-note"></p>
-    </div>
-
     <div class="start-bar">
       <button class="btn btn-primary" data-action="rb-start">開始 · <span data-bind="minutes"></span> 分鐘</button>
     </div>
@@ -514,6 +496,100 @@
   </div>
 </div>
 
+<!-- 白骨觀：設定頁（靜坐觀想左腳的大拇趾，方法參考楊定一博士） -->
+<section class="screen" id="bpSetup" hidden>
+  <div class="setup-inner">
+    <button class="back" data-action="close">← 返回</button>
+    <h2 class="ex-name">白骨觀</h2>
+    <p class="desc wh-desc">一種靜坐觀想：把注意力放在左腳的大拇趾，想像皮、肉、筋膜一層層剝除，直到只剩白骨，然後只專注在這裡，其他一概不理。</p>
+    <button class="wh-safety-btn" data-action="bp-safety"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19L12 3ZM12 10v4.5M12 17.5h.01"></path></svg><span>練習前請先閱讀</span></button>
+
+    <div class="section-head">
+      <span class="section-title">總練習長度</span>
+      <span class="minutes-val"><span id="bpMinVal"></span> 分鐘</span>
+    </div>
+    <div class="panel slider-panel">
+      <input type="range" id="bpMinutes" min="3" max="30" step="1">
+      <div class="ticks"><span>3</span><span>10</span><span>20</span><span>30</span></div>
+    </div>
+    <p class="hint rb-hint">建議 10 到 20 分鐘。最後 30 秒會帶你回到呼吸，再結束。</p>
+
+    <span class="section-title music-title">撥皮肉</span>
+    <div class="music-grid bone-grid" id="bpOpenOpts"></div>
+    <p class="hint rb-hint" id="bpOpenNote"></p>
+
+    <span class="section-title music-title">背景音樂</span>
+    <div class="music-grid" id="bpMusic"></div>
+    <div class="mine" id="bpMineBox" hidden>
+      <span class="mine-title">我的錄音</span>
+      <div id="bpMineRows"></div>
+    </div>
+    <p class="hint music-hint" id="bpMusicHint" hidden>練習開始時播放。</p>
+
+    <div class="start-bar">
+      <button class="btn btn-primary" data-action="bp-start">開始 · <span id="bpMinBtn"></span> 分鐘</button>
+    </div>
+  </div>
+</section>
+
+<!-- 白骨觀：練習畫面（整片換成白描／月白／燭光的底，大拇趾在上方正中間） -->
+<section class="screen screen-center bp-run" id="bpRun" hidden>
+  <canvas class="bp-cv" id="bpCv"></canvas>
+  <div class="run-inner">
+    <div class="run-head">
+      <span class="run-name">白骨觀</span>
+      <span class="run-left">剩 <span id="bpLeft">0:00</span></span>
+    </div>
+    <div class="progress"><div class="progress-fill" id="bpProgress"></div></div>
+    <div class="stage bp-stage">
+      <div class="wh-text"><span class="wh-label" id="bpLabel"></span><span class="wh-hint rb-hint-run" id="bpHint"></span></div>
+    </div>
+    <button class="resume-tip" data-action="resume" hidden>聲音已暫停，點一下繼續</button>
+    <div class="rb-actions">
+      <button class="wh-btn" id="bpPauseBtn" data-action="bp-pause">暫停</button>
+      <button class="wh-btn wh-btn-primary" id="bpResumeBtn" data-action="bp-resume" hidden>繼續</button>
+      <button class="wh-btn rb-stop" data-action="bp-stop">停止</button>
+    </div>
+  </div>
+</section>
+
+<!-- 白骨觀：完成 -->
+<section class="screen screen-center" id="bpDone" hidden>
+  <div class="run-inner">
+    <div class="done-body">
+      <span class="done-tag">完成</span>
+      <span class="rb-done-title">練完了</span>
+      <span class="rb-done-text" id="bpDoneText"></span>
+    </div>
+    <div class="done-actions">
+      <button class="btn btn-primary" data-action="bp-start">再練一次</button>
+      <button class="btn btn-secondary" data-action="close">返回</button>
+    </div>
+  </div>
+</section>
+
+<!-- 白骨觀：練習前請先閱讀 -->
+<div class="wh-sheet-bg" id="bpSafety" hidden>
+  <div class="wh-sheet" role="dialog" aria-modal="true" aria-labelledby="bpSafetyTitle">
+    <h3 id="bpSafetyTitle">練習前請先閱讀</h3>
+    <ul>
+      <li>白骨觀是佛教「不淨觀」的一種，目的是放下對身體的執著，不是討厭自己的身體。</li>
+      <li>只觀想一根大拇趾就好，其他一概不理。想像不出清楚的畫面也沒關係，看著畫面練習也可以。</li>
+      <li>如果覺得害怕、噁心、心慌，或對身體生起厭惡，就睜開眼睛、回到呼吸，或直接停止。</li>
+      <li><strong>正處在憂鬱、創傷、身心狀況不穩，或對自己的身體有強烈負面感受、有傷害自己念頭的人，請先不要練習，並和醫師或心理師談談。</strong></li>
+    </ul>
+    <p class="bp-credit">方法參考楊定一博士《靜坐的科學、醫學與心靈之旅》。</p>
+    <div id="bpAckBox">
+      <label class="wh-check"><input type="checkbox" id="bpChk"><span>我了解</span></label>
+      <div class="wh-sheet-actions">
+        <button class="wh-btn" data-action="close">返回</button>
+        <button class="wh-btn wh-btn-primary" id="bpAckBtn" data-action="bp-ack" disabled>繼續</button>
+      </div>
+    </div>
+    <button class="wh-btn wh-btn-primary" id="bpSafetyClose" data-action="bp-safety-close" hidden>關閉</button>
+  </div>
+</div>
+
 <!-- 聆聽：設定頁（不做呼吸練習，單純聽聲音） -->
 <section class="screen" id="lsSetup" hidden>
   <div class="setup-inner">
@@ -544,12 +620,6 @@
     <span class="section-title music-title">畫面</span>
     <div class="panel rows" id="lsDimBox"></div>
     <p class="hint ls-note" id="lsDimNote"></p>
-
-    <div class="bone-opt" hidden>
-      <span class="section-title cue-title">白骨觀</span>
-      <div class="music-grid bone-grid"></div>
-      <p class="hint bone-note"></p>
-    </div>
 
     <div class="start-bar">
       <button class="btn btn-primary" id="lsStartBtn" data-action="ls-start">開始聆聽</button>
@@ -597,7 +667,7 @@
   </div>
 </section>
 
-<script src="app.js?v=71"></script>
+<script src="app.js?v=72"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
