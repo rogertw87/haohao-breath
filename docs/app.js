@@ -2666,20 +2666,65 @@ const axBlob=(g,x,y,r,c0,c1)=>{const gr=g.createRadialGradient(x,y,0,x,y,r);gr.a
 const axEase=u=>{u=u<0?0:u>1?1:u;return u*u*(3-2*u);};
 const axRand=seed=>{let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};};
 const axCol=W=>{const w=Math.min(W,480);return [(W-w)/2,w];};   // 內容那一欄（最寬 480）的左邊和寬度
-// ── 仙女棒（線香花火）：火星的多寡照自己的節奏，不跟著呼吸 ──
-// 火星往外飛，飛到一半分岔成兩三條，有的再分一次；偶爾掉下一顆小火屑
-function skStep(st,x,y,inten,dt){const R=Math.random,sp=st.sp;st.acc+=dt*58*inten;
-  while(st.acc>=1){st.acc-=1;const a=R()*6.2832,v=(170+R()*170)*(.45+.55*inten);sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:.26+R()*.24,gen:0,fk:.5+R()*.3,done:false,len:16+R()*16});}
-  for(let i=sp.length-1;i>=0;i--){const p=sp[i];p.t+=dt;if(p.t>=p.life){sp.splice(i,1);continue;}p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;
-    if(!p.done&&p.t>p.life*p.fk&&p.gen<2){p.done=true;const n=p.gen===0?2+Math.floor(R()*3):(R()<.55?2:0),a0=Math.atan2(p.vy,p.vx),v0=Math.hypot(p.vx,p.vy)*.8;
-      for(let j=0;j<n;j++){const a2=a0+(R()*2-1)*.95;sp.push({x:p.x,y:p.y,vx:Math.cos(a2)*v0,vy:Math.sin(a2)*v0,t:0,life:.12+R()*.14,gen:p.gen+1,fk:.55,done:false,len:p.len*.62});}}}
-  st.et-=dt;if(st.et<=0){st.et=.5+R()*1.4;st.em.push({x,y,vx:(R()-.5)*30,vy:10,t:0});}
-  for(let i=st.em.length-1;i>=0;i--){const p=st.em[i];p.t+=dt;if(p.t>1.3){st.em.splice(i,1);continue;}p.vy+=260*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}}
-function skDraw(st,g){g.globalCompositeOperation='lighter';g.lineCap='round';
-  for(const p of st.sp){const v=Math.hypot(p.vx,p.vy)||1,L=Math.min(p.len,p.t*v),k=p.t/p.life,a=1-k*k,x0=p.x-p.vx/v*L,y0=p.y-p.vy/v*L;
-    g.strokeStyle='rgba(255,150,50,'+(.3*a).toFixed(3)+')';g.lineWidth=2.6;g.beginPath();g.moveTo(x0,y0);g.lineTo(p.x,p.y);g.stroke();
-    g.strokeStyle='rgba(255,236,190,'+(.95*a).toFixed(3)+')';g.lineWidth=1;g.beginPath();g.moveTo(x0,y0);g.lineTo(p.x,p.y);g.stroke();}
+// ── 仙女棒（線香花火）：照自己的節奏從花蕾一路燒到盛開，再慢慢安靜下來，不跟著呼吸 ──
+// 六種花樣，後面的出現時前面的都還在：花蕾（火球顫動、幾點短短的火花）→ 牡丹（火花盡頭開一朵小花）→ 松葉（一層一層分岔）
+// → 垂柳（長長的火花拖著尾巴往下垂）→ 金雨（金色火屑慢慢飄落）→ 盛開（一陣一陣炸開一整圈，有的圈帶玫瑰色或淡藍色）
+const skC=v=>v<0?0:v>1?1:v,skMix=(a,b,k)=>Math.round(a+(b-a)*k);
+// 燒到第 n 段（1–30，每五段多一種花樣）時的樣子，每一項 0–1；顏色從橘紅慢慢變成金白
+function skLook(n){const k={n,bud:skC(1-(n-1)/5),peony:skC((n-5)/3),pine:skC((n-10)/3),willow:skC((n-15)/3),rain:skC((n-20)/3),bloom:.6*skC((n-25)/5),hot:skC(n/30)};
+  k.col=[['255,'+skMix(112,166,k.hot)+','+skMix(36,66,k.hot),'255,'+skMix(206,244,k.hot)+','+skMix(140,214,k.hot)],['255,84,136','255,186,208'],['84,150,255','186,216,255']];return k;}
+function skStep(st,x,y,it,dt){const R=Math.random,sp=st.sp,k=st.lk,fb=k.bloom;
+  // 一道火花的花樣：松葉（往前分岔兩三層）、牡丹（盡頭開一朵小花）、或單純的一道
+  const shoot=(a,kk,tint)=>{const v=(170+R()*170)*(.45+.55*it)*(1+.4*fb)*(1+.18*k.pine)*kk,sty=R()<.7*k.pine?2:R()<k.peony?1:0;
+    sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:(.26+R()*.24)*(1+.25*fb),gen:0,fk:sty===1?.8+R()*.15:.5+R()*.3,done:false,len:(16+R()*16)*(1+.3*fb),sty,w:sty===1?1.5:1,c:tint||0});};
+  st.acc+=dt*58*it*(1+1.7*fb)*(1+.4*k.pine*(1-fb));while(st.acc>=1){st.acc-=1;shoot(R()*6.2832,1,0);}
+  // 花蕾：火球旁邊噼啪幾下很短的小火花
+  if(k.bud>0){st.bacc+=dt*9*k.bud;while(st.bacc>=1){st.bacc-=1;const a=R()*6.2832,v=70+R()*60;sp.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:.07+R()*.07,gen:9,fk:2,done:true,len:7,sty:0,w:1,c:0});}}
+  // 盛開：每隔一陣子炸開一整圈，有的圈帶顏色
+  if(fb>0){st.bt-=dt;if(st.bt<=0){st.bt=1.7-.8*fb+R()*.6;const nb=Math.round(10+12*fb),a0=R()*6.2832,tb=R()<.4?0:R()<.5?1:2;for(let i=0;i<nb;i++)shoot(a0+i/nb*6.2832+(R()-.5)*.12,1.15+.25*R(),tb);st.pulse=1;}}
+  st.pulse=Math.max(0,st.pulse-dt*2.2);
+  for(let i=sp.length-1;i>=0;i--){const p=sp[i];p.t+=dt;
+    if(p.t>=p.life){if(k.rain>0&&p.gen<9&&R()<.42*k.rain&&st.gl.length<320)st.gl.push({x:p.x,y:p.y,vx:p.vx*.06,vy:p.vy*.06,t:0,life:1+R()*1.3,ph:R()*6.28});sp.splice(i,1);continue;}
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;
+    if(!p.done&&p.t>p.life*p.fk){p.done=true;const a0=Math.atan2(p.vy,p.vx),v0=Math.hypot(p.vx,p.vy);
+      if(p.sty===2){const n=p.gen<(fb>.5?3:2)?(p.gen===0?3+Math.floor(R()*(3+fb)):(R()<.55+.25*fb?2:0)):0;   // 松葉：往前分岔，有的再分一次
+        for(let j=0;j<n;j++){const a2=a0+(R()*2-1)*.95;sp.push({x:p.x,y:p.y,vx:Math.cos(a2)*v0*.8,vy:Math.sin(a2)*v0*.8,t:0,life:.12+R()*.14,gen:p.gen+1,fk:.55,done:false,len:p.len*.62,sty:2,w:1,c:p.c});}}
+      else if(p.sty===1){const n=5+Math.floor(R()*3),off=R()*6.2832;   // 牡丹：盡頭閃一下，往四面開出短短的一小朵
+        for(let j=0;j<n;j++){const a2=off+j/n*6.2832+(R()-.5)*.3;sp.push({x:p.x,y:p.y,vx:Math.cos(a2)*v0*.5+p.vx*.15,vy:Math.sin(a2)*v0*.5+p.vy*.15,t:0,life:.11+R()*.09,gen:9,fk:2,done:true,len:p.len*.6,sty:1,w:1,c:p.c});}
+        st.pp.push({x:p.x,y:p.y,t:0});}
+      else if(p.gen===0&&R()<1-.9*k.bud){for(let j=0;j<2;j++){const a2=a0+(R()*2-1)*.8;sp.push({x:p.x,y:p.y,vx:Math.cos(a2)*v0*.8,vy:Math.sin(a2)*v0*.8,t:0,life:.1+R()*.12,gen:1,fk:2,done:true,len:p.len*.62,sty:0,w:1,c:p.c});}}}}   // 單純的一道：有時分成兩條
+  for(let i=st.pp.length-1;i>=0;i--){const p=st.pp[i];p.t+=dt;if(p.t>.18)st.pp.splice(i,1);}
+  // 垂柳：長長的火花，先往上、往旁邊飛，再慢慢垂下來，一路拖著尾巴
+  if(k.willow>0){st.wacc+=dt*5.5*k.willow*(.5+.5*it)*(1+.7*fb);
+    while(st.wacc>=1){st.wacc-=1;const a=-Math.PI*(.08+.84*R()),v=(150+R()*110)*(1+.2*fb);st.wl.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:0,life:1.1+R()*.7,tr:[x,y]});}}
+  for(let i=st.wl.length-1;i>=0;i--){const p=st.wl[i];p.t+=dt;
+    if(p.t>=p.life){if(k.rain>0&&st.gl.length<320)for(let j=0;j<2;j++)st.gl.push({x:p.x,y:p.y,vx:(R()-.5)*16,vy:R()*10,t:0,life:1+R()*1.3,ph:R()*6.28});st.wl.splice(i,1);continue;}
+    p.vx*=1-1.1*dt;p.vy=p.vy*(1-1.1*dt)+150*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;
+    const m=p.tr.length;if(Math.hypot(p.x-p.tr[m-2],p.y-p.tr[m-1])>3){p.tr.push(p.x,p.y);if(p.tr.length>64)p.tr.splice(0,2);}}
+  st.et-=dt;if(st.et<=0){st.et=(.5+R()*1.4)/Math.max(.3,it);st.em.push({x,y,vx:(R()-.5)*30,vy:10,t:0});}
+  for(let i=st.em.length-1;i>=0;i--){const p=st.em[i];p.t+=dt;if(p.t>1.3){st.em.splice(i,1);continue;}p.vy+=260*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}
+  // 金色的火屑：慢慢往下飄，一邊閃一邊淡掉
+  for(let i=st.gl.length-1;i>=0;i--){const p=st.gl[i];p.t+=dt;if(p.t>p.life){st.gl.splice(i,1);continue;}p.vy+=42*dt;p.vx*=1-1.2*dt;p.x+=p.vx*dt;p.y+=p.vy*dt;}}
+function skDraw(st,g){const C=st.lk.col;g.globalCompositeOperation='lighter';g.lineCap='round';g.lineJoin='round';
+  // 垂柳的尾巴：越靠近頭越亮
+  for(const p of st.wl){const tr=p.tr,n=tr.length/2,fade=1-Math.pow(p.t/p.life,2);
+    for(let c=0;c<4;c++){const j0=Math.floor(n*c/4),j1=c===3?n:Math.floor(n*(c+1)/4);if(j1<=j0&&c<3)continue;   // 尾巴分四段畫，一段比一段亮
+      g.beginPath();g.moveTo(tr[j0*2],tr[j0*2+1]);for(let j=j0+1;j<=Math.min(n-1,j1);j++)g.lineTo(tr[j*2],tr[j*2+1]);if(c===3)g.lineTo(p.x,p.y);
+      g.strokeStyle='rgba(255,206,130,'+(.72*fade*(c+1)/4).toFixed(3)+')';g.lineWidth=1.5*(.55+.15*c);g.stroke();}
+    g.fillStyle='rgba(255,244,214,'+(.95*fade).toFixed(3)+')';g.beginPath();g.arc(p.x,p.y,1.4,0,6.2832);g.fill();}
+  // 火花：照顏色、粗細、亮度分成幾組，一組一起畫（火花多的時候比較省力）
+  const B=st.bk||(st.bk=Array.from({length:36},()=>[]));for(const b of B)b.length=0;
+  for(const p of st.sp){const v=Math.hypot(p.vx,p.vy)||1,L=Math.min(p.len,p.t*v),q=p.t/p.life,a=1-q*q;B[(p.c*2+(p.w>1?1:0))*6+Math.min(5,Math.floor(a*6))].push(p.x-p.vx/v*L,p.y-p.vy/v*L,p.x,p.y);}
+  for(let i=0;i<36;i++){const b=B[i];if(!b.length)continue;const c=C[Math.floor(i/12)],w=Math.floor(i/6)%2?1.5:1,a=(i%6+.5)/6;
+    g.beginPath();for(let j=0;j<b.length;j+=4){g.moveTo(b[j],b[j+1]);g.lineTo(b[j+2],b[j+3]);}
+    g.strokeStyle='rgba('+c[0]+','+(.3*a).toFixed(3)+')';g.lineWidth=2.6*w;g.stroke();
+    g.strokeStyle='rgba('+c[1]+','+(.95*a).toFixed(3)+')';g.lineWidth=w;g.stroke();}
+  for(const p of st.pp){const a=1-p.t/.18;axBlob(g,p.x,p.y,12,'rgba(255,240,206,'+(.85*a).toFixed(3)+')','rgba(255,190,110,0)');}   // 牡丹開花的那一下閃光
   for(const p of st.em){g.fillStyle='rgba(255,170,80,'+(.9*(1-p.t/1.3)).toFixed(3)+')';g.beginPath();g.arc(p.x,p.y,1.3,0,6.2832);g.fill();}
+  // 金色的火屑：照亮度分五組，一組一起畫
+  const G=st.gk||(st.gk=[[],[],[],[],[]]);for(const b of G)b.length=0;
+  for(const p of st.gl){const a=(1-p.t/p.life)*(.55+.45*Math.sin(p.t*22+p.ph));if(a>.04)G[Math.min(4,Math.floor(a*5))].push(p.x,p.y);}
+  for(let i=0;i<5;i++){const b=G[i];if(!b.length)continue;g.fillStyle='rgba(255,226,160,'+((i+.5)/5).toFixed(3)+')';g.beginPath();for(let j=0;j<b.length;j+=2){g.moveTo(b[j]+1.1,b[j+1]);g.arc(b[j],b[j+1],1.1,0,6.2832);}g.fill();}
   g.globalCompositeOperation='source-over';}
 // 靜止的一束火星（開了「減少動態效果」時用）
 function skStill(g,x,y){const R=axRand(11);g.globalCompositeOperation='lighter';g.lineCap='round';
@@ -2689,31 +2734,36 @@ function skStill(g,x,y){const R=axRand(11);g.globalCompositeOperation='lighter';
     for(let j=0;j<n;j++){const a2=a+(R()*2-1)*.9,l=8+R()*10;g.moveTo(x1,y1);g.lineTo(x1+Math.cos(a2)*l,y1+Math.sin(a2)*l);}g.stroke();}
   g.globalCompositeOperation='source-over';}
 const FXS = {
- // 仙女棒：一顆小火球，火星像松葉一樣一段一段分岔散開。有呼吸圓點的練習，圓點就是那顆火球；其他畫面是一根紙捻從上面垂下來，火球掛在尾端。
- // 火星的多寡照自己的節奏（一輪 26 秒：剛點著 → 越來越旺 → 最旺 → 慢慢變小 → 只剩細細幾點），不跟著呼吸。開了「減少動態效果」就是一束靜止的火星
+ // 仙女棒：一顆小火球，照自己的節奏一輪一輪地燒（一輪 58 秒），不跟著呼吸：花蕾 → 牡丹 → 松葉 → 垂柳 → 金雨 → 盛開，然後慢慢安靜下來，再從花蕾開始。
+ // 有呼吸圓點的練習，圓點就是那顆火球；其他畫面是一根紙捻從上面垂下來，火球掛在尾端。開了「減少動態效果」就是一束靜止的火星
  senko:{lay:true,
-  init(st){st.sp=[];st.em=[];st.acc=0;st.et=1;st.t=Math.random()*26;st.x=null;st.y=0;st.top=null;st.inten=.6;st.cv=null;st.dotEl=null;st.layQ=null;},
-  level(T){const c=T%26,b=c<4?.25+.2*axEase(c/4):c<9?.45+.55*axEase((c-4)/5):c<15?1:c<22?1-.8*axEase((c-15)/7):.2;return b*(.92+.08*Math.sin(T*2.3));},
+  init(st){st.sp=[];st.em=[];st.gl=[];st.wl=[];st.pp=[];st.acc=0;st.bacc=0;st.wacc=0;st.et=1;st.bt=.6;st.pulse=0;st.t=Math.random()*49;st.lk=skLook(1);st.x=null;st.y=0;st.top=null;st.inten=.6;st.cv=null;st.dotEl=null;st.layQ=null;},
+  // 這一輪燒到第幾段（1–30）：花蕾 5 秒、牡丹 8 秒，松葉、垂柳、金雨、盛開各 9 秒；接著 6 秒慢慢安靜下來，再 3 秒只剩火球
+  stage(T){let c=T%58;const D=[5,8,9,9,9,9];for(let i=0;i<6;i++){if(c<D[i])return Math.min(30,1+5*(i+c/D[i]));c-=D[i];}return c<6?30-29*axEase(c/6):1;},
   // 呼吸的圓點現在在畫面的哪裡（這個畫面沒有圓點就是 null）
   dot(st){const c=st.cv;if(st.layQ!==st.lay||(st.dotEl&&!st.dotEl.isConnected)){st.layQ=st.lay;st.dotEl=(c.parentElement?[...c.parentElement.querySelectorAll('[data-fxdot]')]:[]).find(e=>e.getBoundingClientRect().width>0)||null;}   // 看得見的那一個
     const e=st.dotEl;if(!e)return null;const r=e.getBoundingClientRect(),cr=c.getBoundingClientRect();if(!r.width||!cr.width)return null;const k=c.clientWidth/cr.width;return [(r.left+r.width/2-cr.left)*k,(r.top+r.height/2-cr.top)*k];},
   move(st,dt,W,H){const rm=reducedMotion();
-    if(!rm&&!(st.cv&&st.cv.isConnected)){st.sp.length=0;st.em.length=0;st.x=null;return;}   // 剛換畫面：等畫布接上再開始
+    if(!rm&&!(st.cv&&st.cv.isConnected)){st.sp.length=0;st.em.length=0;st.gl.length=0;st.wl.length=0;st.pp.length=0;st.x=null;return;}   // 剛換畫面：等畫布接上再開始
     if(!rm)st.t+=dt;const T=st.t,v=(st.lay||{}).vis,col=axCol(W),d=rm?null:this.dot(st);
     if(d){st.x=d[0];st.y=d[1];st.top=null;}
     else if(v){st.x=col[0]+col[1]-46+(rm?0:3*Math.sin(T*.8));st.y=Math.max(104,v.y-4);st.top=64;}   // 沒有圓點的練習：掛在呼吸圖形的右上方
     else if((st.lay||{}).home){st.x=col[0]+col[1]*.8+(rm?0:3*Math.sin(T*.8));st.y=Math.min(H*.37,320);st.top=-4;}   // 首頁：從最上面垂下來，掛在右邊
     else{st.x=col[0]+col[1]-46+(rm?0:3*Math.sin(T*.8));st.y=Math.min(H*.37,320);st.top=88;}   // 其他畫面（白骨觀練習、設定頁）：靠右邊，從標題列下面垂下來，不穿過右上角的時間
-    st.inten=rm?.8:this.level(T);if(!rm)skStep(st,st.x,st.y,st.inten,dt);},
-  draw(st,g,W,H){st.cv=g.canvas;if(st.x==null)return;const L=st.lay||{},x=st.x,y=st.y,it=st.inten,rm=reducedMotion();
+    if(rm){st.inten=.8;return;}
+    const n=this.stage(T);if(Math.abs(n-st.lk.n)>.04)st.lk=skLook(n);   // 越後面的段越旺：前面慢慢來，後面旺得快
+    st.inten=(.14+.86*Math.pow(n/30,1.35))*(.92+.08*Math.sin(T*2.3));skStep(st,st.x,st.y,st.inten,dt);},
+  draw(st,g,W,H){st.cv=g.canvas;if(st.x==null)return;const L=st.lay||{},x=st.x,y=st.y,it=st.inten,rm=reducedMotion(),k=st.lk,fb=rm?0:k.bloom,pu=rm?0:st.pulse,hot=rm?.7:k.hot,bud=rm?0:k.bud;
     if(rm)skStill(g,x,y);else skDraw(st,g);
     if(L.vis)fxClear(g,L.clear);
     // 火光最後才畫，文字後面只清掉火星，不會留下一塊暗影
-    axBlob(g,x,y,150,'rgba(255,140,50,'+(.14*it).toFixed(3)+')','rgba(255,140,50,0)');axBlob(g,x,y,40,'rgba(255,176,84,'+(.55*it).toFixed(3)+')','rgba(255,176,84,0)');
+    axBlob(g,x,y,150*(1+.45*fb+.2*pu),'rgba(255,140,50,'+Math.min(.5,.14*it*(1+.9*fb+.8*pu)).toFixed(3)+')','rgba(255,140,50,0)');axBlob(g,x,y,40*(1+.5*fb+.3*pu),'rgba(255,176,84,'+Math.min(.9,.55*it*(1+.3*fb)).toFixed(3)+')','rgba(255,176,84,0)');
     if(st.top!=null){const x0=x-(rm?0:3*Math.sin(st.t*.8));   // 紙捻和火球
       g.strokeStyle='rgba(214,190,160,.5)';g.lineWidth=1;g.beginPath();g.moveTo(x0,st.top);g.quadraticCurveTo(x0,(st.top+y)/2,x,y-26);g.stroke();
       g.strokeStyle='rgba(128,96,66,.9)';g.lineWidth=1.4;g.beginPath();g.moveTo(x,y-26);g.lineTo(x,y-4);g.stroke();
-      axBlob(g,x,y,11,'rgba(255,214,140,1)','rgba(255,170,70,0)');g.fillStyle='#fff6dc';g.beginPath();g.arc(x,y,4.2,0,6.2832);g.fill();}}},
+      // 火球：越後面越大、越亮；花蕾的時候微微顫動
+      const bs=(.78+.42*hot)*(1+.1*bud*Math.sin(st.t*9)),bx=x+(Math.random()-.5)*1.3*bud,by=y+(Math.random()-.5)*1.3*bud;
+      axBlob(g,bx,by,11*bs,'rgba(255,'+skMix(196,220,hot)+','+skMix(120,150,hot)+',1)','rgba(255,170,70,0)');g.fillStyle='rgb(255,'+skMix(232,248,hot)+','+skMix(196,226,hot)+')';g.beginPath();g.arc(bx,by,4.2*bs,0,6.2832);g.fill();}}},
   // 營火：火星從下方火光冒出，一直往上飄、一邊閃一邊淡掉，速度和數量固定
   sparks: {
     init(st, W, H) { st.p = []; st.acc = 0; for (let i = 0; i < 200; i++) this.move(st, .05, W, H); },
