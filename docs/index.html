@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=61">
+<link rel="stylesheet" href="styles.css?v=62">
 </head>
 <body>
 <main class="home">
@@ -602,20 +602,38 @@
     <h2 class="ex-name">聆聽</h2>
     <p class="desc ls-desc">不做呼吸練習，單純聽聲音：放鬆、專心，或準備入睡。</p>
 
-    <div class="section-head"><span class="section-title">聲音</span><span class="ls-sel-note" id="lsSelNote"></span></div>
-    <div class="music-grid" id="lsSounds"></div>
-    <div id="lsVolBox" hidden>
-      <span class="section-title ls-vol-title">音量</span>
-      <div class="panel ls-vols" id="lsVols"></div>
+    <!-- 一起播：最多 3 種聲音同時播；接著播：一段播完接下一段 -->
+    <div class="ls-mode" id="lsMode" role="group" aria-label="播放方式"></div>
+
+    <div class="ls-col" id="lsMixBox">
+      <div class="section-head"><span class="section-title">聲音</span><span class="ls-sel-note" id="lsSelNote"></span></div>
+      <div class="music-grid" id="lsSounds"></div>
+      <div id="lsVolBox" hidden>
+        <span class="section-title ls-vol-title">音量</span>
+        <div class="panel ls-vols" id="lsVols"></div>
+      </div>
+      <p class="hint ls-note" id="lsMixNote"></p>
     </div>
-    <p class="hint ls-note" id="lsMixNote"></p>
+    <div class="ls-col" id="lsSeqBox" hidden>
+      <div class="section-head"><span class="section-title">播放順序</span><span class="ls-sel-note" id="lqTotal"></span></div>
+      <div class="panel lq-list" id="lqList" hidden></div>
+      <button class="lq-add" id="lqAdd" data-action="ls-add">＋ 加一段</button>
+      <p class="hint ls-note" id="lqNote"></p>
+    </div>
     <div class="mine ls-mine" id="lsMineBox" hidden>
       <span class="mine-title">我的錄音</span>
       <div id="lsMineRows"></div>
     </div>
 
-    <span class="section-title music-title ls-gap">時間</span>
-    <div class="music-grid" id="lsMins"></div>
+    <div class="ls-col" id="lqXfBox" hidden>
+      <span class="section-title music-title ls-gap">換段的方式</span>
+      <div class="music-grid" id="lqXf"></div>
+      <p class="hint ls-note lq-xf-note" id="lqXfNote"></p>
+    </div>
+    <div class="ls-col" id="lsMinBox">
+      <span class="section-title music-title ls-gap">時間</span>
+      <div class="music-grid" id="lsMins"></div>
+    </div>
     <div id="lsFadeBox">
       <span class="section-title cue-title">結束前慢慢變小聲</span>
       <div class="music-grid ls-fades" id="lsFades"></div>
@@ -630,6 +648,25 @@
       <button class="btn btn-primary" id="lsStartBtn" data-action="ls-start">開始聆聽</button>
     </div>
   </div>
+  <!-- 接著播：加一段／改一段的視窗（從下面滑上來） -->
+  <div class="lq-sheet-bg" id="lqSheet" hidden>
+    <div class="lq-sheet-dim" data-action="ls-sheet-close"></div>
+    <div class="lq-sheet" id="lqSheetBox" role="dialog" aria-modal="true" aria-labelledby="lqSheetTitle">
+      <div class="lq-sheet-bar"></div>
+      <div class="lq-sheet-head"><span class="lq-sheet-title" id="lqSheetTitle"></span><button class="lq-sheet-x" data-action="ls-sheet-close">取消</button></div>
+      <span class="section-title lq-sheet-sec">聲音</span>
+      <div class="music-grid lq-grid" id="lqSnds"></div>
+      <span class="section-title lq-sheet-sec lq-sheet-sec2">播多久</span>
+      <div class="music-grid lq-grid" id="lqLens"></div>
+      <div class="lq-step">
+        <button data-action="ls-step-dn" aria-label="少一點">−</button>
+        <span id="lqStepText" aria-live="polite"></span>
+        <button data-action="ls-step-up" aria-label="多一點">＋</button>
+      </div>
+      <p class="hint lq-sheet-note" id="lqSheetNote"></p>
+      <button class="btn btn-primary lq-sheet-ok" id="lqSheetOk" data-action="ls-sheet-ok"></button>
+    </div>
+  </div>
 </section>
 
 <!-- 聆聽：播放畫面（自動變暗時蓋上一層全黑的畫面，點一下顯示控制） -->
@@ -639,7 +676,12 @@
     <div class="progress" id="lsBar"><div class="progress-fill" id="lsProgress"></div></div>
     <div class="stage ls-stage">
       <div class="ls-orb" data-fxvis><div class="ls-glow"></div><svg viewBox="0 0 32 32"><path d="M6.5 19v-3.5a9.5 9.5 0 0 1 19 0V19M6.5 19h3.5v7H8a1.5 1.5 0 0 1-1.5-1.5V19ZM25.5 19H22v7h2a1.5 1.5 0 0 0 1.5-1.5V19Z"></path></svg></div>
-      <div class="ls-text"><span class="ls-names" id="lsNames"></span><span class="ls-status" id="lsStatus"></span></div>
+      <div class="ls-text"><span class="lq-idx" id="lqIdx" hidden></span><span class="ls-names" id="lsNames"></span><span class="ls-status" id="lsStatus"></span></div>
+    </div>
+    <!-- 接著播：分段的進度條、接下來是哪一段 -->
+    <div id="lqRunBox" hidden>
+      <div class="lq-bar" id="lqBar"></div>
+      <div class="lq-next" id="lqNextBox"></div>
     </div>
     <div class="panel ls-vols" id="lsRunVols"></div>
     <div class="wh-actions ls-actions">
@@ -647,7 +689,11 @@
       <button class="wh-btn wh-btn-primary" id="lsResumeBtn" data-action="ls-resume" hidden>繼續</button>
       <button class="wh-btn" data-action="ls-dim">變暗</button>
     </div>
-    <button class="wh-btn ls-stop" data-action="ls-stop">停止</button>
+    <button class="wh-btn ls-stop" id="lsStopBtn" data-action="ls-stop">停止</button>
+    <div class="wh-actions lq-actions" id="lqActions" hidden>
+      <button class="wh-btn lq-next-btn" id="lqNextBtn" data-action="ls-next">下一段</button>
+      <button class="wh-btn" data-action="ls-stop">停止</button>
+    </div>
   </div>
   <div class="ls-dim" id="lsDim" data-action="ls-wake" hidden>
     <div class="ls-dim-glow"></div>
@@ -672,7 +718,7 @@
   </div>
 </section>
 
-<script src="app.js?v=75"></script>
+<script src="app.js?v=76"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

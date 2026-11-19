@@ -726,7 +726,66 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .ls-vol-name { flex: none; width: 78px; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ls-vol input { flex: 1; min-width: 0; height: 28px; margin: 0; }
 .ls-vol-del { flex: none; width: 40px; height: 40px; border: none; background: none; color: var(--muted-2); font-size: 20px; line-height: 1; cursor: pointer; }
-.music-opt.ls-off, .btn.ls-off { opacity: .4; }
+.music-opt.ls-off, .btn.ls-off, .wh-btn.ls-off, .lq-add.ls-off, .lq-more .ls-off { opacity: .4; }
+/* 聆聽：接著播 */
+.ls-col { display: flex; flex-direction: column; }
+.ls-mode { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 20px; border-radius: 16px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.ls-mode button { height: 42px; border: none; border-radius: 12px; background: transparent; color: var(--muted); font-size: 15px; font-weight: 500; cursor: pointer; transition: background .2s; }
+.ls-mode button.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(21,48,58,.16); }
+.ls-mode.lq-dk button.on { background: color-mix(in srgb, var(--accent) 55%, transparent); box-shadow: none; }
+.lq-list { padding: 2px 8px 2px 12px; overflow: hidden; }
+.lq-row { border-bottom: 1px solid var(--line-3); margin: 0 -8px 0 -12px; padding: 0 8px 0 12px; transition: background .15s; }
+.lq-row:last-child { border-bottom: none; }
+.lq-row.open { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+.lq-row.drag { background: color-mix(in srgb, var(--accent) 13%, transparent); }
+.lq-main { display: flex; align-items: center; gap: 6px; min-height: 56px; }
+.lq-grip { flex: none; width: 34px; height: 48px; margin-left: -8px; display: flex; align-items: center; justify-content: center; font-size: 20px; line-height: 1; color: var(--muted-2); opacity: .6; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.lq-name { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0; border: none; background: none; text-align: left; cursor: pointer; }
+.lq-n { flex: none; width: 22px; height: 22px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); font: 500 12px var(--mono); display: flex; align-items: center; justify-content: center; }
+.lq-row.open .lq-n, .lq-row.drag .lq-n { background: var(--accent); color: #ffffff; }
+.lq-label { flex: 1; min-width: 0; font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lq-label.lq-gone { color: var(--muted-2); }
+.lq-len { flex: none; min-height: 36px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--line); background: none; color: var(--muted); font-size: 13px; white-space: nowrap; cursor: pointer; }
+.lq-del { flex: none; width: 36px; height: 44px; padding: 0; border: none; background: none; color: var(--muted-2); font-size: 20px; line-height: 1; cursor: pointer; }
+.lq-more { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 0 0 10px; }
+.lq-more button { height: 40px; padding: 0; border-radius: 11px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 14px; cursor: pointer; }
+.lq-more .lq-red { color: #c8553d; }
+.lq-add { height: 48px; margin-top: 8px; border-radius: 14px; border: 1.5px dashed var(--track); background: none; color: var(--accent); font-size: 15px; font-weight: 500; cursor: pointer; }
+.lq-list[hidden] + .lq-add { margin-top: 0; }
+.lq-xf-note { margin-bottom: 0; }
+/* 加一段／改一段的視窗 */
+.screen.lq-lock { overflow: hidden; }
+.lq-sheet-bg { position: fixed; inset: 0; z-index: 6; display: flex; flex-direction: column; justify-content: flex-end; }
+.lq-sheet-dim { position: absolute; inset: 0; background: rgba(10,24,30,.45); animation: lsIn .2s ease; }
+.lq-sheet { position: relative; width: 100%; max-width: 480px; margin: 0 auto; max-height: 90%; overflow-y: auto; box-sizing: border-box; background: var(--screen); color: var(--ink); border-radius: 26px 26px 0 0; padding: 12px 20px 24px; display: flex; flex-direction: column; animation: lqUp .25s ease; }
+.lq-sheet-bar { flex: none; width: 40px; height: 4px; border-radius: 2px; background: var(--track); align-self: center; margin-bottom: 10px; }
+.lq-sheet-head { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 10px; }
+.lq-sheet-title { font-size: 20px; font-weight: 700; }
+.lq-sheet-x { min-height: 44px; padding: 0 6px; border: none; background: none; color: var(--ink-2); font-size: 15px; cursor: pointer; }
+.lq-sheet-sec { margin: 0 4px 8px; }
+.lq-sheet-sec2 { margin-top: 16px; }
+.lq-grid { gap: 7px; }
+.lq-grid .music-opt { height: 44px; border-radius: 13px; padding: 0 6px; }
+.lq-grid .lq-dash { border-style: dashed; }
+.lq-step { display: flex; align-items: center; gap: 8px; margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px; }
+.lq-step button { flex: none; width: 48px; height: 44px; padding: 0; border: none; border-radius: 12px; background: var(--screen); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
+.lq-step span { flex: 1; text-align: center; font-size: 15px; font-weight: 500; }
+.lq-sheet-note { margin: 10px 4px 0; line-height: 1.6; }
+.lq-sheet-ok { flex: none; margin-top: 16px; }
+/* 播放畫面：第幾段、分段的進度條、接下來 */
+.lq-idx { font: 400 13px var(--mono); color: var(--muted-2); }
+.ls-names.lq-big { font-size: 24px; }
+.lq-bar { display: flex; gap: 5px; margin-bottom: 12px; }
+.lq-seg { min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.lq-seg-bar { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.lq-seg-bar div { height: 100%; width: 0; background: var(--dot); border-radius: 3px; transition: width .4s linear; }
+.lq-seg span { font-size: 11.5px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lq-seg.on span { color: var(--ink); font-weight: 500; }
+.lq-next { margin-bottom: 12px; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 14px; line-height: 1.5; transition: border-color .3s; }
+.lq-next.near { border-color: var(--accent); }
+.lq-actions { margin-top: 10px; }
+.lq-actions .lq-next-btn { background: var(--card); }
+@keyframes lqUp { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 .ls-fades { grid-template-columns: repeat(2, 1fr); }
 .ls-run-inner { margin: 0 auto; min-height: 100%; padding-bottom: 32px; }
 .ls-stage { gap: 18px; min-height: 250px; }
@@ -752,7 +811,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 @keyframes lsPulse { 0%, 100% { transform: scale(.8); opacity: .55; } 50% { transform: scale(1); opacity: 1; } }
 @keyframes lsGlow { 0%, 100% { transform: scale(.84); opacity: .45; } 50% { transform: scale(1.04); opacity: 1; } }
 @keyframes lsIn { from { opacity: 0; } to { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { .ls-glow, .ls-dim-glow, .ls-dim { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .ls-glow, .ls-dim-glow, .ls-dim, .lq-sheet, .lq-sheet-dim { animation: none; } }
 
 /* 白骨觀（楊定一博士帶的方法）：白骨1 月白、白骨2 白描、白骨3 燭光 */
 :root[data-theme="bone1"] { /* 白骨1 月白：深夜的藍黑色，大拇趾像在月光下 */

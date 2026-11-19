@@ -59,7 +59,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, bnOpen: false, bnMin: 10, bnAck: false });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -72,8 +72,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen, bnMin, bnAck } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, bnOpen, bnMin, bnAck })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -496,7 +496,11 @@ function addMine(f) {
     // 在冰人呼吸設定頁上傳的，就選為冰人呼吸的背景音樂；其他練習（包括重生呼吸）共用一般的背景音樂
     if (cur != null && EX[cur].id === 'wimhof') { whSet('music', 'mine:' + id); return; }
     // 在聆聽設定頁上傳的，直接加進選的聲音（最多 3 種）
-    if (cur != null && EX[cur].id === 'listen') { const s = lsSel(); if (s.length < LS_MAX) state.lsSel = [...s, 'mine:' + id]; save(); lsRenderSetup(); return; }
+    if (cur != null && EX[cur].id === 'listen') {
+      if (lqMode() === 'seq') { if (lsSheet) { lsSheet = { ...lsSheet, k: 'mine:' + id, d: 0 }; if (lsSheet.m === 'once') lqDur(lsSheet.k); } }
+      else { const s = lsSel(); if (s.length < LS_MAX) state.lsSel = [...s, 'mine:' + id]; save(); }
+      lsRenderSetup(); return;
+    }
     state.music = 'mine:' + id; save(); renderMusicSetup();
   }).catch(() => alert('無法儲存這個檔案，請換一個試試。'));
 }
@@ -509,6 +513,9 @@ function delMine(m) {
   if (state.music === 'mine:' + m.id) { state.music = 'none'; save(); }
   if (state.wh && state.wh.music === 'mine:' + m.id) { state.wh = { ...state.wh, music: 'none' }; save(); }
   if (Array.isArray(state.lsSel) && state.lsSel.includes('mine:' + m.id)) { state.lsSel = state.lsSel.filter(k => k !== 'mine:' + m.id); save(); }
+  // 接著播的清單裡用到這個錄音的段落也拿掉
+  if (Array.isArray(state.lsSeq) && state.lsSeq.some(x => x && x.k === 'mine:' + m.id)) { state.lsSeq = state.lsSeq.filter(x => !(x && x.k === 'mine:' + m.id)); save(); }
+  lsSheet = null; lsSeqOpen = null;
   renderMusicSetup();
 }
 // 上傳或刪除錄音後，重畫目前打開的設定頁
@@ -1729,7 +1736,15 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && bp
 // 自動變暗：開始播放後 10 秒沒碰螢幕，蓋上一層全黑的畫面。不算練習次數、不給印章
 // 每種聲音一條音軌：同一個網站（或自己上傳）的音檔接到自己的 GainNode，iPhone 也能各自調音量、慢慢變小聲
 const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_AFTER = 10000;
+// 「接著播」：一段播完接下一段。最多 6 段；每段設幾分鐘，有頭有尾的聲音（咒、歌聲、自己的錄音）可以選播完幾遍
+// 換段：慢慢交疊（前後各 2.5 秒）、直接接上、中間安靜（淡出 2 秒、安靜 10 秒、淡入 2 秒）
+const LQ_MAX = 6, LQ_MINS = [5, 10, 15, 20, 30], LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_ONCE = ['chant', 'shurangama', 'dabei', 'singing'];
+const LQ_DARK = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
+const lqOnceOk = k => typeof k === 'string' && (k.startsWith('mine:') || LQ_ONCE.includes(k));
 let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
+// 接著播：加一段／改一段的視窗 { i, k, m, n, d }、清單上展開的那一段、正在拖的那一段、每個聲音播一遍幾秒（-1 是讀不到）
+let lsSheet = null, lsSeqOpen = null, lsSeqDrag = null, lqDrag = null, lsVolHold = false;
+const lqd = {};
 const lsKnown = k => typeof k === 'string' && (k.startsWith('mine:') ? !!myUrls[k.slice(5)] : k !== 'none' && MUSIC.some(([x]) => x === k));
 const lsSel = () => (Array.isArray(state.lsSel) ? state.lsSel : []).filter(lsKnown).slice(0, LS_MAX);
 const lsVolOf = k => { const v = (state.lsVol || {})[k]; return typeof v === 'number' ? v : .7; };
@@ -1751,8 +1766,7 @@ function lsWarnGo() {
 }
 function lsSetVol(k, v) {
   state.lsVol = { ...(state.lsVol || {}), [k]: v }; save();
-  const t = ls && ls.tr.find(x => x.k === k);
-  if (t) { t.v = v; lsApply(t, .06); }
+  (ls ? ls.tr : []).forEach(t => { if (t.k === k) { t.v = v; lsApply(t, .06); } });
 }
 // 音量列：名稱、滑桿、（設定頁才有）× 取消
 function lsVolRows(box, items, canDel) {
@@ -1780,7 +1794,24 @@ function lsOpts(box, opts, isOn, pick) {
   });
 }
 function lsRenderSetup() {
-  const sel = lsSel(), full = sel.length >= LS_MAX, min = +state.lsMin || 0, fd = +state.lsFade || 1, fm = min ? Math.min(fd, min / 2) : 0, warn = lsWarn && full;
+  const mode = lqMode(), isSeq = mode === 'seq';
+  if (isSeq) lqList().forEach(x => { if (x.m === 'once' && !(x.d > 0) && lqOk(x)) lqDur(x.k); });   // 還不知道多長的（例如從別台裝置同步來的），先去讀
+  const LQ = lqList(), qTotal = isSeq ? lqPlan().total : 0, qMin = Math.max(1, Math.round(qTotal / 60));
+  const sel = lsSel(), full = sel.length >= LS_MAX, min = isSeq ? qTotal / 60 : +state.lsMin || 0, fd = +state.lsFade || 1, fm = min ? Math.round(Math.min(fd, min / 2) * 10) / 10 : 0, warn = lsWarn && full;
+  // 一起播／接著播
+  const md = $('lsMode');
+  md.innerHTML = '';
+  md.classList.toggle('lq-dk', LQ_DARK.includes(state.theme));
+  [['mix', '一起播'], ['seq', '接著播']].forEach(([k, lb]) => {
+    const b = document.createElement('button');
+    b.className = mode === k ? 'on' : '';
+    b.textContent = lb; b.setAttribute('aria-pressed', mode === k);
+    b.addEventListener('click', () => { state.lsMode = k; lsSeqOpen = null; lsWarn = false; save(); lsRenderSetup(); });
+    md.appendChild(b);
+  });
+  $('lsMixBox').hidden = isSeq; $('lsMinBox').hidden = isSeq;
+  $('lsSeqBox').hidden = !isSeq; $('lqXfBox').hidden = !isSeq;
+  if (isSeq) lqRenderSetup(LQ, qTotal, qMin);
   $('lsSelNote').textContent = '最多選 ' + LS_MAX + ' 種' + (sel.length ? '・已選 ' + sel.length : '');
   $('lsSelNote').classList.toggle('warn', warn);
   const box = $('lsSounds');
@@ -1818,7 +1849,8 @@ function lsRenderSetup() {
   lsOpts($('lsMins'), LS_MINS.map(m => [m, m ? m + ' 分鐘' : '不限']), m => m === min, m => { state.lsMin = m; save(); lsRenderSetup(); });
   $('lsFadeBox').hidden = !min;
   lsOpts($('lsFades'), LS_FADES.map(f => [f, '最後 ' + f + ' 分鐘']), f => f === fd, f => { state.lsFade = f; save(); lsRenderSetup(); });
-  $('lsTimeNote').textContent = !min ? '不限時間：想停的時候按「停止」。'
+  $('lsTimeNote').textContent = isSeq ? (!min ? '' : fm < fd ? '全部加起來比較短，會在最後 ' + fm + ' 分鐘慢慢變小聲，播完就停。' : '全部播完之前，聲音會慢慢變小，不會突然斷掉。')
+    : !min ? '不限時間：想停的時候按「停止」。'
     : fm < fd ? '時間比較短，會在最後 ' + fm + ' 分鐘慢慢變小聲，時間到就停。' : '聲音會慢慢變小，時間到就停，不會突然斷掉。';
   const dk = !!state.lsDim;
   $('lsDimBox').innerHTML = '';
@@ -1829,20 +1861,25 @@ function lsRenderSetup() {
   t.addEventListener('click', () => { state.lsDim = !state.lsDim; save(); lsRenderSetup(); });
   $('lsDimBox').appendChild(t);
   $('lsDimNote').textContent = (dk ? '開始播放後，10 秒沒碰螢幕，畫面就會變暗，適合睡前。點一下螢幕就會顯示控制。' : '播放時也可以按「變暗」，讓畫面暗下來。') + '播放時螢幕不會自動關掉，播完才會。';
-  $('lsStartBtn').textContent = min ? '開始聆聽 · ' + min + ' 分鐘' : '開始聆聽';
-  $('lsStartBtn').classList.toggle('ls-off', !sel.length);
+  $('lsStartBtn').textContent = isSeq ? (qTotal > 0 ? '開始聆聽 · ' + qMin + ' 分鐘' : '開始聆聽') : min ? '開始聆聽 · ' + min + ' 分鐘' : '開始聆聽';
+  $('lsStartBtn').classList.toggle('ls-off', isSeq ? !(qTotal > 0) : !sel.length);
+  lqRenderSheet();
 }
 function lsOpen() {
   lsWarn = false;
+  lsSheet = null; lsSeqOpen = null; lsSeqDrag = null; lqDrag = null;
+  Object.keys(lqd).forEach(k => { if (lqd[k] === -1) delete lqd[k]; });   // 上次讀不到長度的，這次打開再讀一次
   lsRenderSetup();
   show('lsSetup');
   screens.lsSetup.scrollTop = 0;
 }
 // 一條音軌：音檔（循環、輪播或自己上傳的）＋雨聲、水晶缽多一層當場合成的聲音
-function lsTrack(k, l) {
+// 接著播會多給 o：hold 先載入、輪到了才播；once 播完幾遍就停，不循環；pool 開始播放（點擊）時就建好的播放器
+function lsTrack(k, l, o) {
+  o = o || {};
   const a0 = ctx(), g = a0.createGain();
   g.gain.value = 0; g.connect(a0.destination);
-  const t = { k, l, v: lsVolOf(k), g, els: [], nodes: [], ivs: [], cur: null, sw: false, direct: false };
+  const t = { k, l, v: lsVolOf(k), g, els: [], nodes: [], ivs: [], cur: null, sw: false, direct: false, hold: !!o.hold, dead: false };
   const live = () => ls === l && !l.paused;
   const list = MUSIC_LISTS[k] || (k.startsWith('mine:') ? [myUrls[k.slice(5)]] : null);
   const srcs = list ? null : [].concat(MUSIC_FILES[k] || []);
@@ -1850,22 +1887,23 @@ function lsTrack(k, l) {
   // 同一個網站（或自己上傳）的音檔才接到 GainNode；別的網站的音檔直接調 volume，至少一定聽得到
   try { const u = new URL(first, location.href); t.direct = !(u.protocol === 'blob:' || u.origin === location.origin); } catch (e) { t.direct = true; }
   const mk = src => {
-    const a = new Audio();
+    const a = (o.pool && o.pool.shift()) || new Audio();
     a.preload = 'auto'; a.setAttribute('playsinline', '');
     if (src) a.src = src;
     if (!t.direct) { try { a0.createMediaElementSource(a).connect(g); } catch (e) { t.direct = true; } }
     if (t.direct) a.volume = 0;
     // 被系統停掉（來電、別的 App 開始播放…）：整個暫停，等使用者按「繼續」
-    a.addEventListener('pause', () => { if (t.cur === a && !a.ended && !t.sw && live()) lsSysPause(); });
+    a.addEventListener('pause', () => { if (t.cur === a && !a.ended && !t.sw && !t.dead && live()) lsSysPause(); });
     t.els.push(a);
     return a;
   };
   if (srcs) {
     const a = mk(srcs.shift());
-    a.loop = true;
+    a.loop = !o.once;
+    if (o.once) { let n = 1; a.onended = () => { if (ls !== l || n >= o.once) return; n++; a.currentTime = 0; if (live()) a.play().catch(() => {}); }; }
     a.onerror = () => { if (srcs.length && ls === l) { a.src = srcs.shift(); if (live()) a.play().catch(() => {}); } };
     const cut = LOOPCUT[k];
-    if (cut) {
+    if (cut && !o.once) {
       // 頭尾有淡入淡出的音檔：跳過頭尾，兩個播放器接替
       a.loop = false;
       const b = mk();
@@ -1877,20 +1915,21 @@ function lsTrack(k, l) {
         nx.currentTime = cut[0]; t.cur = nx; nx.play().catch(() => {}); c.pause();
       }, 40));
     }
-    t.cur = a; a.play().catch(() => {});
+    t.cur = a; if (!o.hold) a.play().catch(() => {});
   } else {
-    let i = 0;
+    let i = 0, pass = 1;
     const a = mk(list[0]);
     const next = () => {
       if (ls !== l) return;
-      i = (i + 1) % list.length;
+      i++;
+      if (i >= list.length) { if (o.once && pass >= o.once) return; pass++; i = 0; }
       t.sw = true;
       if (a.src.endsWith(list[i])) a.currentTime = 0; else a.src = list[i];
       t.sw = false;
       if (live()) a.play().catch(() => {});
     };
     a.onended = next; a.onerror = () => { if (list.length > 1) next(); };
-    t.cur = a; a.play().catch(() => {});
+    t.cur = a; if (!o.hold) a.play().catch(() => {});
   }
   const flt = (type, fr) => { const n = a0.createBiquadFilter(); n.type = type; n.frequency.value = fr; return n; };
   const gn = v => { const n = a0.createGain(); n.gain.value = v; return n; };
@@ -1918,7 +1957,7 @@ function lsLevel() {
   return f;
 }
 function lsApply(t, tc) {
-  const v = t.v * lsLevel();
+  const v = t.hold ? 0 : t.v * lsLevel() * (t.e == null ? 1 : t.e);
   try { t.g.gain.setTargetAtTime(v, ac.currentTime, tc || .15); } catch (e) {}
   if (t.direct) t.els.forEach(a => { a.volume = Math.max(0, Math.min(1, v)); });
 }
@@ -1927,7 +1966,8 @@ function lsTick() {
   if (!l) return;
   const el = lsEl();
   if (l.total && el >= l.total) { lsEnd(); return; }
-  if (!l.paused) l.tr.forEach(t => lsApply(t));
+  if (l.seq) lqTick();
+  if (!l.paused) l.tr.forEach(t => lsApply(t, l.seq && l.xf === 'cut' ? .03 : 0));
   if (!l.paused && state.lsDim && $('lsDim').hidden && performance.now() - l.poke > LS_DIM_AFTER) lsDimShow(true);
   if (!$('lsDim').hidden && BONE[state.theme]) lsDimDraw();
   lsUpdate();
@@ -1936,17 +1976,21 @@ function lsUpdate() {
   const l = ls;
   if (!l) return;
   const el = lsEl(), left = l.total ? Math.max(0, l.total - el) : 0, tt = l.total ? fmt(left) : fmt(Math.floor(el));
+  const qs = l.seq, qg = qs ? qs[Math.min(qs.length - 1, l.cur || 0)] : null;
   $('lsTop').textContent = (l.total ? '剩 ' : '已播 ') + tt;
-  $('lsBar').style.visibility = l.total ? 'visible' : 'hidden';
+  $('lsBar').style.visibility = l.total && !qs ? 'visible' : 'hidden';   // 接著播用下面分段的進度條
   $('lsProgress').style.width = (l.total ? Math.min(100, el / l.total * 100) : 0) + '%';
   $('lsStatus').textContent = l.paused ? (l.sys ? '聲音被系統暫停了，按「繼續」接著播放' : '已暫停') : l.total && left <= l.fade ? '正在慢慢變小聲'
+    : qs ? (el > qg.e + .3 && qg !== qs[qs.length - 1] ? '安靜一下，下一段馬上開始' : '這一段還有 ' + fmtUp(Math.ceil(Math.max(0, qg.e - el))))
     : BONE[state.theme] ? BN_TXT[4] : '';
+  if (qs) lqUpdate(l, el);
   $('lsDimTime').textContent = l.paused ? '已暫停' : tt;
   $('lsPauseBtn').hidden = l.paused; $('lsResumeBtn').hidden = !l.paused;
   screens.lsRun.classList.toggle('ls-paused', l.paused);
 }
 function lsDimShow(on) { $('lsDim').hidden = !on; if (on && BONE[state.theme]) lsDimDraw(); }
 function lsStart() {
+  if (lqMode() === 'seq') { lqStart(); return; }
   const sel = lsSel();
   if (!sel.length) return;
   lsStopAll(); clearAll(); stopMusic(true);
@@ -1957,6 +2001,7 @@ function lsStart() {
   l.tr = sel.map(k => lsTrack(k, l));
   $('lsNames').textContent = sel.map(lsName).join('・');
   lsVolRows($('lsRunVols'), l.tr.map(t => ({ k: t.k, v: t.v })), false);
+  lsRunMode(false);
   lsDimShow(false);
   lsIv = setInterval(lsTick, 200);
   lsUpdate();
@@ -1979,8 +2024,343 @@ function lsResume() {
   ctx(); keepAlive.play().catch(() => {});
   const now = performance.now();
   l.t0 += now - l.pAt; l.paused = false; l.sys = false; l.poke = now;
-  l.tr.forEach(t => { const a = t.cur; if (a && a.paused) a.play().catch(() => {}); lsApply(t, .4); });
+  l.tr.forEach(t => { const a = t.cur; if (a && a.paused && !a.ended && !t.hold) a.play().catch(() => {}); lsApply(t, .4); });
   lsUpdate();
+}
+// ---------- 聆聽：接著播（一段播完接下一段） ----------
+// 清單裡的每一段：{ k 聲音（'silence' 是安靜）, m 幾分鐘或 'once'（播完）, n 播幾遍, d 播一遍幾秒（只有「播完」用得到） }
+const lqMode = () => (state.lsMode === 'seq' ? 'seq' : 'mix');
+const lqXf = () => (LQ_XF.some(([k]) => k === state.lsXf) ? state.lsXf : 'x');
+const lqList = () => (Array.isArray(state.lsSeq) ? state.lsSeq : []).filter(x => x && typeof x.k === 'string').slice(0, LQ_MAX);
+// 這台裝置播得出來的才算（別台裝置上傳的錄音、這個版本沒有的聲音都不算）
+const lqOk = x => x.k === 'silence' || lsKnown(x.k);
+const lqName = k => (k === 'silence' ? '安靜' : lsName(k));
+// 這一段幾秒；「播完」但還不知道多長的，回傳 0
+const lqSec = x => (x.m === 'once' ? (x.d > 0 ? x.d * (x.n || 1) : 0) : (+x.m || 0) * 60);
+const lqKnown = k => (lqd[k] > 0 ? lqd[k] : 0);
+function lqLenText(x) {
+  if (x.m !== 'once') return x.m + ' 分鐘';
+  if (!(x.d > 0)) return lqd[x.k] === -1 ? '讀不到長度' : '讀取中…';
+  return (x.n || 1) + ' 遍・' + Math.max(1, Math.round(x.d * (x.n || 1) / 60)) + ' 分';
+}
+// 把「播完一遍」的長度寫回清單裡用到這個聲音的每一段（還有開著的視窗）
+function lqPutDur(k, d) {
+  let ch = false;
+  const L = (Array.isArray(state.lsSeq) ? state.lsSeq : []).map(x => (x && x.k === k && x.m === 'once' && x.d !== d ? (ch = true, { ...x, d }) : x));
+  if (ch) { state.lsSeq = L; save(); }
+  if (lsSheet && lsSheet.k === k && lsSheet.m === 'once' && lsSheet.d !== d) lsSheet = { ...lsSheet, d };
+}
+// 讀一個聲音「播完一遍」有多長（秒）：只讀音檔的開頭，不會整個下載
+function lqDur(k) {
+  if (lqd[k] > 0) { lqPutDur(k, lqd[k]); return; }
+  if (lqd[k] != null) return;   // 正在讀，或讀不到
+  lqd[k] = 0;
+  const L = MUSIC_LISTS[k] || (MUSIC_FILES[k] ? [[].concat(MUSIC_FILES[k])[0]] : [myUrls[k.slice(5)]]), uniq = [...new Set(L)], dur = {};
+  let left = uniq.length;
+  const done = () => {
+    if (--left > 0) return;
+    const d = Math.round(L.reduce((a, u) => a + (dur[u] || 0), 0) * 10) / 10;
+    lqd[k] = d > 0 ? d : -1;
+    if (d > 0) lqPutDur(k, d);
+    if (!screens.lsSetup.hidden) lsRenderSetup();
+  };
+  uniq.forEach(u => {
+    if (!u) { done(); return; }
+    const a = new Audio();
+    a.preload = 'metadata';
+    a.onloadedmetadata = () => { dur[u] = isFinite(a.duration) ? a.duration : 0; a.onerror = null; a.removeAttribute('src'); done(); };
+    a.onerror = () => { a.onloadedmetadata = null; done(); };
+    a.src = u;
+  });
+}
+function lqMove(i, j) {
+  const L = lqList();
+  if (j < 0 || j >= L.length || i === j) return;
+  L.splice(j, 0, L.splice(i, 1)[0]);
+  state.lsSeq = L; lsSeqOpen = lsSeqOpen === i ? j : null;
+  save(); lsRenderSetup();
+}
+function lqDel(i) {
+  const L = lqList();
+  L.splice(i, 1);
+  state.lsSeq = L; lsSeqOpen = null;
+  save(); lsRenderSetup();
+}
+// 加一段／改一段的視窗（i = -1 是加新的）
+function lqSheetOpen(i) {
+  const L = lqList(), x = i >= 0 ? L[i] : null;
+  if (!x && L.length >= LQ_MAX) return;
+  const used = L.map(y => y.k), first = (MUSIC.find(([k]) => k !== 'none' && !used.includes(k)) || MUSIC[1])[0];
+  lsSheet = x ? { i, k: x.k, m: x.m, n: x.n || 1, d: x.d || 0 } : { i: -1, k: first, m: 15, n: 1, d: 0 };
+  lsSeqOpen = null;
+  if (x && x.m === 'once' && !(x.d > 0) && lqOk(x)) lqRetry(x.k);
+  lsRenderSetup();
+  $('lqSheetBox').scrollTop = 0;
+}
+function lqSheetClose() { lsSheet = null; lqRenderSheet(); }
+// 上次讀不到長度的（例如當時沒有網路），再讀一次
+function lqRetry(k) { if (lqd[k] === -1) delete lqd[k]; lqDur(k); }
+function lqSheetPick(k) {
+  const sh = lsSheet;
+  if (!sh) return;
+  const once = sh.m === 'once' && lqOnceOk(k);
+  lsSheet = { ...sh, k, m: once ? 'once' : sh.m === 'once' ? 15 : sh.m, d: once ? lqKnown(k) : 0 };
+  if (once) lqRetry(k);
+  lqRenderSheet();
+}
+function lqSheetLen(m) {
+  const sh = lsSheet;
+  if (!sh) return;
+  if (m !== 'once') lsSheet = { ...sh, m };
+  else if (!lqOnceOk(sh.k)) return;
+  else { lsSheet = { ...sh, m: 'once', n: sh.n || 1, d: lqKnown(sh.k) || sh.d || 0 }; lqRetry(sh.k); }
+  lqRenderSheet();
+}
+// ＋ －：幾分鐘（1–180）或播幾遍（1–9）
+function lqSheetStep(dv) {
+  const sh = lsSheet;
+  if (!sh) return;
+  lsSheet = sh.m === 'once' ? { ...sh, n: Math.max(1, Math.min(9, (sh.n || 1) + dv)) } : { ...sh, m: Math.max(1, Math.min(180, (+sh.m || 0) + dv)) };
+  lqRenderSheet();
+}
+function lqSheetOk() {
+  const sh = lsSheet;
+  if (!sh) return;
+  const L = lqList(), x = sh.m === 'once' ? { k: sh.k, m: 'once', n: sh.n || 1, d: sh.d || lqKnown(sh.k) || 0 } : { k: sh.k, m: +sh.m || 15 };
+  if (sh.i >= 0 && sh.i < L.length) L[sh.i] = x; else if (L.length < LQ_MAX) L.push(x);
+  state.lsSeq = L; lsSheet = null;
+  save(); lsRenderSetup();
+}
+// 按住 ≡ 上下拖：手指每移過一列的高度，就和隔壁那一段對調
+function lqDragDown(i, e) {
+  if (lqList().length < 2) return;
+  const grip = e.currentTarget, row = grip.closest('[data-lqrow]');
+  try { grip.setPointerCapture(e.pointerId); } catch (_) {}
+  lsSeqOpen = null; lsSeqDrag = i;
+  lqRenderList();   // 先把展開的那一列收起來，再量一列有多高
+  lqDrag = { i, y: e.clientY, h: row && row.offsetHeight ? row.offsetHeight : 57, moved: false };
+}
+function lqDragMove(e) {
+  const d = lqDrag;
+  if (!d) return;
+  const L = lqList(), j = Math.max(0, Math.min(L.length - 1, d.i + Math.round((e.clientY - d.y) / d.h)));
+  if (j === d.i) return;
+  L.splice(j, 0, L.splice(d.i, 1)[0]);
+  d.y += (j - d.i) * d.h; d.i = j; d.moved = true;
+  state.lsSeq = L; lsSeqDrag = j;
+  lqRenderList();
+}
+function lqDragUp() {
+  const d = lqDrag;
+  if (!d) return;
+  lqDrag = null; lsSeqDrag = null;
+  if (d.moved) save();
+  lsRenderSetup();
+}
+// 清單的一列。按鈕都是看「這一列現在排第幾」，所以列可以一直留著，只換上面的字
+function lqRow() {
+  const row = document.createElement('div');
+  row.dataset.lqrow = '1';
+  row.innerHTML = '<div class="lq-main"><span class="lq-grip" role="img" aria-label="按住上下拖，調整順序">≡</span>'
+    + '<button class="lq-name"><span class="lq-n"></span><span class="lq-label"></span></button>'
+    + '<button class="lq-len" aria-label="改這一段的長度"></button><button class="lq-del" aria-label="刪除這一段">×</button></div>'
+    + '<div class="lq-more" hidden><button class="lq-up">往上</button><button class="lq-dn">往下</button><button class="lq-edit">改長度</button><button class="lq-red">刪除</button></div>';
+  const idx = () => [...row.parentNode.children].indexOf(row), q = s => row.querySelector(s), on = (s, f) => q(s).addEventListener('click', () => f(idx()));
+  on('.lq-name', i => { lsSeqOpen = lsSeqOpen === i ? null : i; lqRenderList(); });
+  on('.lq-len', lqSheetOpen); on('.lq-edit', lqSheetOpen);
+  on('.lq-del', lqDel); on('.lq-red', lqDel);
+  on('.lq-up', i => lqMove(i, i - 1)); on('.lq-dn', i => lqMove(i, i + 1));
+  const grip = q('.lq-grip');
+  grip.addEventListener('pointerdown', e => lqDragDown(idx(), e));
+  grip.addEventListener('pointermove', lqDragMove);
+  grip.addEventListener('pointerup', lqDragUp);
+  grip.addEventListener('pointercancel', lqDragUp);
+  return row;
+}
+// 播放順序的清單。列數一樣就原地換字：拖的時候手指抓著的那個 ≡ 不能被換掉
+function lqRenderList() {
+  const LQ = lqList(), box = $('lqList');
+  box.hidden = !LQ.length;
+  while (box.children.length > LQ.length) box.lastChild.remove();
+  while (box.children.length < LQ.length) box.appendChild(lqRow());
+  LQ.forEach((x, i) => {
+    const row = box.children[i], ok = lqOk(x), open = lsSeqOpen === i, q = s => row.querySelector(s);
+    row.className = 'lq-row' + (open ? ' open' : '') + (lsSeqDrag === i ? ' drag' : '');
+    q('.lq-n').textContent = i + 1;
+    q('.lq-label').textContent = ok ? lqName(x.k) : '這台裝置沒有這個錄音';
+    q('.lq-label').classList.toggle('lq-gone', !ok);
+    q('.lq-name').setAttribute('aria-expanded', open);
+    q('.lq-len').textContent = lqLenText(x);
+    q('.lq-more').hidden = !open;
+    q('.lq-up').classList.toggle('ls-off', i === 0);
+    q('.lq-dn').classList.toggle('ls-off', i === LQ.length - 1);
+  });
+}
+// 「接著播」的設定：播放順序、換段的方式
+function lqRenderSetup(LQ, qTotal, qMin) {
+  const xf = lqXf(), full = LQ.length >= LQ_MAX;
+  $('lqTotal').textContent = qTotal > 0 ? '共 ' + qMin + ' 分鐘' : LQ.length ? '還算不出來' : '還沒有加';
+  lqRenderList();
+  $('lqAdd').classList.toggle('ls-off', full);
+  const how = '按住 ≡ 可以上下拖；點一下名字，可以往上、往下、改長度或刪除。';
+  $('lqNote').textContent = (!LQ.length ? '先加一段。一段播完會接下一段，最多 ' + LQ_MAX + ' 段。' : full ? '已經排了 ' + LQ_MAX + ' 段，這是最多了。' + how : how + '最多 ' + LQ_MAX + ' 段。')
+    + (LQ.some(x => !lqOk(x)) ? '有的段落用到的錄音不在這台裝置上，播放時會跳過。' : '');
+  lsOpts($('lqXf'), LQ_XF, k => k === xf, k => { state.lsXf = k; save(); lsRenderSetup(); });
+  $('lqXfNote').textContent = xf === 'cut' ? '前一段播到最後，下一段馬上開始，中間沒有重疊。' : xf === 'gap' ? '前一段淡掉之後，安靜 10 秒，下一段再慢慢出來。' : '前一段慢慢變小、下一段慢慢變大，大約 5 秒。';
+}
+// 加一段／改一段的視窗
+function lqRenderSheet() {
+  const sh = lsSheet;
+  $('lqSheet').hidden = !sh;
+  screens.lsSetup.classList.toggle('lq-lock', !!sh);   // 視窗開著的時候，後面的設定頁不要跟著捲
+  if (!sh) return;
+  $('lqSheetTitle').textContent = sh.i >= 0 ? '改這一段' : '加一段';
+  $('lqSheetOk').textContent = sh.i >= 0 ? '改好了' : '加進去';
+  const mk = (box, lb, on, cls, pick) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + (on ? ' on' : '') + (cls ? ' ' + cls : '');
+    b.textContent = lb; b.title = lb; b.setAttribute('aria-pressed', on);
+    b.addEventListener('click', pick);
+    box.appendChild(b);
+    return b;
+  };
+  const snd = $('lqSnds');
+  snd.innerHTML = '';
+  [...MUSIC.filter(([k]) => k !== 'none'), ...mine.map(m => ['mine:' + m.id, m.name]), ['silence', '安靜']]
+    .forEach(([k, lb]) => mk(snd, lb, sh.k === k, k === 'silence' && sh.k !== k ? 'lq-dash' : '', () => lqSheetPick(k)));
+  if (mine.length < MINE_MAX) mk(snd, '＋ 上傳錄音', false, 'music-upload', () => $('mineFile').click()).removeAttribute('aria-pressed');
+  const len = $('lqLens'), noOnce = !lqOnceOk(sh.k);
+  len.innerHTML = '';
+  LQ_MINS.forEach(m => mk(len, m + ' 分鐘', sh.m === m, '', () => lqSheetLen(m)));
+  const ob = mk(len, '播完一遍', sh.m === 'once', noOnce ? 'ls-off' : '', () => lqSheetLen('once'));
+  if (noOnce) ob.setAttribute('aria-disabled', 'true');
+  $('lqStepText').textContent = sh.m === 'once'
+    ? '播 ' + (sh.n || 1) + ' 遍' + (sh.d > 0 ? '・約 ' + Math.max(1, Math.round(sh.d * (sh.n || 1) / 60)) + ' 分鐘' : lqd[sh.k] === -1 ? '・讀不到長度' : '・讀取長度中…')
+    : sh.m + ' 分鐘';
+  $('lqSheetNote').textContent = sh.k === 'silence' ? '「安靜」是一段沒有聲音的時間。用 ＋ － 可以一分鐘一分鐘調。'
+    : lqOnceOk(sh.k) ? '這個聲音有頭有尾，可以選「播完一遍」，再用 ＋ － 改成播幾遍；也可以設成固定幾分鐘。'
+    : '這個聲音沒有頭尾，會一直循環到設定的時間。用 ＋ － 可以一分鐘一分鐘調。';
+}
+// 每一段從第幾秒播到第幾秒。「中間安靜」的話，兩段之間多留 10 秒
+function lqPlan() {
+  const xf = lqXf(), L = lqList().filter(x => lqOk(x) && lqSec(x) > 0), gap = xf === 'gap' ? LQ_GAP : 0;
+  let t = 0;
+  const seg = L.map((x, i) => {
+    const s = t, len = lqSec(x);
+    t = s + len + (i < L.length - 1 ? gap : 0);
+    return { k: x.k, once: x.m === 'once' ? (x.n || 1) : 0, s, e: s + len, len, t: null, st: 0, pool: null };
+  });
+  return { seg, total: t, xf };
+}
+function lqStart() {
+  const p = lqPlan();
+  if (!p.seg.length) return;
+  lsStopAll(); clearAll(); stopMusic(true);
+  ctx(); keepAlive.play().catch(() => {}); lockWake();
+  // iPhone 只讓「點擊當下建立的播放器」之後自己開始播，所以每一段要用的播放器現在就先建好（這時還不載入音檔）
+  p.seg.forEach(g => { if (g.k !== 'silence') g.pool = LOOPCUT[g.k] && !g.once ? [new Audio(), new Audio()] : [new Audio()]; });
+  const now = performance.now(), total = p.total;
+  const l = { tr: [], t0: now, paused: false, pAt: 0, sys: false, total, fade: Math.min((+state.lsFade || 1) * 60, total / 2), poke: now, seq: p.seg, xf: p.xf, cur: 0, sig: null };
+  ls = l;
+  // 分段的進度條：每一段的寬度照它的長度
+  const bar = $('lqBar');
+  bar.innerHTML = '';
+  p.seg.forEach(g => {
+    const d = document.createElement('div');
+    d.className = 'lq-seg';
+    d.style.flex = Math.max(1, Math.round(g.len)) + ' 1 0';
+    d.innerHTML = '<div class="lq-seg-bar"><div></div></div><span></span>';
+    d.lastChild.textContent = lqName(g.k);
+    bar.appendChild(d);
+  });
+  lsRunMode(true);
+  lqTick();
+  lsDimShow(false);
+  lsIv = setInterval(lsTick, 200);
+  lsUpdate();
+  show('lsRun');
+  screens.lsRun.scrollTop = 0;
+}
+// 每 0.2 秒看一次：快輪到的那一段先載入（不出聲）、時間到開始播、換段時調音量，播完的收掉
+function lqTick() {
+  const l = ls;
+  if (!l || !l.seq) return;
+  const el = lsEl(), xf = l.xf, h = xf === 'x' ? LQ_HALF : 0, S = l.seq, cl = v => Math.max(0, Math.min(1, v));
+  if (!l.paused) S.forEach((g, i) => {
+    const first = i === 0, last = i === S.length - 1, on = g.s - (first ? 0 : h), off = g.e + (last ? 0 : h);
+    if (g.st === 0 && el >= off) g.st = 3;   // 被「下一段」整段跳過
+    if (g.st === 0 && el >= on - 6) { g.st = 1; if (g.k !== 'silence') { g.t = lsTrack(g.k, l, { hold: true, once: g.once, pool: g.pool }); l.tr.push(g.t); } }
+    if (g.st === 1 && el >= on) { g.st = 2; if (g.t) { g.t.hold = false; if (g.t.cur) g.t.cur.play().catch(() => {}); } }
+    if (g.st === 2 && g.t) {
+      // 這一段自己的音量：交疊用正弦／餘弦，兩段加起來聽起來一樣大聲
+      let v = 1;
+      if (xf === 'x') {
+        if (!first && el < g.s + h) v = Math.sin(Math.PI / 2 * cl((el - on) / (2 * h)));
+        if (!last && el > g.e - h) v = Math.min(v, Math.cos(Math.PI / 2 * cl((el - (g.e - h)) / (2 * h))));
+      } else if (xf === 'gap') {
+        if (!first) v = cl((el - g.s) / LQ_GFADE);
+        if (!last) v = Math.min(v, cl((g.e - el) / LQ_GFADE));
+      } else if (!last && el >= g.e) v = 0;
+      g.t.e = v;
+    }
+    if (g.st > 0 && g.st < 3 && el >= off + (xf === 'cut' ? .4 : 1)) { g.st = 3; if (g.t) { const t = g.t; g.t = null; l.tr = l.tr.filter(x => x !== t); lsKill(t); } }
+  });
+  let c = 0;
+  S.forEach((g, i) => { if (el >= g.s) c = i; });
+  l.cur = c;
+}
+// 收掉一條音軌（很快地淡掉，再把音檔放掉）
+function lsKill(t) {
+  const t0 = ac ? ac.currentTime : 0;
+  t.dead = true;
+  try { t.g.gain.cancelScheduledValues(t0); t.g.gain.setValueAtTime(t.g.gain.value, t0); t.g.gain.linearRampToValueAtTime(0, t0 + .3); } catch (e) {}
+  t.ivs.forEach(clearInterval);
+  t.els.forEach(a => { a.onended = null; a.onerror = null; });
+  setTimeout(() => {
+    t.els.forEach(a => { try { a.pause(); a.removeAttribute('src'); a.load(); } catch (e) {} });
+    t.nodes.forEach(n => { try { n.stop(); } catch (e) {} });
+    try { t.g.disconnect(); } catch (e) {}
+  }, 400);
+}
+// 「下一段」：直接跳到快要換段的地方，照選的方式接過去
+function lqNext() {
+  const l = ls;
+  if (!l || !l.seq) return;
+  const i = l.cur, S = l.seq;
+  if (i >= S.length - 1) return;
+  const el = lsEl(), to = S[i + 1].s - (l.xf === 'x' ? LQ_HALF : 0) - .05;
+  if (to > el) l.t0 -= (to - el) * 1000;
+  l.poke = performance.now();
+  lsTick();
+}
+const cl01 = v => Math.max(0, Math.min(1, v));
+// 接著播的播放畫面：第幾段、分段的進度條、接下來是什麼、現在聽得到的那一段的音量
+function lqUpdate(l, el) {
+  const S = l.seq, c = Math.min(S.length - 1, l.cur || 0), last = c >= S.length - 1, near = !last && S[c].e - el <= 6;
+  $('lqIdx').textContent = '第 ' + (c + 1) + ' 段 / 共 ' + S.length + ' 段';
+  $('lsNames').textContent = lqName(S[c].k);
+  [...$('lqBar').children].forEach((b, i) => {
+    const g = S[i];
+    b.firstChild.firstChild.style.width = (i < c ? 100 : i > c ? 0 : Math.round(cl01((el - g.s) / g.len) * 1000) / 10) + '%';
+    b.classList.toggle('on', i === c);
+  });
+  $('lqNextBox').textContent = last ? '這是最後一段，播完會慢慢變小聲。'
+    : (near ? '正在換到：' : '接下來：') + lqName(S[c + 1].k) + (near ? '' : ' · ' + (S[c + 1].once ? '約 ' : '') + Math.max(1, Math.round(S[c + 1].len / 60)) + ' 分鐘');
+  $('lqNextBox').classList.toggle('near', near);
+  $('lqNextBtn').classList.toggle('ls-off', last);
+  // 音量列只列現在聽得到的（換段的那幾秒是兩段）；手指正在拉音量的時候先不換
+  const act = l.tr.filter(t => !t.hold), sig = act.map(t => t.k).join('|');
+  if (sig !== l.sig && !lsVolHold) {
+    l.sig = sig;
+    lsVolRows($('lsRunVols'), act.map(t => ({ k: t.k, v: t.v })), false);
+    $('lsRunVols').hidden = !act.length;
+  }
+}
+// 播放畫面：一起播和接著播，用到的東西不一樣
+function lsRunMode(seq) {
+  $('lqIdx').hidden = !seq; $('lqRunBox').hidden = !seq; $('lqActions').hidden = !seq; $('lsStopBtn').hidden = seq;
+  $('lsNames').classList.toggle('lq-big', seq);
+  $('lsRunVols').hidden = false;
 }
 // 停掉所有音軌：0.5 秒淡出後才真的停
 function lsStopAll() {
@@ -2009,7 +2389,7 @@ function lsEnd() {
   const l = ls;
   if (!l) return;
   lsStopAll(); releaseWake();
-  $('lsDoneText').textContent = '聽了 ' + Math.round(l.total / 60) + ' 分鐘。' + (state.lsDim ? '晚安。' : '');
+  $('lsDoneText').textContent = '聽了 ' + Math.max(1, Math.round(l.total / 60)) + ' 分鐘。' + (state.lsDim ? '晚安。' : '');
   screens.lsDone.classList.toggle('ls-dark', !!state.lsDim);
   show('lsDone');
 }
@@ -2021,7 +2401,16 @@ function lsAction(a) {
   else if (a === 'stop') lsStop();
   else if (a === 'dim') lsDimShow(true);
   else if (a === 'wake') { if (ls) ls.poke = performance.now(); lsDimShow(false); }
+  else if (a === 'add') lqSheetOpen(-1);
+  else if (a === 'next') lqNext();
+  else if (a === 'sheet-close') lqSheetClose();
+  else if (a === 'sheet-ok') lqSheetOk();
+  else if (a === 'step-dn') lqSheetStep(-1);
+  else if (a === 'step-up') lqSheetStep(1);
 }
+// 手指正在拉音量的時候，音量列先不要換掉
+$('lsRunVols').addEventListener('pointerdown', () => { lsVolHold = true; });
+['pointerup', 'pointercancel'].forEach(ev => document.addEventListener(ev, () => { lsVolHold = false; }));
 // 碰到螢幕就重新計時，10 秒沒碰才變暗
 ['pointerdown', 'input', 'keydown'].forEach(ev => $('lsRun').addEventListener(ev, () => { if (ls) ls.poke = performance.now(); }));
 document.addEventListener('visibilitychange', () => { if (!document.hidden && ls) { lockWake(); lsTick(); } });
@@ -2986,7 +3375,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'bnOpen', 'bnMin', 'bnAck'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
@@ -3152,6 +3541,7 @@ function refreshSynced() {
   if (!screens.badges.hidden) renderBadges();
   if (!screens.setup.hidden && cur != null) renderSetup();
   if (!screens.whSetup.hidden) whRenderSetup();
+  if (!screens.lsSetup.hidden) lsRenderSetup();
 }
 function syncNow() {
   if (!syncOn || !sync || !tokenOk()) { paintSync(); return Promise.resolve(); }
