@@ -72,8 +72,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -312,8 +312,12 @@ function renderToday() {
   renderLit();
   const it = todayLog(), rows = EX.filter(e => it[e.id]).map(e => ({ name: e.name, n: it[e.id].n, sec: it[e.id].sec }));
   const n = rows.reduce((a, r) => a + r.n, 0), sec = rows.reduce((a, r) => a + r.sec, 0);
-  $('today').hidden = !n;
-  if (!n) return;
+  // 今天點掉了就不出現，明天練了再出現
+  const off = !n || state.todayHide === today();
+  $('today').hidden = off;
+  if (off) return;
+  $('today').classList.remove('bye');
+  $('today').setAttribute('aria-label', '今天練習 ' + mins(sec) + ' 分鐘，完成 ' + n + ' 次。點一下關掉，明天練了會再出現');
   $('todayMin').textContent = mins(sec) + ' 分鐘';
   $('todayN').textContent = '完成 ' + n + ' 次';
   $('todayRows').innerHTML = '';
@@ -2482,6 +2486,12 @@ document.addEventListener('click', e => {
     if (el.classList.contains('bye')) return;
     el.classList.add('bye');
     setTimeout(() => { state.litHide = today(); save(); renderLit(); }, 340);
+  }
+  else if (a === 'today-close') {
+    const el = $('today');
+    if (el.classList.contains('bye')) return;
+    el.classList.add('bye');
+    setTimeout(() => { state.todayHide = today(); save(); renderToday(); }, 340);
   }
   else if (a === 'badges-close') show(null);
   else if (a === 'btab') { bTab = b.dataset.tab; renderBadges(); }
