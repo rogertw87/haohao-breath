@@ -837,9 +837,21 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .lq-grid { gap: 7px; }
 .lq-grid .music-opt { height: 44px; border-radius: 13px; padding: 0 6px; }
 .lq-grid .lq-dash { border-style: dashed; }
-.lq-step { display: flex; align-items: center; gap: 8px; margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 4px; }
-.lq-step button { flex: none; width: 48px; height: 44px; padding: 0; border: none; border-radius: 12px; background: var(--screen); color: var(--ink); font-size: 22px; line-height: 1; cursor: pointer; }
-.lq-step span { flex: 1; text-align: center; font-size: 15px; font-weight: 500; }
+/* 播多久：播幾次、播幾分鐘各一行，正在用的那一個有框，另一個淡一點 */
+.lq-durs { display: flex; flex-direction: column; gap: 8px; }
+.lq-dur { display: flex; align-items: center; gap: 6px; background: var(--card); border: 1.5px solid var(--line); border-radius: 14px; padding: 4px; opacity: .62; transition: border-color .2s, opacity .2s; }
+.lq-dur.on { border-color: var(--accent); opacity: 1; }
+.lq-dur.off { opacity: .4; }
+.lq-dur-pick { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 4px 0 8px; border: none; background: none; color: var(--ink); text-align: left; cursor: pointer; }
+.lq-radio { flex: none; width: 16px; height: 16px; box-sizing: border-box; border-radius: 50%; border: 1.5px solid var(--line); box-shadow: inset 0 0 0 3px var(--card); }
+.lq-dur.on .lq-radio { border-color: var(--accent); background: var(--accent); }
+.lq-dur-name { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.lq-dur-name > span:first-child { font-size: 14px; font-weight: 500; white-space: nowrap; }
+.lq-dur-side { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lq-dur-side:empty { display: none; }
+.lq-dur-btn { flex: none; width: 40px; height: 40px; padding: 0; border: none; border-radius: 11px; background: var(--screen); color: var(--ink); font-size: 20px; line-height: 1; cursor: pointer; }
+.lq-dur button:disabled { cursor: default; }
+.lq-dur-val { flex: none; width: 70px; text-align: center; font-size: 15px; font-weight: 500; white-space: nowrap; }
 .lq-sheet-note { margin: 10px 4px 0; line-height: 1.6; }
 .lq-sheet-ok { flex: none; margin-top: 16px; }
 /* 播放畫面：第幾段、分段的進度條、接下來 */
