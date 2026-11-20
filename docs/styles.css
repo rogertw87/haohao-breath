@@ -140,7 +140,10 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .lit {
   width: 100%; margin: -14px 0 28px; padding: 12px 14px 12px 12px; box-sizing: border-box; border-radius: 20px;
   background: var(--soft); border: 1px solid var(--line); display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
+  max-height: 240px; overflow: hidden; transition: opacity .25s ease, max-height .32s ease, margin .32s ease, padding .32s ease;
 }
+/* 點一下：淡掉、收起來 */
+.lit.bye { opacity: 0; max-height: 0; margin: 0; padding-top: 0; padding-bottom: 0; }
 .lit[hidden] { display: none; }
 .lit:hover { border-color: var(--accent); }
 .lit-pic { flex: none; position: relative; width: 78px; height: 78px; border-radius: 14px; overflow: hidden; background: var(--card); }
@@ -159,7 +162,7 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .lit-big { font-size: 19px; font-weight: 500; line-height: 1.35; color: var(--ink); }
 .lit-note { font-size: 13px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
 .lit-note.todo { color: var(--accent); }
-.lit-chev { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--muted-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.lit-x { flex: none; align-self: flex-start; margin-top: 2px; width: 14px; height: 14px; fill: none; stroke: var(--muted-2); stroke-width: 2; stroke-linecap: round; opacity: .7; }
 .row-icon {
   width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--chip);
   display: flex; align-items: center; justify-content: center;

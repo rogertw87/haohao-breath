@@ -72,8 +72,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -268,7 +268,9 @@ function renderLit() {
   const B = bdg(), SP = 30, nd = Object.keys(B.days).length, stg = nd > 0 ? Math.floor((nd - 1) / SP) : 0;
   const lit = nd - stg * SP, isJ = stg % 2 === 1, full = Math.floor(stg / 2), done = !!B.days[today()], stk = streak(B.days);
   const dk = DARK_THEMES.includes(state.theme);
-  $('lit').hidden = false; $('lit').classList.toggle('dk', dk);
+  // 今天點掉了就不出現，明天再出現
+  if (state.litHide === today()) { $('lit').hidden = true; return; }
+  $('lit').hidden = false; $('lit').classList.remove('bye'); $('lit').classList.toggle('dk', dk);
   $('litGal').hidden = isJ; $('litJ').hidden = !isJ;
   if (!isJ) {
     // 星星的位置和勳章頁一樣（沿兩條旋臂，和銀河圖對齊），只是小一點
@@ -304,7 +306,7 @@ function renderLit() {
   const title = isJ ? '地藏王菩薩的畫' : full > 0 ? '第 ' + (full + 1) + ' 個銀河・' + lit + ' / 30' : '點亮銀河・' + lit + ' / 30';
   $('litTitle').textContent = title; $('litBig').textContent = big; $('litNote').textContent = note;
   $('litNote').classList.toggle('todo', !!nd && !done);
-  $('lit').setAttribute('aria-label', title + '，' + big + '。' + note + '點一下看勳章');
+  $('lit').setAttribute('aria-label', title + '，' + big + '。' + note + '點一下關掉這個提醒，明天會再出現');
 }
 function renderToday() {
   renderLit();
@@ -2474,7 +2476,13 @@ document.addEventListener('click', e => {
   else if (a === 'g-resume') gResume();
   else if (a === 'resume') resumeAllAudio();
   else if (a === 'badges-open') { setMenu(false); renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
-  else if (a === 'lit-open') { bTab = 'gal'; renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
+  else if (a === 'lit-close') {
+    // 先淡掉、收起來，再記下今天關過
+    const el = $('lit');
+    if (el.classList.contains('bye')) return;
+    el.classList.add('bye');
+    setTimeout(() => { state.litHide = today(); save(); renderLit(); }, 340);
+  }
   else if (a === 'badges-close') show(null);
   else if (a === 'btab') { bTab = b.dataset.tab; renderBadges(); }
   else if (a === 'award-next') { awards.shift(); showAward(); }
