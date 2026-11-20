@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=63">
+<link rel="stylesheet" href="styles.css?v=64">
 </head>
 <body>
 <main class="home">
@@ -55,13 +55,13 @@
   <div class="home-inner">
     <h1 class="title">好好呼吸</h1>
     <!-- 點亮：銀河（或地藏王菩薩的畫）練到哪裡，提醒今天練了沒；點一下打開勳章 -->
-    <button class="lit" id="lit" data-action="lit-open" hidden>
+    <button class="lit" id="lit" data-action="lit-close" hidden>
       <div class="lit-pic">
         <div class="lit-gal" id="litGal"><div class="lit-img" id="litImg"></div></div>
         <div class="lit-j" id="litJ" hidden><div class="lit-j-bg"></div><div class="lit-tiles" id="litTiles"></div></div>
       </div>
       <div class="lit-text"><span class="lit-title" id="litTitle"></span><span class="lit-big" id="litBig"></span><span class="lit-note" id="litNote"></span></div>
-      <svg class="lit-chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+      <svg class="lit-x" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7l10 10M17 7 7 17"></path></svg>
     </button>
     <div class="today" id="today" hidden>
       <div class="today-head">
@@ -728,7 +728,7 @@
   </div>
 </section>
 
-<script src="app.js?v=77"></script>
+<script src="app.js?v=78"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
