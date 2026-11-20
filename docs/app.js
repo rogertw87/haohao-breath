@@ -72,8 +72,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide, litCer } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide, litCer })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -137,49 +137,155 @@ function streak(days) {
   }
   return n;
 }
-// 銀河：第 n 天時，旋臂從外圈長到第 n 顆星的位置；核心在後段慢慢亮起，第 30 天完整（畫好的圖會快取）
-// ink=true：淺色主題用的藍綠墨色；false：深色主題用的亮色。都是透明底
-const galCache = {};
-function galaxyAt(n, ink) {
-    const C=galCache,K=n+(ink?'i':'g');if(C[K]!==undefined)return C[K];
-    try{
-      const Z=540,c=document.createElement('canvas');c.width=c.height=Z;const x=c.getContext('2d');
-      let sd=11;const R=()=>(sd=(sd*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/1.15;
-      const thOf=k=>3+(14-Math.floor(k/2))*(7.8/14);
-      const cut=n<=0?99:n>=30?-1:thOf(n-1)-.45,rCut=cut<0?0:27*Math.exp(.195*cut);
-      const vis=th=>cut<0?1:Math.max(0,Math.min(1,(th-cut)/.7));
-      const visR=r=>cut<0?1:Math.max(0,Math.min(1,(r-rCut)/(rCut*.15+4)));
-      const p=Math.max(0,Math.min(1,n/30)),core=n>=30?1:Math.max(0,(p-.6)/.4)*.45;
-      for(let i=0;i<3120;i++)R();
-      x.save();x.translate(Z/2,Z/2);x.rotate(-.42);x.scale(1,.4);
-      let g=x.createRadialGradient(0,0,0,0,0,250);
-      if(ink){g.addColorStop(0,'rgba(90,170,192,.10)');g.addColorStop(.4,'rgba(90,170,192,.04)');g.addColorStop(1,'rgba(90,170,192,0)');}
-      else{g.addColorStop(0,'rgba(255,236,210,.18)');g.addColorStop(.3,'rgba(180,192,235,.08)');g.addColorStop(1,'rgba(120,140,200,0)');}
-      x.globalAlpha=p;x.fillStyle=g;x.beginPath();x.arc(0,0,250,0,7);x.fill();
-      x.globalCompositeOperation=ink?'source-over':'lighter';
-      const arm=(j,th)=>{const r=27*Math.exp(.195*th),a=th+j*Math.PI;return [r*Math.cos(a),r*Math.sin(a),r];};
-      for(let i=0;i<1600;i++){const j=i%2,t=.8+R()*10.4,[px,py,r]=arm(j,t),sc=6+r*.09,ox=G()*sc,oy=G()*sc,rd=7+R()*10,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle=ink?(r<60?'rgba(200,150,95,.02)':'rgba(63,143,166,.025)'):(r<60?'rgba(255,220,185,.016)':'rgba(140,165,255,.028)');x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
-      for(let i=0;i<8000;i++){const j=i%2,t=.6+R()*10.6,[px,py,r]=arm(j,t),sc=4+r*.085,a=(ink?.18+R()*.5:(r<65?.05:.12)+R()*(r<65?.22:.5)).toFixed(2),s=ink?(R()<.93?1:1.9):(R()<.95?.9:1.8);
-        const fs=ink?(r<65?'rgba(190,135,80,'+a+')':(R()<.5?'rgba(31,111,134,'+a+')':'rgba(90,170,192,'+a+')')):r<65?'rgba(255,225,190,'+a+')':'rgba('+(165+R()*70|0)+','+(188+R()*55|0)+',255,'+a+')',ox=G()*sc,oy=G()*sc,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle=fs;x.fillRect(px+ox,py+oy,s,s);}
-      for(let i=0;i<2500;i++){const r=Math.pow(R(),.7)*235,a=R()*7,al=(.05+R()*.18).toFixed(2),v=visR(r);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle=(ink?'rgba(63,143,166,':'rgba(210,215,240,')+al+')';x.fillRect(r*Math.cos(a),r*Math.sin(a),.8,.8);}
-      for(let i=0;i<70;i++){const j=i%2,t=2.5+R()*8,[px,py]=arm(j,t),ox=G()*6,oy=G()*6,rd=1+R()*1.6,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle=ink?'rgba(214,110,150,.4)':'rgba(255,120,170,.35)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
-      if(core>0){g=x.createRadialGradient(0,0,0,0,0,62);
-        if(ink){g.addColorStop(0,'rgba(214,160,100,.55)');g.addColorStop(.18,'rgba(214,160,100,.28)');g.addColorStop(.55,'rgba(214,160,100,.07)');g.addColorStop(1,'rgba(214,160,100,0)');}
-        else{g.addColorStop(0,'rgba(255,246,228,.85)');g.addColorStop(.12,'rgba(255,228,192,.45)');g.addColorStop(.45,'rgba(255,210,170,.10)');g.addColorStop(1,'rgba(255,200,160,0)');}
-        x.globalAlpha=core;x.fillStyle=g;x.beginPath();x.arc(0,0,62,0,7);x.fill();}
-      x.globalCompositeOperation='destination-out';
-      for(let i=0;i<1000;i++){const j=i%2,t=2.3+R()*8.5-.2,[px,py,r]=arm(j,t),sc=2.5+r*.035,ox=G()*sc,oy=G()*sc,rd=2+R()*4,v=vis(t);if(v<=0)continue;
-        x.globalAlpha=v;x.fillStyle='rgba(0,0,0,.12)';x.beginPath();x.arc(px+ox,py+oy,rd,0,7);x.fill();}
-      x.restore();
-      const b64=atob(c.toDataURL('image/png').split(',')[1]),u8=new Uint8Array(b64.length);for(let i=0;i<b64.length;i++)u8[i]=b64.charCodeAt(i);
-      C[K]=URL.createObjectURL(new Blob([u8],{type:'image/png'}));
-    }catch(e){C[K]='';}
-    return C[K];
-
+// ───────── 點亮銀河（星塵版）：一千多顆星塵沿著兩條旋臂慢慢流向中心；30 顆星的位置和一天亮一顆的規則和以前一樣 ─────────
+// 三種畫法：stage 勳章頁深色主題（透明底，疊在主題背景上）、box 勳章頁淺色主題（銀河黑的框）、mini 首頁卡片的小框（銀河黑）
+const gxRand=seed=>{let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};};
+const gxBlob=(g,x,y,r,c0,c1)=>{const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,c0);gr.addColorStop(1,c1);g.fillStyle=gr;g.beginPath();g.arc(x,y,r,0,6.2832);g.fill();};
+const gxCv=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.round(w));c.height=Math.max(1,Math.round(h));return c;};
+const gxEase=u=>u*u*(3-2*u),gxClamp=v=>v<0?0:v>1?1:v,gxA=v=>(v<0?0:v>1?1:v).toFixed(3);
+const GX_C=Math.cos(-.42),GX_S=Math.sin(-.42),GX_T0=.6,GX_T1=11.2;
+const gxArm=(j,th)=>{const r=27*Math.exp(.195*th),a=th+j*Math.PI;return [r*Math.cos(a),r*Math.sin(a),r];};
+const gxThOf=k=>3+(14-Math.floor(k/2))*(7.8/14);   // 第 k 顆星（0 最外圈）在旋臂上的位置
+const gxG=R=>(R()+R()+R()+R()-2)/1.15;
+// 顏色：0 藍白、1 淡金（靠近中心）、2 白、3 粉；dim 是還沒點亮的那一段
+const GX_P={c:['186,208,255','255,226,186','255,255,255','255,172,206'],dim:'150,166,215',lvA:[1,.5,.16],aw:[.62,.92],star:'255,255,255',halo:'210,225,255',glint:'235,242,255',ring:'220,230,255',fut:'220,228,255',burst:'236,232,255',warm:'255,214,170'};
+const gxProj=(st,px,py)=>{const qy=py*.4,X=px*GX_C-qy*GX_S,Y=px*GX_S+qy*GX_C;return [st.cx+X*st.k,st.cy+Y*st.k];};
+const gxVis=(st,th)=>st.cut<0?1:gxClamp((th-st.cut)/.7);
+// 一張畫布的狀態；cer＝要播「今天那一顆亮起來」
+function gxMake(c,n,mode,cer){
+  const W=c.clientWidth||300,H=c.clientHeight||300,d=Math.min(2,window.devicePixelRatio||1);c.width=Math.round(W*d);c.height=Math.round(H*d);
+  const mini=mode==='mini',st={c,g:c.getContext('2d'),W,H,d,n,mode,mini,cer0:cer?-1:null};
+  // 銀河放在哪裡：勳章頁深色是整個正方形（和以前一樣往上 4%）；淺色的框裡置中；首頁小框裡放大 134%
+  if(mini){st.S=W*1.34;st.cx=W*.5;st.cy=W*.46;}else if(mode==='box'){st.S=W*.9667;st.cx=W/2;st.cy=H/2;}else{st.S=W;st.cx=W/2;st.cy=W*.46;}
+  st.k=st.S/540;st.sc=st.S/340;
+  st.cut=n<=0?99:n>=30?-1:gxThOf(n-1)-.45;st.rCut=st.cut<0?0:27*Math.exp(.195*st.cut);
+  st.core=n>=30?1:Math.max(0,(n/30-.6)/.4)*.45;
+  st.stars=[];for(let k=0;k<30;k++){const a=gxArm(k%2,gxThOf(k)),q=gxProj(st,a[0],a[1]);st.stars.push({x:q[0],y:q[1],ph:k*1.7});}
+  const R=gxRand(7+n*13+(mini?5:0));
+  // 沿著旋臂流的星塵（旋臂中間流得快、兩邊慢）
+  st.ps=[];const np=mini?640:1500;
+  for(let i=0;i<np;i++){const cc=R()<.035?3:R()<.3?2:0,ga=gxG(R),gb=gxG(R);st.ps.push({j:i%2,th:GX_T0+R()*(GX_T1-GX_T0),v:(.025+.045*R())*(1-.45*Math.min(1,Math.hypot(ga,gb)/1.6)),gx:ga,gy:gb,big:R()<.17?1:0,c:cc,tier:Math.floor(R()*3),rt:50+R()*30});}
+  // 散在旋臂之間、慢慢繞著中心轉的星塵；中心一團暖色的
+  st.hs=[];const nh=mini?140:380;
+  for(let i=0;i<nh;i++){const r=Math.pow(R(),.7)*235;st.hs.push({r,a:R()*6.2832,w:.018*Math.sqrt(40/(r+20)),big:R()<.1?1:0,c:R()<.5?2:0,tier:Math.floor(R()*3)});}
+  const nb=mini?60:170;for(let i=0;i<nb;i++){const rb=Math.abs(gxG(R))*26+2;st.hs.push({r:rb,a:R()*6.2832,w:.05*Math.sqrt(20/(rb+10)),big:R()<.12?1:0,c:1,tier:Math.floor(R()*3),core:1});}
+  st.grp=[];for(let i=0;i<80;i++)st.grp.push([]);
+  st.mt=5+R()*5;st.me=null;st.R=R;st.base=gxBase(st);
+  return st;
+}
+// 不動的底：框的背景和遠方的小星（深色主題的勳章頁是透明的，用主題自己的背景）、銀河底下的光暈、中心
+function gxBase(st){
+  const {W,H,d}=st,b=gxCv(W*d,H*d),g=b.getContext('2d'),R=gxRand(91);g.scale(d,d);
+  if(st.mini){const rg=g.createRadialGradient(W*.5,H*.45,0,W*.5,H*.45,W*.75);rg.addColorStop(0,'#161c40');rg.addColorStop(1,'#070914');g.fillStyle=rg;g.fillRect(0,0,W,H);}
+  else if(st.mode==='box'){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#0a0d24');gr.addColorStop(1,'#020309');g.fillStyle=gr;g.fillRect(0,0,W,H);
+    for(let i=0;i<Math.round(W*H/600);i++){const r0=R();g.fillStyle='rgba(228,232,255,'+(.06+.5*r0*r0*r0).toFixed(3)+')';g.beginPath();g.arc(R()*W,R()*H,.3+R()*.7,0,6.2832);g.fill();}}
+  // 光暈先畫在小圖上再放大，邊緣比較柔
+  const S=st.S,Z=Math.round(S/3),lo=gxCv(Z,Z),x=lo.getContext('2d'),p=Math.max(.15,Math.min(1,st.n/30)),sk=Z/540,Rg=gxRand(23);
+  x.translate(Z/2,Z/2);x.rotate(-.42);x.scale(sk,sk*.4);
+  const dg=x.createRadialGradient(0,0,0,0,0,250);dg.addColorStop(0,'rgba(255,236,210,.16)');dg.addColorStop(.3,'rgba(170,186,240,.07)');dg.addColorStop(1,'rgba(120,140,200,0)');
+  x.globalAlpha=p;x.fillStyle=dg;x.beginPath();x.arc(0,0,250,0,7);x.fill();
+  x.globalCompositeOperation='lighter';
+  for(let i=0;i<1300;i++){const j=i%2,t=.8+Rg()*10.4,a=gxArm(j,t),sc=6+a[2]*.09,ox=gxG(Rg)*sc,oy=gxG(Rg)*sc,rd=8+Rg()*12,vv=gxVis(st,t);
+    x.globalAlpha=a[2]<60?.04+.96*vv:.12+.88*vv;x.fillStyle=a[2]<60?'rgba(255,214,176,.011)':'rgba(130,160,255,.044)';x.beginPath();x.arc(a[0]+ox,a[1]+oy,rd,0,7);x.fill();}
+  if(st.core>0){const cg=x.createRadialGradient(0,0,0,0,0,70);cg.addColorStop(0,'rgba(255,240,218,.3)');cg.addColorStop(.2,'rgba(255,222,184,.18)');cg.addColorStop(.55,'rgba(255,206,160,.08)');cg.addColorStop(1,'rgba(255,200,160,0)');
+    x.globalAlpha=st.core;x.fillStyle=cg;x.beginPath();x.arc(0,0,70,0,7);x.fill();}
+  g.imageSmoothingEnabled=true;g.drawImage(lo,st.cx-S/2,st.cy-S/2,S,S);
+  return b;
+}
+// 每一格。t 秒、dt 這一格過了幾秒；rm＝減少動態效果（停在一張靜止的畫面）
+function gxDraw(st,t,dt,rm){
+  const g=st.g,P=GX_P,mini=st.mini,n=st.n;let i,k;
+  g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';g.clearRect(0,0,st.c.width,st.c.height);g.drawImage(st.base,0,0);g.setTransform(st.d,0,0,st.d,0,0);
+  const lastK=n>=1?Math.min(29,n-1):-1,nextK=n<30?n:-1;
+  // 「今天那一顆亮起來」（一天只播一次）：0–1 秒還沒亮；1–4 秒附近的星塵往那裡聚攏；4 秒亮起來、送出一圈光；之後慢慢鬆開
+  if(st.cer0===-1)st.cer0=t;
+  const ct=st.cer0!=null&&!rm?t-st.cer0:99,cer=ct<7.5,pre=cer&&ct<4;let gk=0;
+  if(cer&&lastK>=0)gk=ct<1?0:ct<4?gxEase((ct-1)/3):1-gxEase(gxClamp((ct-4)/2.8));
+  const gs=lastK>=0?st.stars[lastK]:null,ns=nextK>=0?st.stars[nextK]:null,nk=rm?0:.2*(.5+.5*Math.sin(t*.7));
+  g.globalCompositeOperation='lighter';g.lineCap='round';
+  const grp=st.grp;for(i=0;i<grp.length;i++)grp[i].length=0;
+  // 把每一顆星塵放進「顏色 × 大小 × 閃的快慢 × 亮度」的組，一組畫一次
+  const put=(x,y,c,big,tier,lv)=>{
+    if(gs&&gk>0){const dx=gs.x-x,dy=gs.y-y,dd=Math.hypot(dx,dy),rr=mini?20:44;if(dd<rr){const f=.88*gk*Math.sqrt(1-dd/rr);x+=dx*f;y+=dy*f;if(lv===1)lv=0;}}
+    if(ns&&nk>0){const ex=ns.x-x,ey=ns.y-y,de=Math.hypot(ex,ey),r2=mini?14:34;if(de<r2){const f2=nk*Math.sqrt(1-de/r2);x+=ex*f2;y+=ey*f2;}}
+    grp[lv===2?72+big*3+tier:lv*24+c*6+big*3+tier].push(x,y);};
+  const tt=rm?0:t,span=GX_T1-GX_T0;
+  for(i=0;i<st.ps.length;i++){
+    const p=st.ps[i],th=GX_T0+(((p.th-GX_T0-p.v*tt)%span)+span)%span,e=gxClamp((th-GX_T0)/.5)*gxClamp((GX_T1-th)/.9),vv=gxVis(st,th)*e;if(e<.25)continue;
+    const a=gxArm(p.j,th),s=4+a[2]*.085,q=gxProj(st,a[0]+p.gx*s,a[1]+p.gy*s);let c=p.c;
+    if(c!==3&&a[2]<p.rt)c=1;
+    if(a[2]<40&&(i%3))continue;
+    const inner=a[2]<58;   // 靠近中心的星塵淡一點、少一點，中間那顆星才看得出來
+    if(inner&&st.core>0&&(i&1))continue;
+    put(q[0],q[1],c,inner&&!mini?0:p.big,p.tier,vv>.66?(inner?1:0):vv>.25?1:2);}
+  for(i=0;i<st.hs.length;i++){const h=st.hs[i],an=h.a+h.w*tt,hv=h.core?st.core*.9:st.cut<0?1:gxClamp((h.r-st.rCut)/(st.rCut*.15+4)),hq=gxProj(st,h.r*Math.cos(an),h.r*Math.sin(an));
+    put(hq[0],hq[1],h.r<55?1:h.c,h.big,h.tier,hv>.66?0:hv>.25?1:2);}
+  const lw=mini?[.85,1.5]:[1.15,2.2];
+  for(k=0;k<78;k++){const L=grp[k];if(!L.length)continue;
+    const dim=k>=72,lv=dim?2:Math.floor(k/24),cc=dim?0:Math.floor((k%24)/6),big=dim?Math.floor((k-72)/3):Math.floor((k%6)/3),tier=k%3,tw=rm?.8:.6+.4*Math.sin(t*(.8+tier*.45)+tier*2.1+cc);
+    g.beginPath();for(i=0;i<L.length;i+=2){g.moveTo(L[i]-.15,L[i+1]);g.lineTo(L[i]+.15,L[i+1]);}
+    g.lineWidth=lw[big];g.strokeStyle='rgba('+(dim?P.dim:P.c[cc])+','+gxA(P.aw[big]*tw*P.lvA[lv])+')';g.stroke();}
+  // 30 天完整：一道光沿著兩條旋臂往中心走
+  if(n>=30&&!rm)for(let j=0;j<2;j++){const wu=(t*.11+j*.5)%1,wth=GX_T1-.6-wu*(GX_T1-2.2),wa=gxArm(j,wth),wq=gxProj(st,wa[0],wa[1]),we=Math.sin(Math.PI*wu);
+    gxBlob(g,wq[0],wq[1],mini?8:22,'rgba('+P.halo+','+gxA(.3*we)+')','rgba('+P.halo+',0)');}
+  // 銀河最中間的那顆星：第 30 天最大最亮，有十字光芒，慢慢一亮一暗；第 18 天以後先出現一顆小的
+  if(st.core>0){const oq=gxProj(st,0,0),ob=rm?.5:.5+.5*Math.sin(t*.5),os=(n>=30?1:.3+.4*st.core/.45)*(mini?.34:1)*st.sc,ox=oq[0],oy=oq[1];
+    gxBlob(g,ox,oy,62*os*(1+.06*ob),'rgba('+P.warm+','+gxA(.18*(.85+.15*ob))+')','rgba('+P.warm+',0)');
+    gxBlob(g,ox,oy,34*os,'rgba(255,238,214,.45)','rgba(255,226,190,0)');
+    const gl2=(42+6*ob)*os;g.lineWidth=Math.max(.7,1.5*os);
+    const lg2=g.createLinearGradient(ox-gl2,oy,ox+gl2,oy);lg2.addColorStop(0,'rgba(255,240,220,0)');lg2.addColorStop(.5,'rgba(255,248,236,.85)');lg2.addColorStop(1,'rgba(255,240,220,0)');g.strokeStyle=lg2;g.beginPath();g.moveTo(ox-gl2,oy);g.lineTo(ox+gl2,oy);g.stroke();
+    const lg3=g.createLinearGradient(ox,oy-gl2*.8,ox,oy+gl2*.8);lg3.addColorStop(0,'rgba(255,240,220,0)');lg3.addColorStop(.5,'rgba(255,248,236,.85)');lg3.addColorStop(1,'rgba(255,240,220,0)');g.strokeStyle=lg3;g.beginPath();g.moveTo(ox,oy-gl2*.8);g.lineTo(ox,oy+gl2*.8);g.stroke();
+    const orr=12*os*(1+.05*ob),og=g.createRadialGradient(ox,oy,0,ox,oy,orr);og.addColorStop(0,'rgba(255,255,255,1)');og.addColorStop(.55,'rgba(255,250,238,.98)');og.addColorStop(1,'rgba(255,236,206,0)');
+    g.fillStyle=og;g.beginPath();g.arc(ox,oy,orr,0,6.2832);g.fill();}
+  // 星星：還沒亮的是淡淡的小圈；明天要亮的那一顆輕輕呼吸；亮了的有光暈和十字光芒，各自閃；最新的那一顆每 4 秒送出一圈光
+  for(k=0;k<30;k++){const S=st.stars[k],on=k<n&&!(pre&&k===lastK),last=k===lastK&&on;
+    if(!on){if(mini)continue;const fa=k===nextK||(pre&&k===lastK)?.32+.2*Math.sin(t*1.4):.26;g.strokeStyle='rgba('+P.fut+','+gxA(fa)+')';g.lineWidth=.8;g.beginPath();g.arc(S.x,S.y,2.6,0,6.2832);g.stroke();continue;}
+    const tw2=rm?.9:.82+.18*Math.sin(t*1.9+S.ph),m=mini?.55:1;
+    if(last){gxBlob(g,S.x,S.y,14*m,'rgba('+P.halo+','+gxA(.55*tw2)+')','rgba('+P.halo+',0)');
+      if(!rm&&!(cer&&ct<6)){const pq=(t%4)/4;g.strokeStyle='rgba('+P.ring+','+gxA(.42*(1-pq))+')';g.lineWidth=1;g.beginPath();g.arc(S.x,S.y,(4+16*pq)*m,0,6.2832);g.stroke();}}
+    else gxBlob(g,S.x,S.y,7.5*m,'rgba('+P.halo+','+gxA(.5*tw2)+')','rgba('+P.halo+',0)');
+    if(!mini||last){const gl=(last?9:4.5)*m+(rm?0:1.4*Math.sin(t*1.3+S.ph));g.strokeStyle='rgba('+P.glint+','+gxA((last?.8:.6)*tw2)+')';g.lineWidth=last?.9:.7;
+      g.beginPath();g.moveTo(S.x-gl,S.y);g.lineTo(S.x+gl,S.y);g.moveTo(S.x,S.y-gl);g.lineTo(S.x,S.y+gl);g.stroke();}
+    g.fillStyle='rgba('+P.star+','+gxA(tw2+.1)+')';g.beginPath();g.arc(S.x,S.y,(last?2.2:1.6)*(mini?.7:1),0,6.2832);g.fill();}
+  // 聚攏時那裡越來越亮；亮起來的那一下：一團光加一圈往外擴的光
+  if(cer&&gs){if(ct>=1&&ct<4)gxBlob(g,gs.x,gs.y,(mini?8:18)+(mini?8:26)*gk,'rgba('+P.burst+','+gxA(.32*gk)+')','rgba('+P.burst+',0)');
+    if(ct>=4&&ct<5.4){const bq=(ct-4)/1.4,bm=mini?.35:1;gxBlob(g,gs.x,gs.y,(22+70*bq)*bm,'rgba('+P.burst+','+gxA(.5*(1-bq))+')','rgba('+P.burst+',0)');
+      g.strokeStyle='rgba('+P.ring+','+gxA(.5*(1-bq))+')';g.lineWidth=1.2;g.beginPath();g.arc(gs.x,gs.y,(8+64*bq)*bm,0,6.2832);g.stroke();}}
+  // 流星（勳章頁才有）：每隔十幾秒一顆
+  if(!mini&&!rm){st.mt-=dt;
+    if(st.mt<=0&&!st.me){const R=st.R;st.mt=12+R()*6;st.me={x:st.W*(.45+.5*R()),y:st.H*(.12+.25*R()),a:2.4+R()*.25,t:0,life:.75+R()*.2};}
+    const me=st.me;
+    if(me){me.t+=dt;if(me.t>=me.life)st.me=null;
+      else{const mq=me.t/me.life,hx=me.x+Math.cos(me.a)*480*me.t,hy=me.y+Math.sin(me.a)*480*me.t,tl=Math.min(110,480*me.t),tx=hx-Math.cos(me.a)*tl,ty=hy-Math.sin(me.a)*tl,al=Math.sin(Math.PI*Math.min(1,mq*1.15));
+        const lg=g.createLinearGradient(hx,hy,tx,ty);lg.addColorStop(0,'rgba(255,255,255,'+gxA(.9*al)+')');lg.addColorStop(1,'rgba(180,205,255,0)');
+        g.strokeStyle=lg;g.lineWidth=1.6;g.beginPath();g.moveTo(hx,hy);g.lineTo(tx,ty);g.stroke();gxBlob(g,hx,hy,6,'rgba(255,255,255,'+gxA(.75*al)+')','rgba(200,220,255,0)');}}}
+  g.globalCompositeOperation='source-over';
+}
+// 畫布：勳章頁一張、首頁卡片一張，看得到才畫；都看不到兩秒以後就停
+const gal = { st: [null, null], raf: 0, last: null, idle: 0 };
+function galSync() { if (!gal.raf) { gal.last = null; gal.idle = 0; gal.raf = requestAnimationFrame(galLoop); } }
+function galLoop(now) {
+  gal.raf = 0;
+  const rm = reducedMotion(), t = now / 1000, dt = gal.last == null ? 0 : Math.min(.05, Math.max(0, now - gal.last) / 1000);
+  gal.last = now;
+  const onHome = Object.values(screens).every(x => x.hidden);
+  let live = false, drew = false;
+  [$('bGalCv'), $('litCv')].forEach((c, i) => {
+    const key = c.dataset.gk || '', show = !!key && c.clientWidth > 0 && (i === 0 || onHome);
+    if (!show) return;
+    live = true;
+    let st = gal.st[i];
+    if (!st || st.c !== c || st.key !== key || Math.abs(c.clientWidth - st.W) > 2) {
+      const [mode, nn] = key.split('|'), n = +nn || 0, td = today();
+      // 今天練過、今天第一次打開勳章頁：播一次「今天那一顆亮起來」
+      const cer = mode !== 'mini' && n > 0 && !!bdg().days[td] && state.litCer !== td && !(st && st.key === key);
+      if (cer) { state.litCer = td; save(); }
+      st = gal.st[i] = gxMake(c, n, mode, cer); st.key = key; st.drawn = false;
+    }
+    if (!rm || !st.drawn) { gxDraw(st, rm ? 9 : t, dt, rm); st.drawn = true; drew = true; }
+  });
+  gal.idle = live ? 0 : gal.idle + dt;
+  if ((live && !rm) || (!live && gal.idle < 2) || drew) gal.raf = requestAnimationFrame(galLoop);
 }
 let bTab = 'gal';
 // 地藏王菩薩的畫（docs/assets/dizang.jpg，900×1257）；檔案還沒放上來時，先不顯示「下一張」預告
@@ -207,30 +313,12 @@ function renderBadges() {
     cell.appendChild(t); $('bTiles').appendChild(cell);
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
-  // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
+  // 銀河（星塵版）：深色主題直接畫在背景上；淺色主題放在銀河黑的框裡，天數寫在框下面
   const dk = DARK_THEMES.includes(state.theme);
-  const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
-  $('bSpiral').innerHTML = '';
-  for (let k = 0; k < SP; k++) {
-    const j = k % 2, th = 3 + (14 - Math.floor(k / 2)) * (7.8 / 14), r = 27 * Math.exp(.195 * th), a = th + j * Math.PI;
-    const [x, y] = gxy(r * Math.cos(a), r * Math.sin(a)), on = k < lit, last = on && k === lit - 1, sz = on ? 5.5 : 6;
-    const el = document.createElement('div');
-    el.className = 'bstar';
-    Object.assign(el.style, {
-      left: x.toFixed(2) + '%', top: y.toFixed(2) + '%', width: sz + 'px', height: sz + 'px', margin: (-sz / 2) + 'px 0 0 ' + (-sz / 2) + 'px',
-      background: on ? (dk ? '#ffffff' : '#1f6f86') : 'transparent',
-      boxShadow: dk
-        ? (last ? '0 0 0 3px var(--screen),0 0 0 4.5px #ffffff,0 0 14px rgba(210,225,255,.85)' : on ? '0 0 5px 1px rgba(215,228,255,.9),0 0 14px rgba(170,190,255,.55)' : 'inset 0 0 0 1px rgba(255,255,255,.5)')
-        : (last ? '0 0 0 3px var(--screen),0 0 0 4.5px #1f6f86,0 0 10px rgba(90,170,192,.6)' : on ? '0 0 6px 1px rgba(90,170,192,.55)' : 'inset 0 0 0 1px var(--track)'),
-    });
-    $('bSpiral').appendChild(el);
-  }
+  $('bStageG').classList.toggle('box', !dk);
+  $('bGalCv').dataset.gk = bTab === 'gal' && !isJ ? (dk ? 'stage' : 'box') + '|' + lit : '';
+  $('bGalCv').setAttribute('aria-label', '銀河：30 顆星已經點亮 ' + lit + ' 顆');
   $('bSpiralNote').textContent = $('bJNote').textContent = nd ? '已經練習 ' + nd + ' 天' + (full > 0 && !isJ ? '，這是第 ' + (full + 1) + ' 個銀河' : '') : '每練習一天，就亮一顆星';
-  const img = bTab === 'gal' && !isJ ? galaxyAt(lit, !dk) : '';
-  $('bGalCore').style.background = dk
-    ? 'radial-gradient(circle closest-side,#ffffff 0,#fff6e6 8%,rgba(255,228,190,.6) 18%,rgba(255,216,172,.22) 36%,rgba(255,206,160,.06) 62%,rgba(255,206,160,0) 100%)'
-    : 'radial-gradient(circle closest-side,#fffaf0 0,rgba(255,232,196,.95) 9%,rgba(236,186,124,.55) 22%,rgba(214,160,100,.2) 42%,rgba(214,160,100,.05) 66%,rgba(214,160,100,0) 100%)';
-  $('bGalImg').style.backgroundImage = img ? "url('" + img + "')" : 'none';
   // 印章
   $('bStamps').innerHTML = '';
   let n = 0;
@@ -249,6 +337,7 @@ function renderBadges() {
   $('bTabGal').hidden = bTab !== 'gal';
   $('bStamps').hidden = bTab !== 'st';
   document.querySelectorAll('.btab').forEach(b => b.classList.toggle('on', b.dataset.tab === bTab));
+  galSync();
 }
 // 完成畫面上，依序跳出這次拿到的新印章
 function showAward() {
@@ -272,26 +361,11 @@ function renderLit() {
   if (state.litHide === today()) { $('lit').hidden = true; return; }
   $('lit').hidden = false; $('lit').classList.remove('bye'); $('lit').classList.toggle('dk', dk);
   $('litGal').hidden = isJ; $('litJ').hidden = !isJ;
-  if (!isJ) {
-    // 星星的位置和勳章頁一樣（沿兩條旋臂，和銀河圖對齊），只是小一點
-    const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
-    const box = $('litGal'); box.querySelectorAll('.lstar').forEach(e => e.remove());
-    for (let k = 0; k < SP; k++) {
-      const j = k % 2, th = 3 + (14 - Math.floor(k / 2)) * (7.8 / 14), r = 27 * Math.exp(.195 * th), a = th + j * Math.PI;
-      const [x, y] = gxy(r * Math.cos(a), r * Math.sin(a)), on = k < lit, last = on && k === lit - 1, sz = last ? 4 : on ? 3 : 2.6, el = document.createElement('div');
-      el.className = 'lstar';
-      Object.assign(el.style, {
-        left: x.toFixed(2) + '%', top: y.toFixed(2) + '%', width: sz + 'px', height: sz + 'px', margin: (-sz / 2) + 'px 0 0 ' + (-sz / 2) + 'px',
-        background: on ? (dk ? '#ffffff' : '#1f6f86') : 'transparent',
-        boxShadow: dk
-          ? (last ? '0 0 0 1.5px rgba(5,7,15,.9),0 0 0 2.5px #ffffff,0 0 8px rgba(210,225,255,.9)' : on ? '0 0 4px 1px rgba(215,228,255,.85)' : 'inset 0 0 0 .8px rgba(255,255,255,.35)')
-          : (last ? '0 0 0 1.5px #ffffff,0 0 0 2.5px #1f6f86' : on ? '0 0 4px rgba(90,170,192,.6)' : 'inset 0 0 0 .8px rgba(31,111,134,.3)'),
-      });
-      box.appendChild(el);
-    }
-    const img = lit > 0 ? galaxyAt(lit, !dk) : '';
-    $('litImg').style.backgroundImage = img ? "url('" + img + "')" : 'none';
-  } else {
+  // 銀河：小框是銀河黑，裡面是會動的星塵銀河（淺色主題也一樣）
+  $('lit').classList.toggle('gal', !isJ);
+  $('litCv').dataset.gk = isJ ? '' : 'mini|' + lit;
+  if (!isJ) galSync();
+  else {
     // 畫分成 5×6 塊，從最下面一排（蓮花座）往上翻，每排先中間再往兩側（和勳章頁一樣）
     const JROW = [2, 1, 3, 0, 4], jRank = {};
     { let q = 0; for (let r = 5; r >= 0; r--) for (const c of JROW) jRank[r * 5 + c] = q++; }
@@ -764,6 +838,7 @@ const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
+  galSync();
 }
 function bind(key, val) { document.querySelectorAll('[data-bind="' + key + '"]').forEach(el => { el.textContent = val; }); }
 

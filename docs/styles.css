@@ -154,11 +154,10 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .lit[hidden] { display: none; }
 .lit:hover { border-color: var(--accent); }
 .lit-pic { flex: none; position: relative; width: 78px; height: 78px; border-radius: 14px; overflow: hidden; background: var(--card); }
-.lit.dk .lit-pic { background: radial-gradient(circle at 50% 45%, #161c40 0%, #070914 100%); }
-.lit-gal { position: absolute; left: -17%; width: 134%; top: -21%; aspect-ratio: 1; }
+.lit.dk .lit-pic, .lit.gal .lit-pic { background: radial-gradient(circle at 50% 45%, #161c40 0%, #070914 100%); }
+.lit-gal { position: absolute; inset: 0; }
 .lit-gal[hidden], .lit-j[hidden] { display: none; }
-.lit-img { position: absolute; inset: 0; background-size: 100% 100%; }
-.lit-gal .lstar { position: absolute; border-radius: 50%; }
+.lit-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .lit-j { position: absolute; left: 14px; top: 4px; width: 50px; height: 70px; border-radius: 6px; overflow: hidden; }
 .lit-j-bg { position: absolute; inset: 0; background: url('assets/dizang.jpg') center / cover; filter: grayscale(1) blur(1px); opacity: .25; }
 .lit-tiles { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(6, 1fr); }
@@ -719,12 +718,11 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .bgal { position: relative; }
 .bgal-sq { position: relative; width: 100%; aspect-ratio: 1; overflow: hidden; }
 .bgal-note { position: absolute; left: 0; right: 0; bottom: 22px; text-align: center; font-size: 18px; font-weight: 500; letter-spacing: .04em; color: var(--muted); z-index: 1; }
-.bgal-in { position: absolute; left: 0; width: 100%; top: -4%; aspect-ratio: 1; }
-.bgal-img { position: absolute; inset: 0; background-size: 100% 100%; }
-.bgal-core {
-  position: absolute; left: 50%; top: 50%; width: 90px; height: 90px; margin: -45px 0 0 -45px; border-radius: 50%;
-}
-.bstar { position: absolute; border-radius: 50%; transition: background .4s; }
+.bgal-cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* 淺色主題：銀河放在銀河黑的框裡，天數寫在框下面 */
+.bgal.box { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 10px 0 18px; }
+.bgal.box .bgal-sq { width: min(300px, 88%); aspect-ratio: 300 / 240; border-radius: 22px; background: #05070f; box-shadow: 0 0 0 1px rgba(21,48,58,.18), 0 10px 24px rgba(21,48,58,.16); }
+.bgal.box .bgal-note { position: static; }
 .bgal-text { padding: 4px 8px; display: flex; flex-direction: column; gap: 8px; }
 .bgal-title { font-size: 16px; font-weight: 500; letter-spacing: .08em; color: var(--ink-2); }
 .bgal-text p { margin: 0; font-size: 14px; line-height: 1.75; color: var(--muted); text-wrap: pretty; }
