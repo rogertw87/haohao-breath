@@ -208,7 +208,7 @@ function renderBadges() {
   }
   $('bJSub').textContent = '地藏王菩薩・' + jl + ' / 30';
   // 星星沿兩條旋臂從外往內亮，位置要和銀河圖（傾斜、壓扁）對齊
-  const dk = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'bone1', 'bone3', 'senko'].includes(state.theme);
+  const dk = DARK_THEMES.includes(state.theme);
   const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
   $('bSpiral').innerHTML = '';
   for (let k = 0; k < SP; k++) {
@@ -263,7 +263,51 @@ function showAward() {
   $('awSub').textContent = '已經蓋在你的印章冊裡。';
 }
 const mins = sec => Math.max(1, Math.round(sec / 60));
+// 首頁的「點亮」卡片：銀河（或地藏王菩薩的畫）練到哪裡，再提醒今天練了沒；點一下打開勳章的「點亮」
+function renderLit() {
+  const B = bdg(), SP = 30, nd = Object.keys(B.days).length, stg = nd > 0 ? Math.floor((nd - 1) / SP) : 0;
+  const lit = nd - stg * SP, isJ = stg % 2 === 1, full = Math.floor(stg / 2), done = !!B.days[today()], stk = streak(B.days);
+  const dk = DARK_THEMES.includes(state.theme);
+  $('lit').hidden = false; $('lit').classList.toggle('dk', dk);
+  $('litGal').hidden = isJ; $('litJ').hidden = !isJ;
+  if (!isJ) {
+    // 星星的位置和勳章頁一樣（沿兩條旋臂，和銀河圖對齊），只是小一點
+    const GR = -.42, GI = .4, GZ = 540, gxy = (px, py) => { const qy = py * GI, X = px * Math.cos(GR) - qy * Math.sin(GR), Y = px * Math.sin(GR) + qy * Math.cos(GR); return [(GZ / 2 + X) / GZ * 100, (GZ / 2 + Y) / GZ * 100]; };
+    const box = $('litGal'); box.querySelectorAll('.lstar').forEach(e => e.remove());
+    for (let k = 0; k < SP; k++) {
+      const j = k % 2, th = 3 + (14 - Math.floor(k / 2)) * (7.8 / 14), r = 27 * Math.exp(.195 * th), a = th + j * Math.PI;
+      const [x, y] = gxy(r * Math.cos(a), r * Math.sin(a)), on = k < lit, last = on && k === lit - 1, sz = last ? 4 : on ? 3 : 2.6, el = document.createElement('div');
+      el.className = 'lstar';
+      Object.assign(el.style, {
+        left: x.toFixed(2) + '%', top: y.toFixed(2) + '%', width: sz + 'px', height: sz + 'px', margin: (-sz / 2) + 'px 0 0 ' + (-sz / 2) + 'px',
+        background: on ? (dk ? '#ffffff' : '#1f6f86') : 'transparent',
+        boxShadow: dk
+          ? (last ? '0 0 0 1.5px rgba(5,7,15,.9),0 0 0 2.5px #ffffff,0 0 8px rgba(210,225,255,.9)' : on ? '0 0 4px 1px rgba(215,228,255,.85)' : 'inset 0 0 0 .8px rgba(255,255,255,.35)')
+          : (last ? '0 0 0 1.5px #ffffff,0 0 0 2.5px #1f6f86' : on ? '0 0 4px rgba(90,170,192,.6)' : 'inset 0 0 0 .8px rgba(31,111,134,.3)'),
+      });
+      box.appendChild(el);
+    }
+    const img = lit > 0 ? galaxyAt(lit, !dk) : '';
+    $('litImg').style.backgroundImage = img ? "url('" + img + "')" : 'none';
+  } else {
+    // 畫分成 5×6 塊，從最下面一排（蓮花座）往上翻，每排先中間再往兩側（和勳章頁一樣）
+    const JROW = [2, 1, 3, 0, 4], jRank = {};
+    { let q = 0; for (let r = 5; r >= 0; r--) for (const c of JROW) jRank[r * 5 + c] = q++; }
+    $('litTiles').innerHTML = '';
+    for (let i = 0; i < 30; i++) { const t = document.createElement('div'); t.className = jRank[i] < lit ? 'on' : ''; t.style.backgroundPosition = ((i % 5) * 25) + '% ' + (Math.floor(i / 5) * 20) + '%'; $('litTiles').appendChild(t); }
+  }
+  const more = isJ ? '再翻開一塊' : '再亮一顆星', fin = lit >= SP;
+  const note = !nd ? '每練習一天，就點亮一顆星。從今天開始吧。'
+    : done ? (fin ? (isJ ? '整張畫完整了！明天開始新的銀河。' : '銀河完整了！明天開始翻開地藏王菩薩的畫。') : (isJ ? '今天翻開了一塊，明天再來翻下一塊。' : '今天的星已經亮了，明天再來點亮下一顆。'))
+    : stk >= 2 ? '已經連續 ' + stk + ' 天，今天也來練一次，' + more + '。' : '今天還沒練。完成一次練習，就' + more + '。';
+  const big = !nd ? '還沒有點亮' : isJ ? '翻開 ' + lit + ' / 30' : '已經點亮 ' + nd + ' 天';
+  const title = isJ ? '地藏王菩薩的畫' : full > 0 ? '第 ' + (full + 1) + ' 個銀河・' + lit + ' / 30' : '點亮銀河・' + lit + ' / 30';
+  $('litTitle').textContent = title; $('litBig').textContent = big; $('litNote').textContent = note;
+  $('litNote').classList.toggle('todo', !!nd && !done);
+  $('lit').setAttribute('aria-label', title + '，' + big + '。' + note + '點一下看勳章');
+}
 function renderToday() {
+  renderLit();
   const it = todayLog(), rows = EX.filter(e => it[e.id]).map(e => ({ name: e.name, n: it[e.id].n, sec: it[e.id].sec }));
   const n = rows.reduce((a, r) => a + r.n, 0), sec = rows.reduce((a, r) => a + r.sec, 0);
   $('today').hidden = !n;
@@ -1602,7 +1646,7 @@ $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Mat
 // 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面用主題自己的背景和顏色；左腳的畫法：淺色主題用白描、深色主題用月白，白骨主題照主題本身
 const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
 let bp = null, bpRaf = 0;
-const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
+const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
 function bpOpen() {
   bpRenderSetup();
   show('bpSetup');
@@ -1736,11 +1780,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && bp
 // 自動變暗：開始播放後 10 秒沒碰螢幕，蓋上一層全黑的畫面。不算練習次數、不給印章
 // 每種聲音一條音軌：同一個網站（或自己上傳）的音檔接到自己的 GainNode，iPhone 也能各自調音量、慢慢變小聲
 const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_AFTER = 10000;
-// 「接著播」：一段播完接下一段。最多 6 段；每段設幾分鐘，有頭有尾的聲音（咒、歌聲、自己的錄音）可以選播完幾遍
+// 「接著播」：一段播完接下一段。最多 6 段；每段設播幾次（預設 1 次，最多 30 次）或幾分鐘；安靜只能設幾分鐘
 // 換段：慢慢交疊（前後各 2.5 秒）、直接接上、中間安靜（淡出 2 秒、安靜 10 秒、淡入 2 秒）
-const LQ_MAX = 6, LQ_MINS = [5, 10, 15, 20, 30], LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_ONCE = ['chant', 'shurangama', 'dabei', 'singing'];
-const LQ_DARK = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
-const lqOnceOk = k => typeof k === 'string' && (k.startsWith('mine:') || LQ_ONCE.includes(k));
+const LQ_MAX = 6, LQ_MINS = [5, 10, 15, 20, 30], LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_NMAX = 30;
+const LQ_DARK = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
+const lqOnceOk = k => typeof k === 'string' && k !== 'silence' && k !== 'none';   // 有音檔的聲音都可以設「播幾次」；安靜不行
 let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
 // 接著播：加一段／改一段的視窗 { i, k, m, n, d }、清單上展開的那一段、正在拖的那一段、每個聲音播一遍幾秒（-1 是讀不到）
 let lsSheet = null, lsSeqOpen = null, lsSeqDrag = null, lqDrag = null, lsVolHold = false;
@@ -2041,16 +2085,16 @@ const lqKnown = k => (lqd[k] > 0 ? lqd[k] : 0);
 function lqLenText(x) {
   if (x.m !== 'once') return x.m + ' 分鐘';
   if (!(x.d > 0)) return lqd[x.k] === -1 ? '讀不到長度' : '讀取中…';
-  return (x.n || 1) + ' 遍・' + Math.max(1, Math.round(x.d * (x.n || 1) / 60)) + ' 分';
+  return (x.n || 1) + ' 次・' + Math.max(1, Math.round(x.d * (x.n || 1) / 60)) + ' 分';
 }
-// 把「播完一遍」的長度寫回清單裡用到這個聲音的每一段（還有開著的視窗）
+// 把「播一次」有多長寫回清單裡用到這個聲音的每一段（還有開著的視窗）
 function lqPutDur(k, d) {
   let ch = false;
   const L = (Array.isArray(state.lsSeq) ? state.lsSeq : []).map(x => (x && x.k === k && x.m === 'once' && x.d !== d ? (ch = true, { ...x, d }) : x));
   if (ch) { state.lsSeq = L; save(); }
   if (lsSheet && lsSheet.k === k && lsSheet.m === 'once' && lsSheet.d !== d) lsSheet = { ...lsSheet, d };
 }
-// 讀一個聲音「播完一遍」有多長（秒）：只讀音檔的開頭，不會整個下載
+// 讀一個聲音播一次有多長（秒）：只讀音檔的開頭，不會整個下載
 function lqDur(k) {
   if (lqd[k] > 0) { lqPutDur(k, lqd[k]); return; }
   if (lqd[k] != null) return;   // 正在讀，或讀不到
@@ -2091,9 +2135,11 @@ function lqSheetOpen(i) {
   const L = lqList(), x = i >= 0 ? L[i] : null;
   if (!x && L.length >= LQ_MAX) return;
   const used = L.map(y => y.k), first = (MUSIC.find(([k]) => k !== 'none' && !used.includes(k)) || MUSIC[1])[0];
-  lsSheet = x ? { i, k: x.k, m: x.m, n: x.n || 1, d: x.d || 0 } : { i: -1, k: first, m: 15, n: 1, d: 0 };
+  // 新加的一段預設「播 1 次」
+  lsSheet = x ? { i, k: x.k, m: x.m, n: x.n || 1, d: x.d || 0 } : { i: -1, k: first, m: 'once', n: 1, d: lqKnown(first) };
   lsSeqOpen = null;
   if (x && x.m === 'once' && !(x.d > 0) && lqOk(x)) lqRetry(x.k);
+  if (!x) lqRetry(first);
   lsRenderSetup();
   $('lqSheetBox').scrollTop = 0;
 }
@@ -2116,11 +2162,11 @@ function lqSheetLen(m) {
   else { lsSheet = { ...sh, m: 'once', n: sh.n || 1, d: lqKnown(sh.k) || sh.d || 0 }; lqRetry(sh.k); }
   lqRenderSheet();
 }
-// ＋ －：幾分鐘（1–180）或播幾遍（1–9）
+// ＋ －：幾分鐘（1–180）或播幾次（1–30）
 function lqSheetStep(dv) {
   const sh = lsSheet;
   if (!sh) return;
-  lsSheet = sh.m === 'once' ? { ...sh, n: Math.max(1, Math.min(9, (sh.n || 1) + dv)) } : { ...sh, m: Math.max(1, Math.min(180, (+sh.m || 0) + dv)) };
+  lsSheet = sh.m === 'once' ? { ...sh, n: Math.max(1, Math.min(LQ_NMAX, (sh.n || 1) + dv)) } : { ...sh, m: Math.max(1, Math.min(180, (+sh.m || 0) + dv)) };
   lqRenderSheet();
 }
 function lqSheetOk() {
@@ -2231,15 +2277,16 @@ function lqRenderSheet() {
   if (mine.length < MINE_MAX) mk(snd, '＋ 上傳錄音', false, 'music-upload', () => $('mineFile').click()).removeAttribute('aria-pressed');
   const len = $('lqLens'), noOnce = !lqOnceOk(sh.k);
   len.innerHTML = '';
-  LQ_MINS.forEach(m => mk(len, m + ' 分鐘', sh.m === m, '', () => lqSheetLen(m)));
-  const ob = mk(len, '播完一遍', sh.m === 'once', noOnce ? 'ls-off' : '', () => lqSheetLen('once'));
+  // 「播幾次」排第一個，後面才是幾分鐘
+  const ob = mk(len, '播幾次', sh.m === 'once', noOnce ? 'ls-off' : '', () => lqSheetLen('once'));
   if (noOnce) ob.setAttribute('aria-disabled', 'true');
+  LQ_MINS.forEach(m => mk(len, m + ' 分鐘', sh.m === m, '', () => lqSheetLen(m)));
   $('lqStepText').textContent = sh.m === 'once'
-    ? '播 ' + (sh.n || 1) + ' 遍' + (sh.d > 0 ? '・約 ' + Math.max(1, Math.round(sh.d * (sh.n || 1) / 60)) + ' 分鐘' : lqd[sh.k] === -1 ? '・讀不到長度' : '・讀取長度中…')
+    ? '播 ' + (sh.n || 1) + ' 次' + (sh.d > 0 ? '・約 ' + Math.max(1, Math.round(sh.d * (sh.n || 1) / 60)) + ' 分鐘' : lqd[sh.k] === -1 ? '・讀不到長度' : '・讀取長度中…')
     : sh.m + ' 分鐘';
   $('lqSheetNote').textContent = sh.k === 'silence' ? '「安靜」是一段沒有聲音的時間。用 ＋ － 可以一分鐘一分鐘調。'
-    : lqOnceOk(sh.k) ? '這個聲音有頭有尾，可以選「播完一遍」，再用 ＋ － 改成播幾遍；也可以設成固定幾分鐘。'
-    : '這個聲音沒有頭尾，會一直循環到設定的時間。用 ＋ － 可以一分鐘一分鐘調。';
+    : sh.m === 'once' ? '整首播完算一次，預設播 1 次；用 ＋ － 改成播幾次（最多 ' + LQ_NMAX + ' 次）。播完最後一次才換下一段。'
+    : '選幾分鐘，聲音會一直循環到時間到；用 ＋ － 可以一分鐘一分鐘調。也可以選「播幾次」，照次數來播。';
 }
 // 每一段從第幾秒播到第幾秒。「中間安靜」的話，兩段之間多留 10 秒
 function lqPlan() {
@@ -2427,6 +2474,7 @@ document.addEventListener('click', e => {
   else if (a === 'g-resume') gResume();
   else if (a === 'resume') resumeAllAudio();
   else if (a === 'badges-open') { setMenu(false); renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
+  else if (a === 'lit-open') { bTab = 'gal'; renderBadges(); screens.badges.scrollTop = 0; show('badges'); }
   else if (a === 'badges-close') show(null);
   else if (a === 'btab') { bTab = b.dataset.tab; renderBadges(); }
   else if (a === 'award-next') { awards.shift(); showAward(); }
@@ -2489,10 +2537,11 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪1、脈輪2、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
+const DARK_THEMES = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];
 const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
-  chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
+  chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', chakra7: 'linear-gradient(180deg,#110d28 0%,#0b0920 50%,#060512 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
   bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)',
   senko: 'linear-gradient(180deg,#14141d 0%,#131110 55%,#12100e 100%)' };
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
@@ -2529,6 +2578,8 @@ function applyTheme() {
   else root.style.removeProperty('--sky');
   syncSparks();
   document.querySelectorAll('[data-theme-pick]').forEach(b => b.classList.toggle('on', b.dataset.themePick === t));
+  const on = document.querySelector('[data-theme-pick].on'); $('themeCur').textContent = on ? on.textContent : '';
+  if (typeof renderLit === 'function') renderLit();
 }
 document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('click', () => {
   state.theme = b.dataset.themePick;
@@ -2539,7 +2590,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
+const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', chakra7: 'chakra7', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -3122,6 +3173,52 @@ function skStill(g,x,y){const R=axRand(11);g.globalCompositeOperation='lighter';
     g.strokeStyle='rgba(255,236,190,.85)';g.lineWidth=1;g.beginPath();g.moveTo(x0,y0);g.lineTo(x1,y1);
     for(let j=0;j<n;j++){const a2=a+(R()*2-1)*.9,l=8+R()*10;g.moveTo(x1,y1);g.lineTo(x1+Math.cos(a2)*l,y1+Math.sin(a2)*l);}g.stroke();}
   g.globalCompositeOperation='source-over';}
+// 脈輪2：七個脈輪的符號（古老的符號，自己用線畫）。0 海底輪 … 6 頂輪；整個符號的半徑當作 1
+const CHK_C7=['236,70,62','247,140,50','248,206,74','96,198,112','70,180,234','104,112,226','176,116,232'];
+const CHK_S=[{n:4,rc:.6,L:.4,a0:-Math.PI/2},{n:6,rc:.6,L:.4,a0:-Math.PI/2},{n:10,rc:.62,L:.38,a0:-Math.PI/2},{n:12,rc:.62,L:.38,a0:-Math.PI/2},{n:16,rc:.64,L:.36,a0:-Math.PI/2},{n:2,rc:.46,L:.54,a0:0,hw:1.05},{n:20,rc:.46,L:.54,a0:-Math.PI/2,inner:10}];
+const chkA=v=>(v<0?0:v>1?1:v).toFixed(3);
+const chkMix=(col,k)=>col.split(',').map(v=>Math.round(+v+(255-v)*k)).join(',');
+// 一片花瓣：從圓上長出去，尖端朝外
+const chkPetal=(g,a,rc,L,hw)=>{const P=(aa,rr)=>[Math.cos(aa)*rr,Math.sin(aa)*rr],b0=P(a-hw,rc),tip=P(a,rc+L),b1=P(a+hw,rc),c0=P(a-hw*1.08,rc+L*.6),c1=P(a-hw*.3,rc+L*.97),c2=P(a+hw*.3,rc+L*.97),c3=P(a+hw*1.08,rc+L*.6);
+  g.moveTo(b0[0],b0[1]);g.bezierCurveTo(c0[0],c0[1],c1[0],c1[1],tip[0],tip[1]);g.bezierCurveTo(c2[0],c2[1],c3[0],c3[1],b1[0],b1[1]);};
+const chkPetals=(g,i,R)=>{const s=CHK_S[i],rc=s.rc*R,L=s.L*R,hw=s.hw||Math.PI/s.n*.93;for(let k=0;k<s.n;k++)chkPetal(g,s.a0+k*2*Math.PI/s.n,rc,L,hw);if(s.inner)for(let k=0;k<s.inner;k++)chkPetal(g,s.a0+(k+.5)*2*Math.PI/s.inner,rc,L*.46,Math.PI/s.inner*.9);};
+const chkTri=(g,r,dn)=>{const s=dn?1:-1;g.moveTo(0,s*r);g.lineTo(-.866*r,-s*.5*r);g.lineTo(.866*r,-s*.5*r);g.closePath();};
+const chkCirc=(g,x,y,r)=>{g.moveTo(x+r,y);g.arc(x,y,r,0,6.2832);};
+// 中間的圓和裡面的圖形：方形和向下的三角形、新月、三角形、六芒星、三角形裡一個圓、三角形、圓裡一個圓
+const chkCore=(g,i,R)=>{const rc=CHK_S[i].rc*R;chkCirc(g,0,0,rc);
+  if(i===0){const h=rc*.707;g.rect(-h,-h,h*2,h*2);g.moveTo(-h,-h);g.lineTo(h,-h);g.lineTo(0,h);g.closePath();}
+  else if(i===1){const y1=.12*rc,r1=.62*rc,y2=-.06*rc,r2=.58*rc,d=y1-y2,a=(r1*r1-r2*r2+d*d)/(2*d),hh=Math.sqrt(r1*r1-a*a),py=y1-a,a1=Math.atan2(py-y1,hh),a2=Math.atan2(py-y2,hh);g.moveTo(hh,py);g.arc(0,y1,r1,a1,Math.PI-a1,false);g.arc(0,y2,r2,Math.PI-a2,a2,true);g.closePath();}
+  else if(i===2)chkTri(g,rc*.92,true);
+  else if(i===3){chkTri(g,rc*.92,true);chkTri(g,rc*.92,false);}
+  else if(i===4){chkTri(g,rc*.92,true);chkCirc(g,0,0,rc*.46);}
+  else if(i===5){chkTri(g,rc*.8,true);chkCirc(g,0,0,rc*.22);}
+  else{chkCirc(g,0,0,rc*.58);chkCirc(g,0,0,rc*.16);}};
+// 發光的線先畫成小圖存起來（花瓣一張、中間一張），之後每一格只要貼上去
+const _chkSp={};
+const chkSprite=(i,R,part,o,d)=>{const key=[i,R.toFixed(1),part,o.c,o.hi,o.lw,o.gl,d].join('|');if(_chkSp[key])return _chkSp[key];
+  const m=Math.ceil(R+o.gl*1.6+o.lw+3),c=document.createElement('canvas');c.width=c.height=Math.ceil(m*2*d);const g=c.getContext('2d');g.scale(d,d);g.translate(m,m);g.lineJoin='round';g.lineCap='round';
+  const path=()=>{g.beginPath();if(part==='petal')chkPetals(g,i,R);else chkCore(g,i,R);};
+  path();g.shadowColor='rgba('+o.c+',1)';g.shadowBlur=o.gl*d;g.strokeStyle='rgba('+o.c+',.7)';g.lineWidth=o.lw*2.2;g.stroke();g.shadowBlur=o.gl*.45*d;g.stroke();g.shadowBlur=0;g.shadowColor='transparent';
+  path();g.strokeStyle='rgba('+o.hi+',1)';g.lineWidth=o.lw;g.stroke();return _chkSp[key]={c,m};};
+// 貼一個符號：rot 花瓣轉幾度（眉心輪的兩瓣固定左右）、sc 花瓣放大多少、a 亮度
+const chkPut=(g,x,y,i,R,o,d,a,rot,sc)=>{if(a<=.004)return;const p=chkSprite(i,R,'petal',o,d),c=chkSprite(i,R,'core',o,d);g.globalAlpha=a>1?1:a;
+  g.save();g.translate(x,y);if(rot&&i!==5)g.rotate(rot);if(sc&&sc!==1)g.scale(sc,sc);g.drawImage(p.c,-p.m,-p.m,p.m*2,p.m*2);g.restore();g.drawImage(c.c,x-c.m,y-c.m,c.m*2,c.m*2);g.globalAlpha=1;};
+// 一團柔和的光（每個顏色存一張）
+const _chkGl={};
+const chkGlow=(g,x,y,r,col,a)=>{if(a<=.004||r<=0)return;let c=_chkGl[col];if(!c){c=_chkGl[col]=document.createElement('canvas');c.width=c.height=128;const x2=c.getContext('2d'),gr=x2.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba('+col+',1)');gr.addColorStop(.25,'rgba('+col+',.5)');gr.addColorStop(.6,'rgba('+col+',.12)');gr.addColorStop(1,'rgba('+col+',0)');x2.fillStyle=gr;x2.fillRect(0,0,128,128);}
+  g.globalAlpha=a>1?1:a;g.drawImage(c,x-r,y-r,r*2,r*2);g.globalAlpha=1;};
+// 七個脈輪的位置：首頁在右邊排成一直列（不擋到練習名稱）；練習時從呼吸圖形上面一點排到圖形底下，正好穿過圖形中間
+const chkLay=(st,W,H)=>{const l=st.lay||{},v=l.vis,cl=l.clear||[];
+  // 比較寬的呼吸圖形（例如諧振式呼吸的波形）底下有一行「一輪幾秒」的小字，脈輪停在小字上面
+  if(v){const x=v.x+v.w/2,top=Math.max(100,v.y-52),bot=v.y+v.h-8-(v.w-v.h>40?30:0),sp=(bot-top)/6,ys=[];for(let i=0;i<7;i++)ys.push(bot-sp*i);
+    return {run:true,x,ys,R:Math.max(12,Math.min(19,sp*.37)),k:1,clear:cl};}
+  const x=W/2+Math.min(W,480)/2-60,y1=H-64,y0=150,ys=[];for(let i=0;i<7;i++)ys.push(y1-(y1-y0)*i/6);
+  return {run:false,x,ys,R:Math.max(14,Math.min(25,(y1-y0)/6*.34)),k:l.home===false?0:1};};
+// 不動的底：星星，畫成一張和畫布一樣大的圖，每一格整張貼上去
+const chkBase=(st,g,W,H,key,paint)=>{const d=Math.min(2,window.devicePixelRatio||1),k2=key+'|'+W+'|'+H+'|'+d;
+  if(st.bk!==k2){const c=st.bc||document.createElement('canvas');c.width=Math.round(W*d);c.height=Math.round(H*d);const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,W,H);let a=7;const R=()=>(a=(a*16807)%2147483647)/2147483647;paint(x,R);st.bc=c;st.bk=k2;}
+  g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(st.bc,0,0);g.restore();};
+const chkStars=(x,W,H,R,n,col)=>{for(let i=0;i<n;i++){const r=R(),a=.05+.5*r*r*r;x.fillStyle='rgba('+col+','+a.toFixed(3)+')';x.beginPath();x.arc(R()*W,R()*H,.4+R()*.9,0,6.2832);x.fill();}};
 const FXS = {
  // 仙女棒：一顆小火球，照自己的節奏一輪一輪地燒（一輪 58 秒），不跟著呼吸：花蕾 → 牡丹 → 松葉 → 垂柳 → 金雨 → 盛開，然後慢慢安靜下來，再從花蕾開始。
  // 有呼吸圓點的練習，圓點就是那顆火球；其他畫面是一根紙捻從上面垂下來，火球掛在尾端。開了「減少動態效果」就是一束靜止的火星
@@ -3309,6 +3406,26 @@ const FXS = {
     glowC(g,x,top+4,80,'255,196,110',.34*K);glowC(g,x,top+4,26,'255,240,210',.7*K,.5);
     const img=gbDot();for(const q of st.p){const e=Math.max(0,Math.min(1,(q.y-top)/60,(bot-q.y)/60));if(e<=0)continue;g.globalAlpha=e*(.45+.55*Math.pow(Math.sin(q.ph),2))*K;g.drawImage(img,x+q.dx+Math.sin(q.ph*.7)*2-q.r*2,q.y-q.r*2,q.r*4,q.r*4);}
     g.globalAlpha=1;g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}},
+ // 脈輪2（七彩脈輪）：七個符號照傳統的顏色，由下往上紅橙黃綠藍靛紫，花瓣慢慢地轉（相鄰的兩個方向相反）。
+ // 一顆白光從下往上走，走到哪一個，那一個就開大一點、亮一下、送出一圈光；七個都開過以後一起亮一會兒，28 秒一輪（不跟著呼吸）
+ chakra7:{lay:true,
+  init(st,W,H){st.md=[];for(let i=0;i<14;i++)st.md.push({x:Math.random()*W,y:Math.random()*H,v:5+Math.random()*9,ph:Math.random()*6.28,f:.6+Math.random()*.9,a:.3+Math.random()*.4,c:CHK_C7[i%7]});},
+  move(st,dt,W,H){for(const q of st.md){q.y-=q.v*dt;q.ph+=q.f*dt;q.x+=Math.sin(q.ph)*5*dt;if(q.y<60){q.y=H-20;q.x=Math.random()*W;}}},
+  draw(st,g,W,H,t){const L=chkLay(st,W,H),d=Math.min(2,window.devicePixelRatio||1),tt=reducedMotion()?12.6:t,c=tt%28,K=L.k,x=L.x,ys=L.ys,Rr=L.R,tb=k=>1.5+k*3.4,all=c>24?Math.sin(Math.PI*(c-24)/4):0;
+    chkBase(st,g,W,H,'s',(x2,R)=>chkStars(x2,W,H,R,Math.round(W*H/2600),'220,214,255'));
+    g.globalCompositeOperation='lighter';
+    for(const q of st.md){const e=Math.max(0,Math.min(1,(q.y-60)/60,(H-20-q.y)/40));chkGlow(g,q.x,q.y,6,q.c,q.a*e*.55);}
+    if(K<=0){g.globalCompositeOperation='source-over';return;}
+    // 中脈：一條很細的彩色線
+    const lg=g.createLinearGradient(0,ys[0],0,ys[6]);for(let i=0;i<7;i++)lg.addColorStop(i/6,'rgba('+CHK_C7[i]+','+chkA((.22+.25*all)*K)+')');g.fillStyle=lg;g.fillRect(x-1,ys[6],2,ys[0]-ys[6]);
+    let k=-1;for(let i=0;i<6;i++)if(c>=tb(i)&&c<tb(i+1))k=i;
+    if(k>=0){const u=ezC(Math.max(0,Math.min(1,(c-tb(k)-.9)/2.3))),py=ys[k]+(ys[k+1]-ys[k])*u;chkGlow(g,x,py,14,'255,255,255',.5*Math.sin(Math.PI*u)*K);}
+    for(let i=0;i<7;i++){const u=(c-tb(i))/.95,e=Math.exp(-u*u),col=CHK_C7[i],o={c:col,hi:chkMix(col,.55),lw:1.15,gl:L.run?7:9};
+      chkGlow(g,x,ys[i],Rr*(2.4+1.8*e+all),col,(.2+.55*e+.25*all)*K);
+      chkPut(g,x,ys[i],i,Rr,o,d,(.66+.4*e+.3*all+.08*Math.sin(tt*1.3+i))*K,tt*(i%2?.14:-.14)*(.7+i*.06),1+.16*e);
+      const rc=c-tb(i);if(rc>0&&rc<2.6){g.strokeStyle='rgba('+col+','+chkA((1-rc/2.6)*.5*K)+')';g.lineWidth=1.1;g.beginPath();g.arc(x,ys[i],Rr*(1.05+rc*1.1),0,6.2832);g.stroke();}}
+    if(all>0)chkGlow(g,x,ys[6]-Rr*.6,Rr*5*all,'210,170,255',.35*all*K);
+    g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}},
  bone1:bnFx('moon'),bone2:bnFx('ink'),bone3:bnFx('candle')
 };
 // 脈輪、中脈：量出呼吸圖形和「吸氣／數字」在畫面上的位置（看不見的不算），中脈的光才知道要放哪、避開哪裡
@@ -3360,7 +3477,11 @@ function syncSparks() {
 function setMenu(open) {
   $('menuPop').hidden = !open;
   $('menuBtn').setAttribute('aria-expanded', open);
+  setThemeOpen(false);   // 選單每次打開，主題都先收起來
 }
+// 選單裡的「主題」：和勳章同一層，點了才展開所有主題
+function setThemeOpen(open) { $('themeOpts').hidden = !open; $('themeItem').setAttribute('aria-expanded', open); }
+$('themeItem').addEventListener('click', () => setThemeOpen($('themeOpts').hidden));
 $('menuBtn').addEventListener('click', () => setMenu($('menuPop').hidden));
 document.addEventListener('click', e => { if (!e.target.closest('#menu')) setMenu(false); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') setMenu(false); });
