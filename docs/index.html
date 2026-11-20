@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=65">
+<link rel="stylesheet" href="styles.css?v=66">
 </head>
 <body>
 <main class="home">
@@ -667,11 +667,19 @@
       <span class="section-title lq-sheet-sec">聲音</span>
       <div class="music-grid lq-grid" id="lqSnds"></div>
       <span class="section-title lq-sheet-sec lq-sheet-sec2">播多久</span>
-      <div class="music-grid lq-grid" id="lqLens"></div>
-      <div class="lq-step">
-        <button data-action="ls-step-dn" aria-label="少一點">−</button>
-        <span id="lqStepText" aria-live="polite"></span>
-        <button data-action="ls-step-up" aria-label="多一點">＋</button>
+      <div class="lq-durs">
+        <div class="lq-dur" id="lqDurN">
+          <button class="lq-dur-pick" id="lqNPick" data-action="ls-n-pick"><span class="lq-radio"></span><span class="lq-dur-name"><span>播幾次</span><span class="lq-dur-side" id="lqNSide"></span></span></button>
+          <button class="lq-dur-btn" data-action="ls-n-dn" aria-label="少播一次">−</button>
+          <span class="lq-dur-val" id="lqNText" aria-live="polite"></span>
+          <button class="lq-dur-btn" data-action="ls-n-up" aria-label="多播一次">＋</button>
+        </div>
+        <div class="lq-dur" id="lqDurM">
+          <button class="lq-dur-pick" id="lqMPick" data-action="ls-m-pick"><span class="lq-radio"></span><span class="lq-dur-name"><span>播幾分鐘</span></span></button>
+          <button class="lq-dur-btn" data-action="ls-m-dn" aria-label="少一分鐘">−</button>
+          <span class="lq-dur-val" id="lqMText" aria-live="polite"></span>
+          <button class="lq-dur-btn" data-action="ls-m-up" aria-label="多一分鐘">＋</button>
+        </div>
       </div>
       <p class="hint lq-sheet-note" id="lqSheetNote"></p>
       <button class="btn btn-primary lq-sheet-ok" id="lqSheetOk" data-action="ls-sheet-ok"></button>
@@ -728,7 +736,7 @@
   </div>
 </section>
 
-<script src="app.js?v=79"></script>
+<script src="app.js?v=80"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

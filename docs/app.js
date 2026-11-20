@@ -1788,7 +1788,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && bp
 const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_AFTER = 10000;
 // 「接著播」：一段播完接下一段。最多 6 段；每段設播幾次（預設 1 次，最多 30 次）或幾分鐘；安靜只能設幾分鐘
 // 換段：慢慢交疊（前後各 2.5 秒）、直接接上、中間安靜（淡出 2 秒、安靜 10 秒、淡入 2 秒）
-const LQ_MAX = 6, LQ_MINS = [5, 10, 15, 20, 30], LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_NMAX = 30;
+const LQ_MAX = 6, LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_NMAX = 30;
 const LQ_DARK = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
 const lqOnceOk = k => typeof k === 'string' && k !== 'silence' && k !== 'none';   // 有音檔的聲音都可以設「播幾次」；安靜不行
 let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
@@ -2142,7 +2142,8 @@ function lqSheetOpen(i) {
   if (!x && L.length >= LQ_MAX) return;
   const used = L.map(y => y.k), first = (MUSIC.find(([k]) => k !== 'none' && !used.includes(k)) || MUSIC[1])[0];
   // 新加的一段預設「播 1 次」
-  lsSheet = x ? { i, k: x.k, m: x.m, n: x.n || 1, d: x.d || 0 } : { i: -1, k: first, m: 'once', n: 1, d: lqKnown(first) };
+  // mm：記住分鐘數，照次數播的時候換回分鐘用得到
+  lsSheet = x ? { i, k: x.k, m: x.m, n: x.n || 1, d: x.d || 0, mm: x.m === 'once' ? 15 : +x.m || 15 } : { i: -1, k: first, m: 'once', n: 1, d: lqKnown(first), mm: 15 };
   lsSeqOpen = null;
   if (x && x.m === 'once' && !(x.d > 0) && lqOk(x)) lqRetry(x.k);
   if (!x) lqRetry(first);
@@ -2156,23 +2157,31 @@ function lqSheetPick(k) {
   const sh = lsSheet;
   if (!sh) return;
   const once = sh.m === 'once' && lqOnceOk(k);
-  lsSheet = { ...sh, k, m: once ? 'once' : sh.m === 'once' ? 15 : sh.m, d: once ? lqKnown(k) : 0 };
+  lsSheet = { ...sh, k, m: once ? 'once' : sh.m === 'once' ? sh.mm || 15 : sh.m, d: once ? lqKnown(k) : 0 };
   if (once) lqRetry(k);
   lqRenderSheet();
 }
 function lqSheetLen(m) {
   const sh = lsSheet;
   if (!sh) return;
-  if (m !== 'once') lsSheet = { ...sh, m };
+  if (m !== 'once') lsSheet = { ...sh, m, mm: m };
   else if (!lqOnceOk(sh.k)) return;
   else { lsSheet = { ...sh, m: 'once', n: sh.n || 1, d: lqKnown(sh.k) || sh.d || 0 }; lqRetry(sh.k); }
   lqRenderSheet();
 }
-// ＋ －：幾分鐘（1–180）或播幾次（1–30）
-function lqSheetStep(dv) {
+// 兩個 ＋ －：調「播幾次」（1–30）就照次數播，調「播幾分鐘」（1–180）就照分鐘播
+function lqSheetStepN(dv) {
+  const sh = lsSheet;
+  if (!sh || !lqOnceOk(sh.k)) return;
+  if (sh.m !== 'once') lqRetry(sh.k);
+  lsSheet = { ...sh, m: 'once', n: Math.max(1, Math.min(LQ_NMAX, (sh.n || 1) + dv)), d: sh.m === 'once' ? sh.d : lqKnown(sh.k) || sh.d || 0 };
+  lqRenderSheet();
+}
+function lqSheetStepM(dv) {
   const sh = lsSheet;
   if (!sh) return;
-  lsSheet = sh.m === 'once' ? { ...sh, n: Math.max(1, Math.min(LQ_NMAX, (sh.n || 1) + dv)) } : { ...sh, m: Math.max(1, Math.min(180, (+sh.m || 0) + dv)) };
+  const v = Math.max(1, Math.min(180, (sh.m === 'once' ? sh.mm || 15 : +sh.m || 15) + dv));
+  lsSheet = { ...sh, m: v, mm: v };
   lqRenderSheet();
 }
 function lqSheetOk() {
@@ -2281,18 +2290,18 @@ function lqRenderSheet() {
   [...MUSIC.filter(([k]) => k !== 'none'), ...mine.map(m => ['mine:' + m.id, m.name]), ['silence', '安靜']]
     .forEach(([k, lb]) => mk(snd, lb, sh.k === k, k === 'silence' && sh.k !== k ? 'lq-dash' : '', () => lqSheetPick(k)));
   if (mine.length < MINE_MAX) mk(snd, '＋ 上傳錄音', false, 'music-upload', () => $('mineFile').click()).removeAttribute('aria-pressed');
-  const len = $('lqLens'), noOnce = !lqOnceOk(sh.k);
-  len.innerHTML = '';
-  // 「播幾次」排第一個，後面才是幾分鐘
-  const ob = mk(len, '播幾次', sh.m === 'once', noOnce ? 'ls-off' : '', () => lqSheetLen('once'));
-  if (noOnce) ob.setAttribute('aria-disabled', 'true');
-  LQ_MINS.forEach(m => mk(len, m + ' 分鐘', sh.m === m, '', () => lqSheetLen(m)));
-  $('lqStepText').textContent = sh.m === 'once'
-    ? '播 ' + (sh.n || 1) + ' 次' + (sh.d > 0 ? '・約 ' + Math.max(1, Math.round(sh.d * (sh.n || 1) / 60)) + ' 分鐘' : lqd[sh.k] === -1 ? '・讀不到長度' : '・讀取長度中…')
-    : sh.m + ' 分鐘';
-  $('lqSheetNote').textContent = sh.k === 'silence' ? '「安靜」是一段沒有聲音的時間。用 ＋ － 可以一分鐘一分鐘調。'
-    : sh.m === 'once' ? '整首播完算一次，預設播 1 次；用 ＋ － 改成播幾次（最多 ' + LQ_NMAX + ' 次）。播完最後一次才換下一段。'
-    : '選幾分鐘，聲音會一直循環到時間到；用 ＋ － 可以一分鐘一分鐘調。也可以選「播幾次」，照次數來播。';
+  // 播多久：播幾次、播幾分鐘各一個 ＋ －，正在用的那一個有框
+  const noOnce = !lqOnceOk(sh.k), byN = sh.m === 'once';
+  $('lqDurN').classList.toggle('on', byN); $('lqDurN').classList.toggle('off', noOnce);
+  $('lqDurM').classList.toggle('on', !byN);
+  $('lqDurN').querySelectorAll('button').forEach(b => { b.disabled = noOnce; });
+  $('lqNPick').setAttribute('aria-pressed', byN); $('lqMPick').setAttribute('aria-pressed', !byN);
+  $('lqNText').textContent = noOnce ? '—' : (sh.n || 1) + ' 次';
+  $('lqNSide').textContent = noOnce ? '安靜不能用' : sh.d > 0 ? '約 ' + Math.max(1, Math.round(sh.d * (sh.n || 1) / 60)) + ' 分鐘' : lqd[sh.k] === -1 ? '讀不到長度' : '讀取長度中…';
+  $('lqMText').textContent = (byN ? sh.mm || 15 : +sh.m || 15) + ' 分鐘';
+  $('lqSheetNote').textContent = sh.k === 'silence' ? '「安靜」是一段沒有聲音的時間，只能設分鐘。用 － ＋ 一分鐘一分鐘調。'
+    : byN ? '現在照次數播：整首播完算一次，播完第 ' + (sh.n || 1) + ' 次才換下一段（最多 ' + LQ_NMAX + ' 次）。調下面的「播幾分鐘」，就改成照分鐘播。'
+    : '現在照分鐘播：聲音會一直循環，播滿 ' + sh.m + ' 分鐘才換下一段。調上面的「播幾次」，就改成照次數播。';
 }
 // 每一段從第幾秒播到第幾秒。「中間安靜」的話，兩段之間多留 10 秒
 function lqPlan() {
@@ -2458,8 +2467,12 @@ function lsAction(a) {
   else if (a === 'next') lqNext();
   else if (a === 'sheet-close') lqSheetClose();
   else if (a === 'sheet-ok') lqSheetOk();
-  else if (a === 'step-dn') lqSheetStep(-1);
-  else if (a === 'step-up') lqSheetStep(1);
+  else if (a === 'n-dn') lqSheetStepN(-1);
+  else if (a === 'n-up') lqSheetStepN(1);
+  else if (a === 'm-dn') lqSheetStepM(-1);
+  else if (a === 'm-up') lqSheetStepM(1);
+  else if (a === 'n-pick') lqSheetLen('once');
+  else if (a === 'm-pick') { if (lsSheet && lsSheet.m === 'once') lqSheetLen(lsSheet.mm || 15); }
 }
 // 手指正在拉音量的時候，音量列先不要換掉
 $('lsRunVols').addEventListener('pointerdown', () => { lsVolHold = true; });
