@@ -89,7 +89,13 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   cursor: pointer; box-sizing: border-box;
 }
 .menu-item:hover { background: color-mix(in srgb, var(--screen) 50%, transparent); }
-.menu-theme { min-width: 210px; box-sizing: border-box; padding: 8px 14px 10px; display: flex; flex-direction: column; gap: 8px; }
+.menu-theme { min-width: 210px; box-sizing: border-box; padding: 2px 14px 12px; display: flex; flex-direction: column; gap: 8px; }
+.menu-theme[hidden] { display: none; }
+#themeItem { min-width: 210px; }
+.menu-item svg .dot { fill: var(--accent); stroke: none; }
+.menu-theme-cur { margin-left: auto; padding-left: 12px; font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+.menu-item svg.menu-chev { width: 14px; height: 14px; margin-left: 6px; stroke: var(--muted-2); stroke-width: 2; transition: transform .2s; }
+#themeItem[aria-expanded="true"] .menu-chev { transform: rotate(90deg); }
 .menu-theme-title { font-size: 12px; color: var(--muted); }
 .menu-theme-opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .menu-theme-opt {
@@ -129,6 +135,31 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .today-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; line-height: 1.5; color: var(--muted); }
 .today-row span:first-child { min-width: 0; }
 .today-row span:last-child { flex: none; white-space: nowrap; }
+
+/* 首頁的「點亮」卡片 */
+.lit {
+  width: 100%; margin: -14px 0 28px; padding: 12px 14px 12px 12px; box-sizing: border-box; border-radius: 20px;
+  background: var(--soft); border: 1px solid var(--line); display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer;
+}
+.lit[hidden] { display: none; }
+.lit:hover { border-color: var(--accent); }
+.lit-pic { flex: none; position: relative; width: 78px; height: 78px; border-radius: 14px; overflow: hidden; background: var(--card); }
+.lit.dk .lit-pic { background: radial-gradient(circle at 50% 45%, #161c40 0%, #070914 100%); }
+.lit-gal { position: absolute; left: -17%; width: 134%; top: -21%; aspect-ratio: 1; }
+.lit-gal[hidden], .lit-j[hidden] { display: none; }
+.lit-img { position: absolute; inset: 0; background-size: 100% 100%; }
+.lit-gal .lstar { position: absolute; border-radius: 50%; }
+.lit-j { position: absolute; left: 14px; top: 4px; width: 50px; height: 70px; border-radius: 6px; overflow: hidden; }
+.lit-j-bg { position: absolute; inset: 0; background: url('assets/dizang.jpg') center / cover; filter: grayscale(1) blur(1px); opacity: .25; }
+.lit-tiles { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(6, 1fr); }
+.lit-tiles div { background-image: url('assets/dizang.jpg'); background-size: 500% 600%; opacity: 0; }
+.lit-tiles div.on { opacity: 1; }
+.lit-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.lit-title { font-size: 12px; letter-spacing: .14em; color: var(--muted-2); }
+.lit-big { font-size: 19px; font-weight: 500; line-height: 1.35; color: var(--ink); }
+.lit-note { font-size: 13px; line-height: 1.55; color: var(--muted); text-wrap: pretty; }
+.lit-note.todo { color: var(--accent); }
+.lit-chev { flex: none; width: 16px; height: 16px; fill: none; stroke: var(--muted-2); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .row-icon {
   width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--chip);
   display: flex; align-items: center; justify-content: center;
@@ -567,6 +598,35 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
   --sky-pos: center;
 }
 :root[data-theme="chakra"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+:root[data-theme="chakra7"] { /* 脈輪2：近黑的靛紫夜空，七個脈輪的符號照傳統的顏色，花瓣慢慢轉，一個接一個地開 */
+  --page: #0b0920;
+  --screen: #090718;
+  --ink: #efeaff;
+  --ink-2: #d9ccff;
+  --accent: #c9b5ff;
+  --accent-2: #d9ccff;
+  --line-2: #352d66;
+  --line: #241e48;
+  --soft-2: #16122f;
+  --chip: #1c1740;
+  --soft: #0b0920;
+  --line-3: #1c1740;
+  --muted-2: #a49dc6;
+  --muted: #c6c0e4;
+  --track: #5a4b9a;
+  --guide: #16122f;
+  --figure: #1c1740;
+  --fade: rgba(11,9,32,0);
+  --shadow: rgba(0,0,0,.5);
+  --card: #161230;
+  --sel: #c9b5ff;
+  --selfg: #0b0920;
+  --img-filter: brightness(1.9);
+  --dot: #e4dcff;
+  --dot-glow: 0 0 0 2px #0b0920, 0 0 0 7px rgba(228,220,255,.2), 0 0 22px 4px rgba(200,180,255,.42);
+  --sky-pos: center;
+}
+:root[data-theme="chakra7"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
 :root[data-theme="gold"] { /* 中脈：深紫的夜，一道金色光柱從底下貫通到頭頂 */
   --page: #170e1b;
   --screen: #130b16;
