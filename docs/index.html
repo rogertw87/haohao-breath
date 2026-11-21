@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=68">
+<link rel="stylesheet" href="styles.css?v=69">
 </head>
 <body>
 <main class="home">
@@ -274,8 +274,7 @@
     <div class="off-status" id="offStatus"></div>
     <div class="sync-inapp" id="offInapp" hidden><b>現在是在 LINE 或其他 App 裡打開</b><span>在這裡存的檔案可能留不住。請改用 Safari 或 Chrome 打開，最好再加到手機桌面。</span></div>
     <div class="off-sec"><span class="install-title">背景聲音</span><span class="off-note">要在沒網路時聽，先下載。有網路時播過一次的，也會自動存起來，下次不用再用流量。</span></div>
-    <div class="off-list" id="offList"></div>
-    <button class="install-go sync-go" id="offAll" data-action="off-all" hidden></button>
+    <button class="install-go sync-go off-all" id="offAll" data-action="off-all" hidden></button>
     <p class="sync-note"><span id="offSum"></span> 先<button class="off-link" data-action="off-install">加到手機桌面</button>，存的東西比較不會被手機清掉。</p>
     <button class="install-ok" data-action="off-close">關閉</button>
   </div>
@@ -745,7 +744,7 @@
   </div>
 </section>
 
-<script src="app.js?v=82"></script>
+<script src="app.js?v=83"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

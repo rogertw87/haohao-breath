@@ -2657,31 +2657,15 @@ function offRender() {
   else { b.textContent = '正在準備離線使用…'; t.textContent = online ? '第一次要先存一些檔案（約 3 MB），請保持連線一下下。' : '現在沒有網路，有網路時打開一次就會準備好。'; }
   st.append(b, t);
   $('offInapp').hidden = !inapp;
-  const box = $('offList'); box.innerHTML = '';
-  let left = 0, got = 0;
-  offKeys().forEach(k => {
-    const name = MUSIC.find(m => m[0] === k)[1], size = sndBytes(k), has = off.has.has(k), p = off.dl[k];
-    if (has) got += size; else left += size;
-    const row = document.createElement('div'); row.className = 'off-row';
-    const nm = document.createElement('span'); nm.className = 'off-name'; nm.textContent = name;
-    const sz = document.createElement('span'); sz.className = 'off-size mono'; sz.textContent = fmtMB(size);
-    const act = document.createElement('span'); act.className = 'off-act';
-    if (p != null) { const pr = document.createElement('span'); pr.className = 'off-prog mono'; pr.textContent = '下載中 ' + Math.floor(p * 100) + '%'; act.append(pr); }
-    else if (has) {
-      const ok = document.createElement('span'); ok.className = 'off-ok'; ok.textContent = '已下載';
-      const del = document.createElement('button'); del.className = 'off-mini'; del.textContent = '刪除'; del.dataset.action = 'off-del'; del.dataset.k = k; del.setAttribute('aria-label', '刪除' + name);
-      act.append(ok, del);
-    } else {
-      const go = document.createElement('button'); go.className = 'off-mini go'; go.textContent = off.err[k] ? '再試一次' : '下載'; go.dataset.action = 'off-get'; go.dataset.k = k; go.disabled = !online || !off.sw; go.setAttribute('aria-label', '下載' + name);
-      act.append(go);
-    }
-    row.append(nm, sz, act); box.appendChild(row);
-  });
-  const all = $('offAll');
-  all.hidden = !off.sw || !left;
-  all.disabled = !online || off.busy;
-  all.textContent = off.busy ? '下載中…' : '全部下載（還要 ' + fmtMB(left) + '）';
-  $('offSum').textContent = (got ? '已下載 ' + fmtMB(got) + '。' : '') + (online ? '建議連上 Wi-Fi 再下載。' : '現在沒有網路，有網路時才能下載。');
+  // 一個按鈕：下載網站資料（還沒下載的背景聲音一次全部下載）→ 下載中 xx% → 網站資料都下載好了
+  let left = 0, got = 0, doing = 0;
+  offKeys().forEach(k => { const z = sndBytes(k); if (off.has.has(k)) got += z; else { left += z; if (off.dl[k] != null) doing += z * off.dl[k]; } });
+  const all = $('offAll'), done = !left, busy = off.busy;
+  all.hidden = !off.sw;
+  all.classList.toggle('done', done && !busy);
+  all.disabled = !done && !busy && !online;
+  all.textContent = busy ? '下載中 ' + Math.floor((got + doing) / (got + left) * 100) + '%' : done ? '✓ 網站資料都下載好了' : '下載網站資料';
+  $('offSum').textContent = done ? '已下載 ' + fmtMB(got) + '。' : (got ? '已下載 ' + fmtMB(got) + '，' : '') + (online ? '還要下載 ' + fmtMB(left) + '，建議連上 Wi-Fi 再下載。' : '現在沒有網路，有網路時才能下載。');
 }
 async function offGet(k) {
   if (off.dl[k] != null || off.has.has(k)) return;
@@ -2716,12 +2700,8 @@ async function offGet(k) {
   delete off.dl[k];
   offMark(); if (!$('offSheet').hidden) offRender();
 }
-async function offDel(k) {
-  try { const c = await caches.open(SND_CACHE); for (const f of sndFiles(k)) await c.delete(sndUrl(f)); } catch (e) {}
-  off.has.delete(k); offMark(); offRender();
-}
 async function offAllGet() {
-  if (off.busy) return;
+  if (off.busy || !navigator.onLine || offKeys().every(k => off.has.has(k))) return;
   off.busy = true; offRender();
   for (const k of offKeys()) { if (!navigator.onLine) break; if (!off.has.has(k)) await offGet(k); }
   off.busy = false; offRender();
@@ -2729,8 +2709,6 @@ async function offAllGet() {
 function offAction(a, b, e) {
   if (a === 'open') { setMenu(false); $('offSheet').hidden = false; offRender(); offCheck(); }
   else if (a === 'close') { if (e.target.closest('.sheet') && !e.target.closest('.install-ok')) return; $('offSheet').hidden = true; }
-  else if (a === 'get') offGet(b.dataset.k);
-  else if (a === 'del') offDel(b.dataset.k);
   else if (a === 'all') offAllGet();
   else if (a === 'install') { $('offSheet').hidden = true; installAction('open', e); }
 }
