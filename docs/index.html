@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=67">
+<link rel="stylesheet" href="styles.css?v=68">
 </head>
 <body>
 <main class="home">
@@ -49,6 +49,7 @@
       <a class="menu-item" href="help.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.1-2.4 3.6M12 17h.01"></path></svg><span>使用說明</span></a>
       <a class="menu-item" href="thanks.html"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10Z"></path></svg><span>感謝</span></a>
       <a class="menu-item" href="privacy.html"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6l7-3Z"></path></svg><span>隱私權</span></a>
+      <button class="menu-item" id="offItem" data-action="off-open"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.8 10.6 12 14.8l4.2-4.2M5 16.5v2A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-2"></path></svg><span>離線使用</span></button>
       <button class="menu-item" id="installItem" data-action="install-open"><svg viewBox="0 0 24 24"><path d="M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM12 8v7M8.8 11.8 12 15l3.2-3.2"></path></svg><span>加到手機桌面</span></button>
     </div>
   </div>
@@ -263,6 +264,20 @@
     <ol class="install-steps" id="installSteps"></ol>
     <button class="install-go" id="installGo" data-action="install-prompt" hidden>立即加入</button>
     <button class="install-ok" data-action="install-close">知道了</button>
+  </div>
+</div>
+
+<!-- 離線使用 -->
+<div class="sheet-bg" id="offSheet" data-action="off-close" hidden>
+  <div class="sheet install off" role="dialog" aria-modal="true" aria-labelledby="offHead">
+    <div class="install-head"><span class="sync-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v10.5M7.8 10.6 12 14.8l4.2-4.2M5 16.5v2A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-2"></path></svg></span><div><span class="install-name" id="offHead">離線使用</span><span class="install-sub">沒有網路的地方也能練習。</span></div></div>
+    <div class="off-status" id="offStatus"></div>
+    <div class="sync-inapp" id="offInapp" hidden><b>現在是在 LINE 或其他 App 裡打開</b><span>在這裡存的檔案可能留不住。請改用 Safari 或 Chrome 打開，最好再加到手機桌面。</span></div>
+    <div class="off-sec"><span class="install-title">背景聲音</span><span class="off-note">要在沒網路時聽，先下載。有網路時播過一次的，也會自動存起來，下次不用再用流量。</span></div>
+    <div class="off-list" id="offList"></div>
+    <button class="install-go sync-go" id="offAll" data-action="off-all" hidden></button>
+    <p class="sync-note"><span id="offSum"></span> 先<button class="off-link" data-action="off-install">加到手機桌面</button>，存的東西比較不會被手機清掉。</p>
+    <button class="install-ok" data-action="off-close">關閉</button>
   </div>
 </div>
 
@@ -730,7 +745,7 @@
   </div>
 </section>
 
-<script src="app.js?v=81"></script>
+<script src="app.js?v=82"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

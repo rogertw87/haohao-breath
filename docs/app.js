@@ -520,8 +520,7 @@ function playMusic(kind) {
   au.addEventListener('pause', () => { if (audio === au && !switching && !au.error) pauseAllAudio(); });
   au.loop = true; au.volume = 0; au.play().catch(() => {});
   audio = au;
-  let v = 0;
-  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * musicVol(); if (v >= 1) clearInterval(fadeIv); }, 60);
+  fadeInWhenPlaying(au);
   const cut = LOOPCUT[kind];
   if (cut) {
     // 快播到結尾淡出前，換另一個播放器從淡入之後接著播
@@ -555,8 +554,17 @@ function playList(list) {
   au.addEventListener('pause', () => { if (audio === au && !au.ended && !au.error) pauseAllAudio(); });
   au.volume = 0; au.play().catch(() => {});
   audio = au;
-  let v = 0;
-  fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * musicVol(); if (v >= 1) clearInterval(fadeIv); }, 60);
+  fadeInWhenPlaying(au);
+}
+// 真的有聲音了才淡入：還沒存在手機裡的背景聲音，第一次要先下載完才會開始播
+function fadeInWhenPlaying(au) {
+  let v = 0, go = false;
+  const run = () => {
+    if (go) return; go = true;
+    clearInterval(fadeIv);
+    fadeIv = setInterval(() => { v = Math.min(1, v + .05); if (audio) audio.volume = v * musicVol(); if (v >= 1) clearInterval(fadeIv); }, 60);
+  };
+  if (!au.paused && au.readyState >= 3) run(); else au.addEventListener('playing', run, { once: true });
 }
 function stopMusic(immediate) {
   clearInterval(fadeIv); clearInterval(loopIv);
@@ -880,7 +888,7 @@ function musicGrid(box, current, pick) {
   MUSIC.concat(mine.map(m => ['mine:' + m.id, m.name])).forEach(([k, l]) => {
     const b = document.createElement('button');
     b.className = 'music-opt' + (k === current ? ' on' : '');
-    b.textContent = l; b.title = l;
+    b.textContent = l; b.title = l; b.dataset.snd = k;
     b.addEventListener('click', () => pick(k));
     box.appendChild(b);
   });
@@ -1944,7 +1952,7 @@ function lsRenderSetup() {
   MUSIC.filter(([k]) => k !== 'none').concat(mine.map(m => ['mine:' + m.id, m.name])).forEach(([k, l]) => {
     const on = sel.includes(k), b = document.createElement('button');
     b.className = 'music-opt' + (on ? ' on' : '') + (!on && full ? ' ls-off' : '');
-    b.textContent = l; b.title = l; b.setAttribute('aria-pressed', on);
+    b.textContent = l; b.title = l; b.dataset.snd = k; b.setAttribute('aria-pressed', on);
     b.addEventListener('click', () => lsToggle(k));
     box.appendChild(b);
   });
@@ -2363,7 +2371,7 @@ function lqRenderSheet() {
   const snd = $('lqSnds');
   snd.innerHTML = '';
   [...MUSIC.filter(([k]) => k !== 'none'), ...mine.map(m => ['mine:' + m.id, m.name]), ['silence', '安靜']]
-    .forEach(([k, lb]) => mk(snd, lb, sh.k === k, k === 'silence' && sh.k !== k ? 'lq-dash' : '', () => lqSheetPick(k)));
+    .forEach(([k, lb]) => { mk(snd, lb, sh.k === k, k === 'silence' && sh.k !== k ? 'lq-dash' : '', () => lqSheetPick(k)).dataset.snd = k; });
   if (mine.length < MINE_MAX) mk(snd, '＋ 上傳錄音', false, 'music-upload', () => $('mineFile').click()).removeAttribute('aria-pressed');
   // 播多久：播幾次、播幾分鐘各一個 ＋ －，正在用的那一個有框
   const noOnce = !lqOnceOk(sh.k), byN = sh.m === 'once';
@@ -2586,6 +2594,7 @@ document.addEventListener('click', e => {
   else if (a === 'award-next') { awards.shift(); showAward(); }
   else if (a.startsWith('install-')) installAction(a.slice(8), e);
   else if (a.startsWith('sync-')) syncAction(a.slice(5), b, e);
+  else if (a.startsWith('off-')) offAction(a.slice(4), b, e);
   else if (a.startsWith('wh-')) whAction(a.slice(3));
   else if (a.startsWith('rb-')) rbAction(a.slice(3));
   else if (a.startsWith('ls-')) lsAction(a.slice(3));
@@ -2596,6 +2605,135 @@ $('minutes').addEventListener('input', e => {
   state.minutes = Math.min(30, Math.max(1, +e.target.value));
   save(); renderSetup();
 });
+
+// ---------- 離線使用 ----------
+// 練習本身（網頁、程式、主題圖片、提示音）第一次打開時就自動存在手機裡（sw.js）。
+// 背景聲音比較大，在這裡一種一種下載；有網路時播過一次的也會自動留著。存在 hh-sound，和 sw.js 用同一個地方。
+const SND_CACHE = 'hh-sound';
+// 每個檔案的大小（位元組），下載前顯示用；換了音檔要一起改（測試會檢查）
+const SND_SIZE = {'audio/handpan.mp3': 4127996, 'audio/drums.mp3': 1460344, 'audio/rain.mp3': 2996441, 'audio/evening.mp3': 9601060, 'audio/chant.mp3': 928390, 'audio/campfire.mp3': 3393522, 'audio/rainforest.mp3': 3842615, 'audio/dabei.mp3': 2712141, 'audio/singing.mp3': 3116205, 'audio/crystalbowl.mp3': 11906583, 'audio/cat1.mp3': 1013229, 'audio/cat2.mp3': 1077165, 'audio/cat3.mp3': 1404909, 'audio/shurangama1.mp3': 1612530, 'audio/shurangama2.mp3': 1530610};
+const sndFiles = k => [...new Set(MUSIC_LISTS[k] || [].concat(MUSIC_FILES[k] || []).slice(0, 1))];
+const sndUrl = f => new URL(f, location.href).href;
+const sndBytes = k => sndFiles(k).reduce((a, f) => a + (SND_SIZE[f.split('?')[0]] || 0), 0);
+const fmtMB = b => (b / 1048576 < 9.95 ? (b / 1048576).toFixed(1) : Math.round(b / 1048576)) + ' MB';
+const off = { sw: 'serviceWorker' in navigator && 'caches' in window, ready: false, has: new Set(), dl: {}, err: {}, busy: false };
+const offKeys = () => MUSIC.map(([k]) => k).filter(k => k !== 'none');
+if (off.sw && location.protocol !== 'file:') {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(offCheck).catch(() => {}); });
+}
+async function offCheck() {
+  if (!off.sw) return;
+  try {
+    const keys = await caches.keys(), app = keys.find(k => k.startsWith('hh-app-'));
+    off.ready = !!(app && await (await caches.open(app)).match('./'));
+    const c = await caches.open(SND_CACHE), has = new Set();
+    for (const k of offKeys()) {
+      let all = true;
+      for (const f of sndFiles(k)) if (!(await c.match(sndUrl(f)))) { all = false; break; }
+      if (all) has.add(k);
+    }
+    off.has = has;
+  } catch (e) {}
+  offMark(); if (!$('offSheet').hidden) offRender();
+}
+// 沒網路時，還沒下載的背景聲音標「需要網路」
+function offMark() {
+  let st = $('offMarkCss');
+  if (!st) { st = document.createElement('style'); st.id = 'offMarkCss'; document.head.appendChild(st); }
+  const need = navigator.onLine || !off.ready ? [] : offKeys().filter(k => !off.has.has(k));
+  st.textContent = need.length ? need.map(k => '.music-opt[data-snd="' + k + '"]').join(',') + '{border-style:dashed;opacity:.6}'
+    + need.map(k => '.music-opt[data-snd="' + k + '"]::after').join(',') + '{content:"需要網路";display:block;font-size:11px;font-weight:400;line-height:1.3;opacity:.8}' : '';
+}
+window.addEventListener('online', () => { offMark(); if (!$('offSheet').hidden) offRender(); });
+window.addEventListener('offline', () => { offMark(); if (!$('offSheet').hidden) offRender(); });
+function offRender() {
+  const online = navigator.onLine, inapp = platform() === 'inapp';
+  const st = $('offStatus');
+  st.className = 'off-status' + (off.ready ? ' ok' : '');
+  st.innerHTML = '';
+  const b = document.createElement('b'), t = document.createElement('span');
+  if (!off.sw) { b.textContent = '這個瀏覽器不能離線使用'; t.textContent = '請用 iPhone 的 Safari 或 Android 的 Chrome 打開。'; }
+  else if (off.ready) { b.textContent = '練習已經可以離線使用'; t.textContent = '引導、提示音、主題都已經存在這支手機裡，沒有網路也能練習。'; }
+  else { b.textContent = '正在準備離線使用…'; t.textContent = online ? '第一次要先存一些檔案（約 3 MB），請保持連線一下下。' : '現在沒有網路，有網路時打開一次就會準備好。'; }
+  st.append(b, t);
+  $('offInapp').hidden = !inapp;
+  const box = $('offList'); box.innerHTML = '';
+  let left = 0, got = 0;
+  offKeys().forEach(k => {
+    const name = MUSIC.find(m => m[0] === k)[1], size = sndBytes(k), has = off.has.has(k), p = off.dl[k];
+    if (has) got += size; else left += size;
+    const row = document.createElement('div'); row.className = 'off-row';
+    const nm = document.createElement('span'); nm.className = 'off-name'; nm.textContent = name;
+    const sz = document.createElement('span'); sz.className = 'off-size mono'; sz.textContent = fmtMB(size);
+    const act = document.createElement('span'); act.className = 'off-act';
+    if (p != null) { const pr = document.createElement('span'); pr.className = 'off-prog mono'; pr.textContent = '下載中 ' + Math.floor(p * 100) + '%'; act.append(pr); }
+    else if (has) {
+      const ok = document.createElement('span'); ok.className = 'off-ok'; ok.textContent = '已下載';
+      const del = document.createElement('button'); del.className = 'off-mini'; del.textContent = '刪除'; del.dataset.action = 'off-del'; del.dataset.k = k; del.setAttribute('aria-label', '刪除' + name);
+      act.append(ok, del);
+    } else {
+      const go = document.createElement('button'); go.className = 'off-mini go'; go.textContent = off.err[k] ? '再試一次' : '下載'; go.dataset.action = 'off-get'; go.dataset.k = k; go.disabled = !online || !off.sw; go.setAttribute('aria-label', '下載' + name);
+      act.append(go);
+    }
+    row.append(nm, sz, act); box.appendChild(row);
+  });
+  const all = $('offAll');
+  all.hidden = !off.sw || !left;
+  all.disabled = !online || off.busy;
+  all.textContent = off.busy ? '下載中…' : '全部下載（還要 ' + fmtMB(left) + '）';
+  $('offSum').textContent = (got ? '已下載 ' + fmtMB(got) + '。' : '') + (online ? '建議連上 Wi-Fi 再下載。' : '現在沒有網路，有網路時才能下載。');
+}
+async function offGet(k) {
+  if (off.dl[k] != null || off.has.has(k)) return;
+  const files = sndFiles(k), total = sndBytes(k) || 1;
+  off.dl[k] = 0; delete off.err[k]; offRender();
+  try { if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {}); } catch (e) {}
+  let base = 0, last = 0;
+  try {
+    const c = await caches.open(SND_CACHE);
+    for (const f of files) {
+      const url = sndUrl(f);
+      if (await c.match(url)) { base += SND_SIZE[f.split('?')[0]] || 0; continue; }
+      // 自己存（x-hh-dl：sw.js 看到就不要再存一份）
+      const res = await fetch(url, { headers: { 'x-hh-dl': '1' }, cache: 'no-store' });
+      if (!res.ok) throw new Error('http ' + res.status);
+      const rd = res.body.getReader(), parts = [];
+      let got = 0;
+      for (;;) {
+        const { done, value } = await rd.read();
+        if (done) break;
+        parts.push(value); got += value.length;
+        off.dl[k] = Math.min(.99, (base + got) / total);
+        const now = performance.now();
+        if (now - last > 150) { last = now; if (!$('offSheet').hidden) offRender(); }
+      }
+      const blob = new Blob(parts, { type: res.headers.get('content-type') || 'audio/mpeg' });
+      await c.put(url, new Response(blob, { headers: { 'Content-Type': blob.type, 'Content-Length': String(blob.size) } }));
+      base += got;
+    }
+    off.has.add(k);
+  } catch (e) { off.err[k] = 1; }
+  delete off.dl[k];
+  offMark(); if (!$('offSheet').hidden) offRender();
+}
+async function offDel(k) {
+  try { const c = await caches.open(SND_CACHE); for (const f of sndFiles(k)) await c.delete(sndUrl(f)); } catch (e) {}
+  off.has.delete(k); offMark(); offRender();
+}
+async function offAllGet() {
+  if (off.busy) return;
+  off.busy = true; offRender();
+  for (const k of offKeys()) { if (!navigator.onLine) break; if (!off.has.has(k)) await offGet(k); }
+  off.busy = false; offRender();
+}
+function offAction(a, b, e) {
+  if (a === 'open') { setMenu(false); $('offSheet').hidden = false; offRender(); offCheck(); }
+  else if (a === 'close') { if (e.target.closest('.sheet') && !e.target.closest('.install-ok')) return; $('offSheet').hidden = true; }
+  else if (a === 'get') offGet(b.dataset.k);
+  else if (a === 'del') offDel(b.dataset.k);
+  else if (a === 'all') offAllGet();
+  else if (a === 'install') { $('offSheet').hidden = true; installAction('open', e); }
+}
 
 // ---------- 加到手機桌面 ----------
 let installEvt = null; // Android／電腦 Chrome 可以直接跳出安裝視窗

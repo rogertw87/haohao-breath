@@ -1025,3 +1025,22 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .bp-run .run-inner { position: relative; }
 .bp-stage { justify-content: flex-end; padding-bottom: 28px; }
 .bp-credit { margin: 0; font-size: 12px; line-height: 1.6; color: var(--muted); }
+
+/* ---------- 離線使用 ---------- */
+.install.off { max-height: 92vh; max-height: 92dvh; overflow-y: auto; gap: 16px; }
+.off-status { display: flex; flex-direction: column; gap: 2px; padding: 12px 14px; border-radius: 14px; background: var(--soft-2); font-size: 14px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+.off-status b { color: var(--ink); font-weight: 500; font-size: 15px; }
+.off-status.ok b::before { content: '✓ '; color: var(--accent); }
+.off-sec { display: flex; flex-direction: column; gap: 4px; }
+.off-note { font-size: 13px; line-height: 1.6; color: var(--muted); text-wrap: pretty; }
+.off-list { display: flex; flex-direction: column; border-top: 1px solid var(--line); margin-top: -4px; }
+.off-row { display: flex; align-items: center; gap: 10px; min-height: 52px; border-bottom: 1px solid var(--line); }
+.off-name { flex: 1; min-width: 0; font-size: 15px; }
+.off-size { font-size: 12px; color: var(--muted-2); white-space: nowrap; }
+.off-act { display: flex; align-items: center; justify-content: flex-end; gap: 8px; min-width: 118px; }
+.off-ok { font-size: 13px; color: var(--accent); white-space: nowrap; }
+.off-prog { font-size: 12px; color: var(--accent); white-space: nowrap; }
+.off-mini { min-height: 36px; padding: 0 14px; border: 1px solid var(--line); border-radius: 99px; background: none; color: var(--ink); font-size: 13px; cursor: pointer; white-space: nowrap; }
+.off-mini.go { border-color: var(--accent); color: var(--accent); }
+.off-mini:disabled { opacity: .45; cursor: default; }
+.off-link { padding: 0; border: none; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
