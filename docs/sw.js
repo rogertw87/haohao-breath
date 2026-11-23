@@ -3,12 +3,12 @@
 // 2. 背景聲音存在另一個地方（hh-sound），在「離線使用」裡下載，或有網路時播過一次就自動留著；換新版也不會被清掉
 // 3. 網頁本身先試網路（拿到新版），網路太慢或沒網路就用存著的
 // 改了不帶版本號的檔案（圖片、提示音、說明頁）時，把 VER 加一，手機才會換成新的
-const VER = 'v1';
+const VER = 'v2';
 const APP = 'hh-app-' + VER, SND = 'hh-sound', FONT = 'hh-font';
 const CORE = [
   './', 'index.html', 'help.html', 'privacy.html', 'thanks.html', 'manifest.webmanifest', 'favicon.ico',
   'icons/favicon.png', 'icons/favicon-32.png', 'icons/favicon-48.png', 'icons/favicon-96.png', 'icons/favicon-144.png', 'icons/favicon-192.png', 'icons/favicon-512.png', 'icons/wind.png',
-  'assets/dizang.jpg', 'assets/themes2/fireflies.jpg', 'assets/themes2/sakura.jpg', 'assets/themes2/sakura-run.jpg', 'assets/warm/ember-v1.jpg', 'assets/warm/ember-v1-plain.jpg',
+  'assets/dizang.jpg', 'assets/themes2/fireflies.jpg', 'assets/themes2/sakura.jpg', 'assets/themes2/sakura-run.jpg', 'assets/warm/ember-v1.jpg', 'assets/warm/ember-v1-plain.jpg', 'assets/paint/maruchi-bonfire.jpg',
   'audio/breath-in.mp3', 'audio/breath-out.mp3',
   'audio/cue-in.wav', 'audio/cue-out.wav', 'audio/cue-hold.wav',
   'audio/cues/in.wav', 'audio/cues/out.wav', 'audio/cues/hold-in.wav', 'audio/cues/hold-out.wav',
