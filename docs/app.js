@@ -1735,7 +1735,7 @@ $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Mat
 // 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面用主題自己的背景和顏色；左腳的畫法：淺色主題用白描、深色主題用月白，白骨主題照主題本身
 const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
 let bp = null, bpRaf = 0;
-const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
+const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'oil', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
 function bpOpen() {
   bpRenderSetup();
   show('bpSetup');
@@ -1872,7 +1872,7 @@ const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_
 // 「接著播」：一段播完接下一段。最多 6 段；每段設播幾次（預設 1 次，最多 30 次）或幾分鐘；安靜只能設幾分鐘
 // 換段：慢慢交疊（前後各 2.5 秒）、直接接上、中間安靜（淡出 2 秒、安靜 10 秒、淡入 2 秒）
 const LQ_MAX = 6, LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_NMAX = 30;
-const LQ_DARK = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
+const LQ_DARK = ['dark', 'night', 'fire', 'oil', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
 const lqOnceOk = k => typeof k === 'string' && k !== 'silence' && k !== 'none';   // 有音檔的聲音都可以設「播幾次」；安靜不行
 let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
 // 接著播：加一段／改一段的視窗 { i, k, m, n, d }、清單上展開的那一段、正在拖的那一段、每個聲音播一遍幾秒（-1 是讀不到）
@@ -2759,13 +2759,13 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火、螢火蟲、櫻花、脈輪1、脈輪2、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
-const DARK_THEMES = ['dark', 'night', 'fire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火1、營火2（油畫）、螢火蟲、櫻花、脈輪1、脈輪2、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'oil', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
+const DARK_THEMES = ['dark', 'night', 'fire', 'oil', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];
 const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
   chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', chakra7: 'linear-gradient(180deg,#110d28 0%,#0b0920 50%,#060512 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
   bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)',
-  senko: 'linear-gradient(180deg,#14141d 0%,#131110 55%,#12100e 100%)' };
+  senko: 'linear-gradient(180deg,#14141d 0%,#131110 55%,#12100e 100%)', oil: 'linear-gradient(180deg,#132654 0%,#10203f 38%,#0e1424 62%,#120c0a 100%)' };
 // 夜空：一次畫成一張完整的星空圖（銀河、小星、少數亮星光暈），當作背景圖
 let _starUrl=null;let _starV=2;const starTex=()=>{if(_starUrl)return _starUrl;try{const W=480,H=1000,k=2,c=document.createElement('canvas');c.width=W*k;c.height=H*k;const x=c.getContext('2d');x.scale(k,k);let r=11;const R=()=>(r=(r*16807)%2147483647)/2147483647,G=()=>(R()+R()+R()+R()-2)/2;
   const bg=x.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#000000');bg.addColorStop(1,'#000000');x.fillStyle=bg;x.fillRect(0,0,W,H);
@@ -2812,7 +2812,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', chakra7: 'chakra7', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
+const FX_OF = { fire: 'sparks', oil: 'oil', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', chakra7: 'chakra7', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -3441,6 +3441,114 @@ const chkBase=(st,g,W,H,key,paint)=>{const d=Math.min(2,window.devicePixelRatio|
   if(st.bk!==k2){const c=st.bc||document.createElement('canvas');c.width=Math.round(W*d);c.height=Math.round(H*d);const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);x.clearRect(0,0,W,H);let a=7;const R=()=>(a=(a*16807)%2147483647)/2147483647;paint(x,R);st.bc=c;st.bk=k2;}
   g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(st.bc,0,0);g.restore();};
 const chkStars=(x,W,H,R,n,col)=>{for(let i=0;i<n;i++){const r=R(),a=.05+.5*r*r*r;x.fillStyle='rgba('+col+','+a.toFixed(3)+')';x.beginPath();x.arc(R()*W,R()*H,.4+R()*.9,0,6.2832);x.fill();}};
+// ───────── 油畫篝火：朋友的油畫（Maruchi W., 2024）＋會動的火 ─────────
+// 畫：1108×1476；火的中線在 u≈.49，火心 v≈.42，火堆底 v≈.76；簽名在左下。選了這個主題才下載畫
+const OIL_W=1108,OIL_H=1476;let _oilImg=null;
+const oilImg=()=>{if(!_oilImg){_oilImg=new Image();_oilImg.decoding='async';_oilImg.src='assets/paint/maruchi-bonfire.jpg';}return _oilImg;};
+const oilOK=()=>{const i=oilImg();return i.complete&&i.naturalWidth>0;};
+const oilRand=s=>{let a=s>>>0;return()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};};
+const oilWob=(t,s)=>.5*Math.sin(t*1.13+s)+.3*Math.sin(t*2.71+s*1.7)+.2*Math.sin(t*5.3+s*2.9);
+// 油畫的一筆：六個角、邊緣不規則（j 是六個 0–1 的亂數，同一筆每一格長得一樣）
+const oilRGB=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const oilMix=(a,b,t)=>{t=t<0?0:t>1?1:t;const A=oilRGB(a),B=oilRGB(b);return 'rgb('+Math.round(A[0]+(B[0]-A[0])*t)+','+Math.round(A[1]+(B[1]-A[1])*t)+','+Math.round(A[2]+(B[2]-A[2])*t)+')';};
+const oilPick=(R,L)=>{let s=0;for(const x of L)s+=x[1];let r=R()*s;for(const x of L){r-=x[1];if(r<=0)return x[0];}return L[L.length-1][0];};
+const oilPts=(x,y,len,wid,ang,j)=>{const c=Math.cos(ang),s=Math.sin(ang),hl=len/2,hw=wid/2;
+  return [[-hl,-hw*(.4+.5*j[0])],[hl*(j[1]-.3),-hw],[hl,-hw*.3*j[2]],[hl*(.8+.2*j[3]),hw*(.4+.5*j[3])],[-hl*(.1+.5*j[4]),hw],[-hl*(.85+.15*j[5]),hw*(.2+.5*j[5])]].map(p=>[x+p[0]*c-p[1]*s,y+p[0]*s+p[1]*c]);};
+const oilAdd=(g,P)=>{g.moveTo(P[0][0],P[0][1]);for(let i=1;i<P.length;i++)g.lineTo(P[i][0],P[i][1]);g.closePath();};
+const oilFill=(g,R,n,x0,y0,x1,y1,col,ang,l0,l1,w0,w1,rim)=>{for(let i=0;i<n;i++){const x=x0+R()*(x1-x0),y=y0+R()*(y1-y0),P=oilPts(x,y,l0+R()*(l1-l0),w0+R()*(w1-w0),ang(x,y,R),[R(),R(),R(),R(),R(),R()]);
+  g.beginPath();oilAdd(g,P);g.fillStyle=col(x,y,R);g.fill();   // 上緣一點亮、下緣一點暗（厚顏料的感覺）
+  g.lineWidth=.7;g.strokeStyle='rgba(255,240,220,'+rim+')';g.beginPath();g.moveTo(P[0][0],P[0][1]);g.lineTo(P[1][0],P[1][1]);g.lineTo(P[2][0],P[2][1]);g.stroke();
+  g.strokeStyle='rgba(0,0,0,'+rim+')';g.beginPath();g.moveTo(P[3][0],P[3][1]);g.lineTo(P[4][0],P[4][1]);g.lineTo(P[5][0],P[5][1]);g.stroke();}};
+// 畫放在哪裡：首頁畫寬是內容欄的 1.25 倍（放大一點點，只裁掉右邊一小條），靠左下；練習和其他畫面不放大，畫寬剛好等於內容欄、貼著上緣，整幅畫的左右都看得到
+const oilLay=(W,H,L)=>{const [c0,cw]=axCol(W),w=Math.round(cw*(L.home?1.25:1)),h=Math.round(OIL_H*w/OIL_W),x=Math.round(c0);
+  return L.home?{x,y:Math.round(Math.max(H-h,H*.45-.42*h)),w,h}:{x,y:0,w,h};};
+const oilAt=(r,u,v)=>[r.x+u*r.w,r.y+v*r.h];
+// 畫放不滿的地方：用畫裡同一帶的顏色接著刷（上面天空、兩邊樹林、下面地上），畫的邊緣淡淡地融進去；離畫越遠越暗
+const OIL_SKY=[['#1d3f8c',2],['#2a5cb4',1.2],['#173470',2],['#0f1a36',3],['#22457e',.8],['#1a3a2a',1.2],['#2b4f3e',.7],['#0e1a14',1.2]],
+  OIL_WOOD=[['#0e1a14',3],['#1a3a2a',2],['#2b4f3e',.8],['#173470',.8],['#0f1a36',2]],
+  OIL_GND=[['#2a120c',3],['#3a160e',3],['#4a1c10',2],['#1a0c08',2],['#8a2e16',.9],['#c8401a',.5],['#e0701a',.2],['#24401e',.3]];
+const oilExt=(g,W,H,d,R,r,dk)=>{g.fillStyle='#0b1020';g.fillRect(0,0,W,H);
+  // 離畫越遠越暗：上下 200px 內慢慢暗到 dk；兩邊（寬螢幕）暗得更多，畫才是主角
+  const far=(x,y)=>{const dx=Math.max(r.x-x,0,x-r.x-r.w),dy=Math.max(r.y-y,0,y-r.y-r.h);return dx>0?Math.min(.9,.12+Math.hypot(dx,dy)/320):Math.min(1,dy/200)*dk;},
+    sky=(x,y,R)=>oilMix(oilPick(R,OIL_SKY),'#070a14',far(x,y)),gnd=(x,y,R)=>oilMix(oilPick(R,OIL_GND),'#0a0808',far(x,y)),
+    skyA=(x,y,R)=>Math.sin(x*.03+y*.05)*1.2+(R()-.5)*.8,gndA=(x,y,R)=>(R()-.5)*.9;
+  // 兩邊（寬螢幕才有）：上面天空、中間樹林、下面地上（和畫的左右兩邊一樣）
+  const side=(x0,x1)=>oilFill(g,R,Math.round((x1-x0)*(H+20)/34),x0,-10,x1,H+10,(x,y,R)=>{const v=(y-r.y)/r.h;return v<.2?sky(x,y,R):v>.68||(v>.56&&R()<(v-.56)/.12)?gnd(x,y,R):oilMix(oilPick(R,OIL_WOOD),'#070a14',far(x,y));},(x,y,R)=>(y-r.y)/r.h<.6?skyA(x,y,R):gndA(x,y,R),12,26,5,11,.08);
+  if(r.x>0)side(-10,r.x+r.w*.08);
+  if(r.x+r.w<W)side(r.x+r.w*.92,W+10);
+  if(r.y>0)oilFill(g,R,Math.round(W*(r.y+70)/30),-10,-10,W+10,r.y+r.h*.12,sky,skyA,12,26,5,11,.08);
+  if(r.y+r.h<H)oilFill(g,R,Math.round(W*(H-r.y-r.h+70)/28),-10,r.y+r.h-70,W+10,H+10,gnd,gndA,12,24,5,10,.1);
+  if(!oilOK())return null;
+  const c=document.createElement('canvas');c.width=Math.round(r.w*d);c.height=Math.round(r.h*d);const x=c.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(oilImg(),0,0,c.width,c.height);
+  x.globalCompositeOperation='destination-out';
+  const fade=(x0,y0,x1,y1)=>{const gr=x.createLinearGradient(x0*d,y0*d,x1*d,y1*d);gr.addColorStop(0,'rgba(0,0,0,1)');gr.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=gr;x.fillRect(Math.min(x0,x1)*d,Math.min(y0,y1)*d,(Math.abs(x1-x0)||r.w)*d,(Math.abs(y1-y0)||r.h)*d);};
+  if(r.y>0)fade(0,0,0,r.h*.08);
+  if(r.y+r.h<H)fade(0,r.h,0,r.h*.93);
+  if(r.x>0)fade(0,0,r.w*.07,0);
+  if(r.x+r.w<W)fade(r.w,0,r.w*.93,0);
+  x.globalCompositeOperation='source-over';g.drawImage(c,r.x,r.y,r.w,r.h);return c;};
+// 不動的底（夜空、樹林、地上、畫），存成一張和畫布一樣大的圖；畫的位置或畫面大小變了才重畫
+// 只是高度變一點（手機捲動時網址列收起來、跑出來）：等它停下來（0.3 秒）再重畫，這段時間先用原來的底
+const oilBase=(st,W,H)=>{const d=Math.min(2,window.devicePixelRatio||1),ok=oilOK(),n=st.rT,k=[W,H,d,n.x,n.y,n.w,ok?1:0].join('|'),now=performance.now();
+  if(st.bk!==k){const o=st.r,small=!reducedMotion()&&st.bc&&o&&st.bW===W&&o.x===n.x&&o.w===n.w&&st.bok===ok&&Math.abs(H-st.bH)<=160;
+    if(small&&st.kq!==k){st.kq=k;st.kt=now;}
+    if(!small||now-st.kt>300){const c=st.bc||document.createElement('canvas');c.width=Math.round(W*d);c.height=Math.round(H*d);const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);
+      st.pi=oilExt(x,W,H,d,oilRand(4201),n,.35);st.bc=c;st.bk=k;st.bW=W;st.bH=H;st.bok=ok;st.kq=null;st.r=n;st.shK=null;}}
+  return st.bc;};
+// 畫裡的火像熱氣一樣輕輕搖：把火那一帶一條一條橫著錯開（越往上錯得越多，底部不動），再用柔和的邊（火的形狀）貼回去
+const oilShimmer=(st,g,r,H,tt,amp)=>{const d=Math.min(2,window.devicePixelRatio||1),u0=.12,u1=.88,x0=r.x+u0*r.w,x1=r.x+u1*r.w,y0=Math.max(0,r.y),y1=Math.min(H,r.y+.66*r.h),bw=Math.ceil(x1-x0),bh=Math.ceil(y1-y0);
+  if(bw<=0||bh<=0||!st.pi)return;const K=[bw,bh,r.x,r.y,r.w,d].join('|');
+  if(st.shK!==K){st.shK=K;const mk=()=>{const c=document.createElement('canvas');c.width=Math.round(bw*d);c.height=Math.round(bh*d);return c;};st.sh=mk();st.shm=mk();
+    const m=st.shm.getContext('2d');m.scale(d,d);const cx=(.49-u0)*r.w,cy=r.y+.4*r.h-y0,rg=m.createRadialGradient(cx,cy,0,cx,cy,1);rg.addColorStop(0,'rgba(0,0,0,1)');rg.addColorStop(.62,'rgba(0,0,0,1)');rg.addColorStop(1,'rgba(0,0,0,0)');
+    m.translate(cx,cy);m.scale(.36*r.w,.42*r.h);m.translate(-cx,-cy);m.fillStyle=rg;m.beginPath();m.arc(cx,cy,1,0,6.2832);m.fill();}
+  const s=st.sh,x=s.getContext('2d'),src=st.pi,SW=src.width,SH=src.height,step=3,baseY=r.y+.7*r.h,sx=u0*SW,sw=(u1-u0)*SW;
+  x.setTransform(1,0,0,1,0,0);x.globalCompositeOperation='source-over';x.clearRect(0,0,s.width,s.height);
+  for(let y=0;y<bh;y+=step){const Y=y0+y,k=Math.max(0,Math.min(1,(baseY-Y)/(baseY-r.y))),a=amp*Math.pow(k,.8),v=(Y-r.y)/r.h;
+    const dx=a*(Math.sin(v*22-tt*3.1+Math.sin(tt*.7)*.8)+.45*Math.sin(v*53+tt*5.3));
+    x.drawImage(src,sx,v*SH,sw,step/r.h*SH,dx*d,y*d,(x1-x0)*d,step*d+1);}
+  x.globalCompositeOperation='destination-in';x.drawImage(st.shm,0,0);x.globalCompositeOperation='source-over';
+  g.drawImage(s,x0,y0,bw,bh);};
+// 火星：從火尖附近冒出來的幾點顏料，往上飄、淡掉；edge＝從火的兩側冒出來、往外飄，帶一點光
+const OIL_SPC=['#fffcf2','#fff2c4','#ffe67c','#ffcc28','#f8a41e','#ef6e1a'],OIL_SPE=['#fff2c4','#ffe67c','#ffcc28','#ffb020','#f8a41e','#ff8a24'];
+const oilSpark=(R,p,first,rise)=>{p.u=.36+R()*.28;p.v=.08+R()*.22;if(p.edge){const sd=R()<.5?-1:1;p.v=.06+R()*.52;p.u=.49+sd*(.05+.3*p.v/.72)*(.85+R()*.25);p.sd=sd;}
+  p.life=first?R():0;p.dur=2+R()*2.4;p.r0=rise;p.rise=rise*(.6+R()*.7);p.dx=(R()-.5)*30;p.ph=R()*6.28;p.s=2+R()*3;p.c=OIL_SPC[Math.floor(R()*6)];
+  if(p.edge){p.dx=p.sd*(12+R()*46);p.c=OIL_SPE[Math.floor(R()*6)];}p.j=[R(),R(),R(),R(),R(),R()];return p;};
+const oilSparks=(g,r,S,tt,sc)=>{for(const p of S){const L=Math.min(1,p.life),z=Math.sin(L*Math.PI);if(z<.1)continue;
+  const x=r.x+p.u*r.w+p.dx*L+8*Math.sin(tt*1.4+p.ph),y=r.y+p.v*r.h-p.rise*L,s=p.s*z*sc;
+  if(p.edge){g.globalCompositeOperation='lighter';chkGlow(g,x,y,s*3.2,'255,170,60',.5*z);g.globalCompositeOperation='source-over';}
+  g.beginPath();oilAdd(g,oilPts(x,y,s*1.6,s,-1.2,p.j));g.fillStyle=p.c;g.fill();}};
+// 金色火屑：一點一點從火的兩側和火尖飄出來，一邊閃一邊慢慢往上飄、停下來、淡掉
+const oilFrom=(r,R)=>{let v,u,a;if(R()<.7){const sd=R()<.5?-1:1;v=.08+R()*.45;u=.49+sd*(.05+.3*v/.72)*(.8+R()*.25);a=-Math.PI/2+sd*(.25+R()*.85);}else{v=.02+R()*.14;u=.4+R()*.2;a=-Math.PI/2+(R()-.5)*1.3;}const q=oilAt(r,u,v);return [q[0],q[1],a];};
+const oilFleckStep=(P,r,dt)=>{const R=Math.random;P.acc+=dt*22;while(P.acc>=1){P.acc-=1;const f=oilFrom(r,R),d=6+R()*30,v=8+R()*18;P.gl.push({x:f[0]+Math.cos(f[2])*d,y:f[1]+Math.sin(f[2])*d,vx:Math.cos(f[2])*v,vy:Math.sin(f[2])*v,t:0,life:1.2+R()*1.4,ph:R()*6.28});}
+  for(let i=P.gl.length-1;i>=0;i--){const q=P.gl[i];q.t+=dt;if(q.t>q.life){P.gl.splice(i,1);continue;}q.vy-=14*dt;q.vx*=1-1.2*dt;q.vy*=1-.8*dt;q.x+=q.vx*dt;q.y+=q.vy*dt;}};
+const oilFlecks=(g,pts)=>{const G=[[],[],[],[],[]];for(const p of pts)if(p[2]>.04)G[Math.min(4,Math.floor(p[2]*5))].push(p[0],p[1]);   // 照亮度分五組，一組一起畫
+  for(let i=0;i<5;i++){const c=G[i];if(!c.length)continue;g.fillStyle='rgba(255,226,160,'+((i+.5)/5).toFixed(3)+')';g.beginPath();for(let j=0;j<c.length;j+=2){g.moveTo(c[j]+1.1,c[j+1]);g.arc(c[j],c[j+1],1.1,0,6.2832);}g.fill();}};
+const oilStill=r=>{const R=oilRand(11),pts=[];for(let i=0;i<60;i++){const f=oilFrom(r,R),d=6+R()*50;pts.push([f[0]+Math.cos(f[2])*d,f[1]+Math.sin(f[2])*d,.3+R()*.7]);}return pts;};
+// 字後面墊一點暗：首頁左邊（清單）和上面（標題）；設定頁整片壓暗一些；練習時上面、下面（按鈕）和「吸氣／數字」後面
+const oilScrim=(g,W,H,L)=>{let gr;const sh=(y0,y1,a)=>{gr=g.createLinearGradient(0,y0,0,y1);gr.addColorStop(0,'rgba(8,8,12,'+a+')');gr.addColorStop(1,'rgba(8,8,12,0)');g.fillStyle=gr;g.fillRect(0,Math.min(y0,y1),W,Math.abs(y1-y0));},
+    blob=(x,y,rx,ry,a)=>{g.save();g.translate(x,y);g.scale(rx/80,ry/80);axBlob(g,0,0,80,'rgba(10,6,4,'+a+')','rgba(10,6,4,0)');g.restore();};
+  if(L.home){const [c0,cw]=axCol(W);gr=g.createLinearGradient(c0,0,c0+cw,0);gr.addColorStop(0,'rgba(8,8,12,.7)');gr.addColorStop(.55,'rgba(8,8,12,.46)');gr.addColorStop(.85,'rgba(8,8,12,.12)');gr.addColorStop(1,'rgba(8,8,12,0)');g.fillStyle=gr;g.fillRect(0,0,W,H);sh(0,130,.5);return;}
+  if(!L.vis){g.fillStyle='rgba(8,8,12,.42)';g.fillRect(0,0,W,H);sh(0,160,.4);return;}
+  sh(0,100,.55);sh(H,H-190,.5);
+  for(const c of L.clear||[])blob(c.x+c.w/2,c.y+c.h/2,Math.max(c.w/2+70,130),c.h/2+30,.66);};
+const OIL_FX={lay:true,
+  init(st){const R=oilRand(4201);st.E=[];for(let i=0;i<26;i++)st.E.push({u:.08+R()*.84,v:.7+R()*.26,f:.4+R()*1.1,ph:R()*6.28,s:.6+R()*.8});
+    st.S=[];for(let i=0;i<22;i++)st.S.push(oilSpark(R,{},true,130));st.S2=[];for(let i=0;i<60;i++)st.S2.push(oilSpark(R,{edge:true},true,120));st.pk={gl:[],acc:0};st.bk=null;oilImg();},
+  move(st,dt,W,H){st.rT=oilLay(W,H,st.lay||{});if(reducedMotion()||!oilOK()||!st.r)return;dt=Math.min(dt,.05);
+    for(const S of [st.S,st.S2])for(const p of S){p.life+=dt/p.dur;if(p.life>=1)oilSpark(Math.random,p,false,p.r0);}
+    oilFleckStep(st.pk,st.r,dt);},
+  draw(st,g,W,H,t){st.cv=g.canvas;const L=st.lay||{},rm=reducedMotion(),tt=rm?20:t;if(!st.rT)st.rT=oilLay(W,H,L);
+    g.save();g.setTransform(1,0,0,1,0,0);g.drawImage(oilBase(st,W,H),0,0);g.restore();const r=st.r;   // 火、火星都照底圖上畫的位置
+    if(!oilOK()){   // 畫還沒下載好：先只有夜空和地上；下載好了，減少動態效果時也補畫一格
+      if(!st.wait){st.wait=1;oilImg().addEventListener('load',()=>{st.wait=0;const c=st.cv;if(!reducedMotion()||!c||!c.isConnected||!c.clientWidth)return;const w=c.clientWidth,h=c.clientHeight,x=c.getContext('2d');x.setTransform(c.width/w,0,0,c.width/w,0,0);x.clearRect(0,0,w,h);this.draw(st,x,w,h,0);},{once:true});}
+      oilScrim(g,W,H,L);return;}
+    if(!rm)oilShimmer(st,g,r,H,tt,2.6*r.w/540);
+    g.globalCompositeOperation='lighter';   // 火光慢慢亮暗（自己的節奏）；地上的炭火一點一點地亮
+    const p=oilAt(r,.49,.45),f=.75+.25*(.6*Math.sin(tt*.9)+.4*oilWob(tt*1.8,3));chkGlow(g,p[0],p[1],r.w*.42,'255,150,60',.14*f);
+    for(const e of st.E){let z=Math.sin(tt*e.f+e.ph);if(z<=.2)continue;z=(z-.2)/.8;const q=oilAt(r,e.u,e.v);chkGlow(g,q[0],q[1],9*e.s*r.w/540,'255,110,40',.45*z*z);}
+    g.globalCompositeOperation='source-over';oilScrim(g,W,H,L);
+    const k=Math.max(.75,r.w/540);oilSparks(g,r,st.S,tt,1.3*k);oilSparks(g,r,st.S2,tt,1.4*k);
+    g.globalCompositeOperation='lighter';oilFlecks(g,rm?oilStill(r):st.pk.gl.map(q=>[q.x,q.y,(1-q.t/q.life)*(.55+.45*Math.sin(q.t*22+q.ph))]));g.globalCompositeOperation='source-over';}};
 const FXS = {
  // 仙女棒：一顆小火球，照自己的節奏一輪一輪地燒（一輪 58 秒），不跟著呼吸：花蕾 → 牡丹 → 松葉 → 垂柳 → 金雨 → 盛開，然後慢慢安靜下來，再從花蕾開始。
  // 有呼吸圓點的練習，圓點就是那顆火球；其他畫面是一根紙捻從上面垂下來，火球掛在尾端。開了「減少動態效果」就是一束靜止的火星
@@ -3648,6 +3756,7 @@ const FXS = {
       const rc=c-tb(i);if(rc>0&&rc<2.6){g.strokeStyle='rgba('+col+','+chkA((1-rc/2.6)*.5*K)+')';g.lineWidth=1.1;g.beginPath();g.arc(x,ys[i],Rr*(1.05+rc*1.1),0,6.2832);g.stroke();}}
     if(all>0)chkGlow(g,x,ys[6]-Rr*.6,Rr*5*all,'210,170,255',.35*all*K);
     g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}},
+ oil:OIL_FX,
  bone1:bnFx('moon'),bone2:bnFx('ink'),bone3:bnFx('candle')
 };
 // 脈輪、中脈：量出呼吸圖形和「吸氣／數字」在畫面上的位置（看不見的不算），中脈的光才知道要放哪、避開哪裡
