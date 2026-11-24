@@ -1393,12 +1393,6 @@ function whAction(a) {
   else if (a === 'safety') whSafety(true);
   else if (a === 'safety-close') $('whSafety').hidden = true;
   else if (a === 'ack') { if ($('whChk').checked) { state.whAck = true; save(); $('whSafety').hidden = true; } }
-  else if (a === 'open') {
-    const on = $('whSettings').hidden;
-    $('whSettings').hidden = !on;
-    $('whOpenSign').textContent = on ? '－' : '＋';
-    document.querySelector('[data-action="wh-open"]').setAttribute('aria-expanded', on);
-  }
 }
 
 // ---------- 重生呼吸 ----------
@@ -1735,7 +1729,7 @@ $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Mat
 // 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面用主題自己的背景和顏色；左腳的畫法：淺色主題用白描、深色主題用月白，白骨主題照主題本身
 const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
 let bp = null, bpRaf = 0;
-const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'oil', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
+const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
 function bpOpen() {
   bpRenderSetup();
   show('bpSetup');
@@ -1872,7 +1866,7 @@ const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_
 // 「接著播」：一段播完接下一段。最多 6 段；每段設播幾次（預設 1 次，最多 30 次）或幾分鐘；安靜只能設幾分鐘
 // 換段：慢慢交疊（前後各 2.5 秒）、直接接上、中間安靜（淡出 2 秒、安靜 10 秒、淡入 2 秒）
 const LQ_MAX = 6, LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_NMAX = 30;
-const LQ_DARK = ['dark', 'night', 'fire', 'oil', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
+const LQ_DARK = ['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
 const lqOnceOk = k => typeof k === 'string' && k !== 'silence' && k !== 'none';   // 有音檔的聲音都可以設「播幾次」；安靜不行
 let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
 // 接著播：加一段／改一段的視窗 { i, k, m, n, d }、清單上展開的那一段、正在拖的那一段、每個聲音播一遍幾秒（-1 是讀不到）
@@ -2759,10 +2753,10 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火1、營火2（油畫）、螢火蟲、櫻花、脈輪1、脈輪2、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'oil', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
-const DARK_THEMES = ['dark', 'night', 'fire', 'oil', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];
-const SKY = { fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火1、營火2（油畫）、營火3（影片）、螢火蟲、櫻花、脈輪1、脈輪2、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
+const THEMES = ['light', 'dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
+const DARK_THEMES = ['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];
+const SKY = { vfire: "url('assets/video/fire3-poster.jpg')", fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
   chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', chakra7: 'linear-gradient(180deg,#110d28 0%,#0b0920 50%,#060512 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
   bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)',
   senko: 'linear-gradient(180deg,#14141d 0%,#131110 55%,#12100e 100%)', oil: 'linear-gradient(180deg,#132654 0%,#10203f 38%,#0e1424 62%,#120c0a 100%)' };
@@ -2812,7 +2806,7 @@ document.querySelectorAll('[data-theme-pick]').forEach(b => b.addEventListener('
 // 只有一個畫布，跟著目前最上層的畫面（首頁或某個練習畫面）移動；換畫面時會接著動。切到別的 App 時瀏覽器會自動暫停。
 // 手機開了「減少動態效果」：營火改用畫好火星的靜態背景；螢火蟲、櫻花只畫一張靜止的。
 function reducedMotion() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }
-const FX_OF = { fire: 'sparks', oil: 'oil', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', chakra7: 'chakra7', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
+const FX_OF = { fire: 'sparks', oil: 'oil', vfire: 'vscrim', fireflies: 'fireflies', sakura: 'sakura', night: 'meteors', chakra: 'chakra', chakra7: 'chakra7', gold: 'goldbeam', bone1: 'bone1', bone2: 'bone2', bone3: 'bone3', senko: 'senko' };
 const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, drawn: null };
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
@@ -3757,6 +3751,7 @@ const FXS = {
     if(all>0)chkGlow(g,x,ys[6]-Rr*.6,Rr*5*all,'210,170,255',.35*all*K);
     g.globalCompositeOperation='source-over';if(L.run)fxClear(g,L.clear);}},
  oil:OIL_FX,
+ vscrim:{lay:true,init(){},move(){},draw(st,g,W,H){oilScrim(g,W,H,st.lay||{});}},   // 營火3：影片在畫布底下，畫布只負責字後面的暗影
  bone1:bnFx('moon'),bone2:bnFx('ink'),bone3:bnFx('candle')
 };
 // 脈輪、中脈：量出呼吸圖形和「吸氣／數字」在畫面上的位置（看不見的不算），中脈的光才知道要放哪、避開哪裡
@@ -3775,6 +3770,7 @@ function drawFx(now) {
   const host = fxHost(), c = fx.c, bnT = bnEl();
   if (!host) { c.hidden = true; fx.last = null; return; }
   if (c.parentNode !== host) host.prepend(c);
+  if (fx.v && (fx.v.parentNode !== host || fx.v.nextSibling !== c)) { host.insertBefore(fx.v, c); vidGo(fx.v); }   // 影片跟著畫布換到現在的畫面
   c.hidden = false;
   const W = c.clientWidth, H = c.clientHeight; if (!W || !H) return;
   const still = reducedMotion();
@@ -3791,7 +3787,26 @@ function drawFx(now) {
   const g = c.getContext('2d'); g.setTransform(k, 0, 0, k, 0, 0); g.clearRect(0, 0, W, H); F.draw(fx.st, g, W, H, t, br);
   fx.drawn = host;
 }
+// ---------- 影片主題（營火3）：<video> 跟著畫布放在同一個畫面裡、畫布底下 ----------
+// 一定要靜音＋playsinline 手機才會自動播；減少動態效果時不播；播不了（例如 iPhone 省電模式）就藏起來，露出底下同一格的靜止圖
+const VIDEO = { vfire: { src: 'assets/video/fire3.mp4', poster: 'assets/video/fire3-poster.jpg' } };
+function vidGo(v) {
+  if (reducedMotion()) { try { v.pause(); } catch (err) {} return; }
+  const p = v.play(); if (p && p.then) p.then(() => { v.style.visibility = ''; }, () => { v.style.visibility = 'hidden'; });
+}
+function syncVideo() {
+  const V = VIDEO[state.theme];
+  if (!V) { if (fx.v) { fx.v.remove(); fx.v = null; } return; }
+  if (fx.v && fx.v.dataset.k === state.theme) { if (fx.v.isConnected) vidGo(fx.v); return; }
+  if (fx.v) fx.v.remove();
+  const v = fx.v = document.createElement('video'); v.className = 'vidbg'; v.dataset.k = state.theme;
+  v.muted = true; v.defaultMuted = true; v.loop = true; v.playsInline = true;
+  ['muted', 'playsinline', 'webkit-playsinline', 'loop', 'disablepictureinpicture'].forEach(a => v.setAttribute(a, ''));
+  v.setAttribute('aria-hidden', 'true'); v.tabIndex = -1; v.poster = V.poster; v.preload = reducedMotion() ? 'none' : 'auto'; v.src = V.src;
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && fx.v && fx.v.isConnected && fx.v.paused) vidGo(fx.v); });
 function syncSparks() {
+  syncVideo();
   const kind = FX_OF[state.theme], on = !!kind && !((kind === 'sparks' || kind === 'meteors') && reducedMotion());
   if (on) {
     if (!fx.c) { fx.c = document.createElement('canvas'); fx.c.className = 'sparks'; fx.c.setAttribute('aria-hidden', 'true'); }

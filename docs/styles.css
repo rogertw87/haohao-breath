@@ -318,11 +318,6 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 .wh-flow-val { font-size: 12px; color: var(--muted-2); }
 .wh-flow-arrow { color: var(--track); }
 .wh-flow-rounds { border-top: 1px solid var(--line-3); padding-top: 12px; text-align: center; font-size: 13px; color: var(--muted); }
-.wh-adjust {
-  display: flex; justify-content: space-between; align-items: center; min-height: 44px; margin: 0 0 10px; padding: 0 4px;
-  border: none; background: none; font-size: 13px; font-weight: 500; color: var(--ink-2); cursor: pointer;
-}
-.wh-adjust-sign { font-size: 18px; font-weight: 400; }
 .wh-settings { display: flex; flex-direction: column; gap: 22px; margin-bottom: 8px; }
 .wh-group { display: flex; flex-direction: column; gap: 10px; }
 .wh-group-title { margin: 0 4px; }
@@ -550,6 +545,36 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 }
 :root[data-theme="oil"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
 :root[data-theme="oil"] body, :root[data-theme="oil"] .row { text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 10px rgba(0,0,0,.6); }   /* 畫比較亮，字加一點暗影才看得清楚 */
+:root[data-theme="vfire"] { /* 營火3：真的營火影片（Pexels 16003276），7.7 秒頭尾接得起來的循環 */
+  --page: #0b0806;
+  --screen: #0b0806;
+  --ink: #f6ead8;
+  --ink-2: #ffcf8a;
+  --accent: #ffa64d;
+  --accent-2: #ffd27a;
+  --line-2: #4a3324;
+  --line: #2c2018;
+  --soft-2: #1c1410;
+  --chip: #261a12;
+  --soft: #0b0806;
+  --line-3: #261a12;
+  --muted-2: #c4ad94;
+  --muted: #e0cdb4;
+  --track: #8a5226;
+  --guide: #1c1410;
+  --figure: #261a12;
+  --fade: rgba(11,8,6,0);
+  --shadow: rgba(0,0,0,.55);
+  --card: #18110c;
+  --sel: #ffa64d;
+  --selfg: #1a0f06;
+  --dot: #fff1d6;
+  --dot-glow: 0 0 0 2px rgba(20,10,4,.85), 0 0 0 7px rgba(255,200,130,.25), 0 0 18px 5px rgba(255,150,60,.45);
+  --sky-pos: center;
+  --img-filter: brightness(1.9);
+}
+:root[data-theme="vfire"] .home::before { display: block; background: var(--page) var(--sky, none) center / cover; }
+:root[data-theme="vfire"] body, :root[data-theme="vfire"] .row { text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 10px rgba(0,0,0,.6); }   /* 火很亮，字加一點暗影才看得清楚 */
 :root[data-theme="fireflies"] { /* 螢火蟲：夏夜的草叢，螢火蟲一閃一閃 */
   --page: #06100d;
   --screen: #050d0b;
@@ -698,6 +723,8 @@ input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 
 /* 火星、螢火蟲、花瓣：畫在畫面背景之上、文字按鈕之下 */
 .sparks { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 .home > .sparks { left: 50%; max-width: 480px; transform: translateX(-50%); }
+.vidbg { position: fixed; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; pointer-events: none; }   /* 影片主題的影片：在畫布底下 */
+.home > .vidbg { left: 50%; max-width: 480px; transform: translateX(-50%); }
 .wh-music-hint { margin: 12px 4px 24px; font-size: 12px; line-height: 1.6; color: var(--muted-2); }
 
 /* ---------- 勳章 ---------- */
