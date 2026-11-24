@@ -3791,8 +3791,17 @@ function drawFx(now) {
 // 一定要靜音＋playsinline 手機才會自動播；減少動態效果時不播；播不了（例如 iPhone 省電模式）就藏起來，露出底下同一格的靜止圖
 const VIDEO = { vfire: { src: 'assets/video/fire3.mp4', poster: 'assets/video/fire3-poster.jpg' } };
 function vidGo(v) {
+  if (!v || !v.isConnected) return;
   if (reducedMotion()) { try { v.pause(); } catch (err) {} return; }
-  const p = v.play(); if (p && p.then) p.then(() => { v.style.visibility = ''; }, () => { v.style.visibility = 'hidden'; });
+  if (v.error || (v.readyState === 0 && v.networkState === 3)) v.load();   // 在背景太久、影片資料被手機丟掉了：重新載入
+  const p = v.play(); if (p && p.then) p.then(() => { v.style.visibility = ''; }, () => { v.style.visibility = 'hidden'; vidWait(); });
+}
+// 不能自動播（省電模式、剛從背景回來還不讓播）：等使用者下一次碰畫面再播
+let vidWaiting = false;
+function vidWait() {
+  if (vidWaiting) return; vidWaiting = true;
+  const E = ['pointerdown', 'touchend', 'keydown'], go = () => { vidWaiting = false; E.forEach(e => document.removeEventListener(e, go, true)); vidGo(fx.v); };
+  E.forEach(e => document.addEventListener(e, go, true));
 }
 function syncVideo() {
   const V = VIDEO[state.theme];
@@ -3804,7 +3813,18 @@ function syncVideo() {
   ['muted', 'playsinline', 'webkit-playsinline', 'loop', 'disablepictureinpicture'].forEach(a => v.setAttribute(a, ''));
   v.setAttribute('aria-hidden', 'true'); v.tabIndex = -1; v.poster = V.poster; v.preload = reducedMotion() ? 'none' : 'auto'; v.src = V.src;
 }
-document.addEventListener('visibilitychange', () => { if (!document.hidden && fx.v && fx.v.isConnected && fx.v.paused) vidGo(fx.v); });
+// 從別的 App 或分頁回來：馬上叫影片繼續播，過一下再叫一次（有的手機剛回來時還不讓播）
+const vidBack = () => { if (document.hidden || !fx.v) return; vidGo(fx.v); setTimeout(() => vidGo(fx.v), 500); setTimeout(() => vidGo(fx.v), 1500); };
+document.addEventListener('visibilitychange', vidBack); window.addEventListener('pageshow', vidBack); window.addEventListener('focus', vidBack);
+// 看門狗：畫面看得到、影片卻停著，就叫它繼續播；卡在同一格超過 3 秒、又不是正在下載，就重新載入再播
+setInterval(() => {
+  const v = fx.v; if (!v || !v.isConnected || document.hidden || reducedMotion()) return;
+  const ct = v.currentTime;
+  if (v.paused) { v._stuck = 0; vidGo(v); }
+  else if (ct === v._ct && v.networkState !== 2) { v._stuck = (v._stuck || 0) + 1; if (v._stuck >= 2) { v._stuck = 0; v.load(); vidGo(v); } }
+  else v._stuck = 0;
+  v._ct = ct;
+}, 1500);
 function syncSparks() {
   syncVideo();
   const kind = FX_OF[state.theme], on = !!kind && !((kind === 'sparks' || kind === 'meteors') && reducedMotion());
