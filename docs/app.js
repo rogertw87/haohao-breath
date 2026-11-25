@@ -59,11 +59,14 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '' });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
 );
+// 三個白骨主題不再是網站的主題，改成白骨觀練習裡的三種動畫。原本選白骨主題的裝置：主題改成深色／淺色，白骨觀沿用原本那一種動畫
+function bnMigrate() { const m = /^bone([123])$/.exec(state.theme); if (m) { if (!state.bnSkin) state.bnSkin = m[1]; state.theme = m[1] === '2' ? 'light' : 'dark'; } }
+bnMigrate();
 let cur = null;        // 目前練習
 let timers = [];       // 整段練習的計時器
 let phaseTimers = [];  // 單一階段的計時器
@@ -72,8 +75,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide, litCer } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, litHide, todayHide, litCer })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -1726,10 +1729,11 @@ $('rbMinutes').addEventListener('input', e => { state.minutes = Math.min(30, Mat
 
 // ---------- 白骨觀：靜坐觀想左腳的大拇趾（方法參考楊定一博士） ----------
 // 安定 30 秒（自然呼吸）→ 觀想 8 秒 → 皮、肉、筋膜各 15 秒撥開（選「直接露出骨頭」或減少動態效果就跳過）→ 只剩白骨，只專注在這裡（每 3 分鐘換一句提醒）→ 最後 30 秒回到呼吸 → 響一聲鐘結束
-// 撥開皮肉的動畫只在這個練習；白骨主題的其他練習一律是撥好的樣子。練習畫面用主題自己的背景和顏色；左腳的畫法：淺色主題用白描、深色主題用月白，白骨主題照主題本身
+// 練習畫面用主題自己的背景和顏色；左腳和白骨的畫法在設定裡選（「動畫」：白骨1 月白、白骨2 白描、白骨3 燭光），還沒選過一律是白骨1
 const BP_REM = ['走神了也沒關係，輕輕回到大拇趾', '不用用力，只是看著它', '只看這一段白骨，其他一概不理'];
 let bp = null, bpRaf = 0;
-const bpLook = () => BONE[state.theme] || (['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'].includes(state.theme) ? 'moon' : 'ink');
+const bnSkin = () => (state.bnSkin === '2' || state.bnSkin === '3' ? state.bnSkin : '1');
+const bpLook = () => BONE['bone' + bnSkin()];
 function bpOpen() {
   bpRenderSetup();
   show('bpSetup');
@@ -1748,6 +1752,9 @@ function bpRenderSetup() {
   $('bpMinutes').value = m; $('bpMinVal').textContent = m; $('bpMinBtn').textContent = m;
   rbOpts($('bpOpenOpts'), [[false, '自動撥皮肉'], [true, '直接露出骨頭']], v => open === v, v => { state.bnOpen = v; save(); bpRenderSetup(); });
   $('bpOpenNote').textContent = open ? '安定下來以後，直接是撥好、露出白骨的樣子。' : '安定下來以後，皮、肉、筋膜一層層撥開，約 1 分鐘撥完，之後停住。';
+  const skin = bnSkin();
+  rbOpts($('bpSkinOpts'), [['1', '白骨1'], ['2', '白骨2'], ['3', '白骨3']], v => skin === v, v => { state.bnSkin = v; save(); bpRenderSetup(); });
+  $('bpSkinNote').textContent = { 1: '月白：白骨泛著月光。', 2: '白描：墨線勾出來的白骨。', 3: '燭光：白骨透著燭光。' }[skin] + '只換腳和白骨的畫法，背景還是你原本的主題。';
   // 背景音樂：和其他練習共用同一個設定
   musicGrid($('bpMusic'), state.music, k => { state.music = k; save(); bpRenderSetup(); });
   $('bpMineBox').hidden = !mine.length;
@@ -1866,7 +1873,7 @@ const LS_MAX = 3, LS_MINS = [10, 20, 30, 45, 60, 0], LS_FADES = [1, 10], LS_DIM_
 // 「接著播」：一段播完接下一段。最多 6 段；每段設播幾次（預設 1 次，最多 30 次）或幾分鐘；安靜只能設幾分鐘
 // 換段：慢慢交疊（前後各 2.5 秒）、直接接上、中間安靜（淡出 2 秒、安靜 10 秒、淡入 2 秒）
 const LQ_MAX = 6, LQ_XF = [['x', '慢慢交疊'], ['cut', '直接接上'], ['gap', '中間安靜']], LQ_HALF = 2.5, LQ_GAP = 10, LQ_GFADE = 2, LQ_NMAX = 30;
-const LQ_DARK = ['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
+const LQ_DARK = ['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'];   // 深色的主題：「一起播／接著播」選中的那一邊改用重點色
 const lqOnceOk = k => typeof k === 'string' && k !== 'silence' && k !== 'none';   // 有音檔的聲音都可以設「播幾次」；安靜不行
 let ls = null, lsIv = 0, lsWarn = false, lsWarnT = 0;
 // 接著播：加一段／改一段的視窗 { i, k, m, n, d }、清單上展開的那一段、正在拖的那一段、每個聲音播一遍幾秒（-1 是讀不到）
@@ -2753,9 +2760,10 @@ function installAction(a, e) {
 // 已經從桌面圖示打開的話，就不顯示這個選項
 $('installItem').hidden = isStandalone();
 
-// ---------- 主題（首頁選單：淺色、深色、夜空、營火1、營火2（油畫）、營火3（影片）、螢火蟲、櫻花、脈輪1、脈輪2、中脈、白骨1～3、仙女棒；顏色在 styles.css） ----------
-const THEMES = ['light', 'dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'bone1', 'bone2', 'bone3', 'senko'];
-const DARK_THEMES = ['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'bone1', 'bone3', 'senko'];
+// ---------- 主題（首頁選單：淺色、深色、夜空、營火1、營火2（油畫）、營火3（影片）、螢火蟲、櫻花、脈輪1、脈輪2、中脈、仙女棒；顏色在 styles.css） ----------
+// 白骨1～3 不再是主題（選單拿掉了），只當作白骨觀練習裡的三種動畫；下面和 styles.css 裡 bone1～3 的背景、顏色目前用不到
+const THEMES = ['light', 'dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'sakura', 'chakra', 'chakra7', 'gold', 'senko'];
+const DARK_THEMES = ['dark', 'night', 'fire', 'oil', 'vfire', 'fireflies', 'chakra', 'chakra7', 'gold', 'senko'];
 const SKY = { vfire: "url('assets/video/fire3-poster.jpg')", fireflies: "url('assets/themes2/fireflies.jpg')", sakura: "url('assets/themes2/sakura-run.jpg')",  // 各畫面的背景圖
   chakra: 'linear-gradient(180deg,#191340 0%,#120e2e 48%,#0b0a1c 100%)', chakra7: 'linear-gradient(180deg,#110d28 0%,#0b0920 50%,#060512 100%)', gold: 'linear-gradient(180deg,#1f1327 0%,#150d1b 50%,#0c0910 100%)',
   bone1: 'linear-gradient(180deg,#0c131a 0%,#0a1016 60%,#070b10 100%)', bone2: 'radial-gradient(ellipse at 50% 42%,#f7f3ea 0%,#f3eee3 55%,#e9e1cf 100%)', bone3: 'linear-gradient(180deg,#17120e 0%,#120e0b 60%,#0d0a08 100%)',
@@ -3862,7 +3870,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck', 'bnSkin'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
@@ -3908,6 +3916,7 @@ function applySet(f) {
     if (k === 'lsSel') { const own = (Array.isArray(state.lsSel) ? state.lsSel : []).filter(x => typeof x === 'string' && x.startsWith('mine:')); state.lsSel = [...(Array.isArray(o[k]) ? o[k] : []), ...own].slice(0, 3); return; }
     state[k] = k === 'music' ? pick(o[k], state.music) : o[k];
   });
+  bnMigrate();   // 別台裝置（舊版）選的是白骨主題：一樣改成深色／淺色
 }
 // 每一項各自比修改時間，新的贏；被刪掉的（例如恢復預設）也有時間，所以不會被另一台裝置加回來
 function mergeFlat(lf, ls, rf, rs) {
