@@ -3,7 +3,7 @@
 // 2. 背景聲音存在另一個地方（hh-sound），在「離線使用」裡下載，或有網路時播過一次就自動留著；換新版也不會被清掉
 // 3. 網頁本身先試網路（拿到新版），網路太慢或沒網路就用存著的
 // 改了不帶版本號的檔案（圖片、提示音、說明頁）時，把 VER 加一，手機才會換成新的
-const VER = 'v5';
+const VER = 'v6';
 const APP = 'hh-app-' + VER, SND = 'hh-sound', FONT = 'hh-font';
 const CORE = [
   './', 'index.html', 'help.html', 'privacy.html', 'thanks.html', 'manifest.webmanifest', 'favicon.ico',

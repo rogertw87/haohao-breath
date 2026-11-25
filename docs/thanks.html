@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>感謝 · 好好呼吸</title>
-<script>try{if((JSON.parse(localStorage.getItem('haohao-breath-settings'))||{}).theme==='dark')document.documentElement.dataset.theme='dark'}catch(e){}</script>
+<script>try{var o=JSON.parse(localStorage.getItem('haohao-breath-settings'))||{};if(o.theme==='dark')document.documentElement.dataset.theme='dark';var f=[1,1.15,1.3][+o.fsz]||1;if(f!==1){var s=document.documentElement.style;s.setProperty('--fs',f);s.setProperty('--fsl',1+(f-1)/2)}}catch(e){}</script>
 <link rel="icon" href="favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="144x144" href="icons/favicon-144.png">
 <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96.png">
@@ -22,15 +22,15 @@ a { color: var(--h3); text-underline-offset: 3px; }
 a:hover { color: var(--h2); }
 header { border-bottom: 1px solid var(--h7); }
 .bar { max-width: 720px; margin: 0 auto; padding: 14px 24px; display: flex; align-items: center; min-height: 44px; }
-.brand { font-size: 18px; font-weight: 500; letter-spacing: .3em; text-decoration: none; color: var(--h3); }
-article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; box-sizing: border-box; line-height: 1.9; font-size: 16px; }
-h1 { margin: 0 0 28px; font-size: 32px; font-weight: 700; }
+.brand { font-size: calc(18px * var(--fs, 1)); font-weight: 500; letter-spacing: .3em; text-decoration: none; color: var(--h3); }
+article { max-width: 720px; margin: 0 auto; padding: 48px 24px 80px; box-sizing: border-box; line-height: 1.9; font-size: calc(16px * var(--fs, 1)); }
+h1 { margin: 0 0 28px; font-size: calc(32px * var(--fsl, 1)); font-weight: 700; }
 .thanks { display: flex; flex-direction: column; gap: 22px; color: var(--h13); }
 .thanks p { margin: 0; text-wrap: pretty; }
 .thanks strong { font-weight: 500; color: var(--h2); }
 .cta {
   margin-top: 36px; display: inline-flex; align-items: center; height: 48px; padding: 0 24px; border-radius: 14px;
-  background: var(--h2); color: var(--h0); text-decoration: none; font-size: 15px; font-weight: 500;
+  background: var(--h2); color: var(--h0); text-decoration: none; font-size: calc(15px * var(--fs, 1)); font-weight: 500;
 }
 .cta:hover { color: var(--h0); }
 </style>
