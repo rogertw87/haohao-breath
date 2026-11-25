@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>好好運動</title>
+<meta name="description" content="好好運動：收藏喜歡的 YouTube 運動影片，每天挑一支跟著做，記錄每週目標，並把提醒加到日曆。">
+<script>try{var d=JSON.parse(localStorage.getItem('haohao-move'))||{},u=d.ui;if(!u){var o=JSON.parse(localStorage.getItem('haohao-breath-settings'))||{};u={theme:o.theme==='dark'?'dark':'light',fsz:+o.fsz||0}}if(u.theme==='dark')document.documentElement.dataset.theme='dark';var f=[1,1.15,1.3][+u.fsz]||1;document.documentElement.style.setProperty('--fs',f)}catch(e){}</script>
+<link rel="icon" type="image/png" sizes="48x48" href="icons/icon-48.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/icon-32.png">
+<link rel="icon" type="image/png" sizes="96x96" href="icons/icon-96.png">
+<link rel="icon" type="image/png" sizes="144x144" href="icons/icon-144.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="好好運動">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* 好好運動：好好呼吸的姊妹站。同一套顏色、字體和元件；單欄 480px，手機優先。
+   呼吸藍（--breath）只給「會動」的東西：每週目標圈、進度條、開關。 */
+:root {
+  --fs: 1;
+  --bg-page: #ffffff;
+  --bg-screen: #eef4f5;
+  --surface-card: #ffffff;
+  --surface-soft: #f4f9fa;
+  --fill-icon: #e3f0f3;
+  --fill-hover: #e2eff2;
+  --ink: #15303a;
+  --brand: #2f6475;
+  --accent: #1f6f86;
+  --text-2: #4a6872;
+  --line: #d9e8ec;
+  --line-inner: #e6f0f3;
+  --line-strong: #cfe2e8;
+  --track: #c3dbe2;
+  --fade-0: rgba(238, 244, 245, 0);
+  --breath: #5aaac0;
+  --knob: #ffffff;
+  --video-bg: #061015;
+  --video-ink: #d6e8ee;
+  --scrim: rgba(6, 16, 21, .55);
+  --shadow-menu: 0 8px 24px rgba(21, 48, 58, .12);
+  --shadow-knob: 0 1px 3px rgba(0, 0, 0, .2);
+  --font-sans: "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+:root[data-theme="dark"] {
+  --bg-page: #0d1b22; --bg-screen: #0d1b22; --surface-card: #132a33; --surface-soft: #132a33;
+  --fill-icon: #173039; --fill-hover: #16303a; --ink: #e6f1f4; --brand: #8fc3d3; --accent: #7cc4da;
+  --text-2: #a3bfc8; --line: #1f3943; --line-inner: #1c3640; --line-strong: #23404b; --track: #2a4a56;
+  --fade-0: rgba(13, 27, 34, 0);
+  --shadow-menu: 0 8px 24px rgba(0, 0, 0, .4);
+  color-scheme: dark;
+}
+
+html { height: 100%; }
+body {
+  margin: 0; min-height: 100%; display: flex; flex-direction: column;
+  background: var(--bg-page); color: var(--ink);
+  font-family: var(--font-sans); font-size: calc(15px * var(--fs)); line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+body.task { background: var(--bg-screen); }
+#app { flex: 1; display: flex; flex-direction: column; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:not(.btn):hover { color: var(--ink); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.screen {
+  position: relative; flex: 1; width: 100%; max-width: 480px; margin: 0 auto; box-sizing: border-box;
+  display: flex; flex-direction: column;
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+}
+.screen.home {
+  padding-top: calc(56px + env(safe-area-inset-top, 0px));
+  padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+.screen.task { padding-top: calc(44px + env(safe-area-inset-top, 0px)); }
+
+/* 字 */
+.wordmark { margin: 8px 8px 20px; font-size: calc(34px * var(--fs)); font-weight: 500; letter-spacing: .3em; text-indent: .3em; text-align: center; color: var(--brand); line-height: 1.4; }
+.h2 { margin: 12px 4px 4px; font-size: calc(26px * var(--fs)); font-weight: 700; line-height: 1.4; }
+.desc.lead { margin: 0 4px 28px; }
+.desc { margin: 0; font-size: calc(14px * var(--fs)); line-height: 1.7; color: var(--text-2); }
+.cap { margin: 10px 4px 0; font-size: calc(12px * var(--fs)); line-height: 1.6; color: var(--text-2); }
+.cap.err { color: var(--ink); font-weight: 500; }
+.cap.ok { color: var(--ink); }
+.eyebrow { font-size: calc(13px * var(--fs)); line-height: 1.4; color: var(--text-2); }
+.label-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 0 4px 10px; min-height: 24px; }
+.label { font-size: calc(13px * var(--fs)); font-weight: 500; color: var(--brand); }
+.label-val { font: 500 calc(16px * var(--fs)) var(--font-mono); }
+
+/* 按鈕 */
+.btn {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 56px; padding: 8px 16px; box-sizing: border-box;
+  border-radius: 16px; border: 1px solid transparent;
+  font: inherit; font-size: calc(17px * var(--fs)); font-weight: 500; line-height: 1.3;
+  text-decoration: none; cursor: pointer; text-align: center;
+}
+.btn-md { min-height: 52px; font-size: calc(16px * var(--fs)); }
+.btn-primary, .btn-primary:hover { background: var(--ink); color: var(--bg-screen); }
+.btn-secondary, .btn-secondary:hover { background: var(--surface-card); border-color: var(--line-strong); color: var(--ink); }
+.btn-outline, .btn-outline:hover { background: none; border-color: var(--line-strong); color: var(--brand); font-weight: 400; }
+.btn[disabled] { opacity: .4; cursor: default; }
+.btn svg { flex: none; }
+.text-btn { align-self: center; min-height: 44px; padding: 0 12px; border: none; background: none; font: inherit; font-size: calc(14px * var(--fs)); color: var(--brand); cursor: pointer; }
+.back { align-self: flex-start; border: none; background: none; font: inherit; font-size: calc(15px * var(--fs)); color: var(--brand); padding: 8px 0; min-height: 44px; cursor: pointer; }
+.pill {
+  align-self: center; display: flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 0 16px; box-sizing: border-box;
+  border: 1px solid var(--line-strong); border-radius: 22px; background: var(--surface-card);
+  font: inherit; font-size: calc(13px * var(--fs)); color: var(--accent); cursor: pointer;
+}
+.pill svg { flex: none; }
+.notice { margin: 16px 0 0; padding: 12px 16px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface-soft); font-size: calc(14px * var(--fs)); line-height: 1.6; color: var(--ink); }
+.screen.task .notice { margin: 0 0 20px; background: var(--surface-card); }
+
+/* 選單 */
+.menu { position: absolute; top: calc(68px + env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); z-index: 4; }
+.menu-btn { width: 44px; height: 44px; padding: 0; border: none; background: none; color: var(--brand); display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 50%; }
+.menu-btn:hover { background: var(--surface-soft); }
+.menu-pop { position: absolute; top: 48px; right: 0; min-width: 220px; padding: 6px 0; border-radius: 14px; border: 1px solid var(--line); background: var(--bg-page); box-shadow: var(--shadow-menu); display: flex; flex-direction: column; }
+.menu-item { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 44px; padding: 0 14px; box-sizing: border-box; border: none; background: none; font: inherit; font-size: calc(14px * var(--fs)); color: var(--ink); text-decoration: none; cursor: pointer; text-align: left; }
+.menu-item:hover { background: var(--bg-screen); color: var(--ink); }
+.menu-item svg { flex: none; color: var(--brand); }
+.menu-st { margin-left: auto; padding-left: 12px; font-size: calc(12px * var(--fs)); color: var(--text-2); white-space: nowrap; }
+.menu-sub { padding: 2px 14px 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.menu-opt { min-height: 36px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-card); color: var(--ink); font: inherit; font-size: calc(13px * var(--fs)); cursor: pointer; }
+.menu-opt[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg-screen); }
+
+/* 卡片 */
+.card { background: var(--surface-card); border: 1px solid var(--line); border-radius: 20px; padding: 4px 16px; }
+.soft { background: var(--surface-soft); border: 1px solid var(--line); border-radius: 20px; padding: 18px 20px; display: flex; flex-direction: column; gap: 14px; }
+.tag { flex: none; padding: 4px 10px; border-radius: 12px; background: var(--fill-hover); font-size: calc(13px * var(--fs)); line-height: 1.4; color: var(--text-2); white-space: nowrap; }
+.disc { width: 48px; height: 48px; flex: none; border-radius: 50%; background: var(--fill-icon); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.thumb { flex: none; width: 96px; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; background: var(--fill-icon); color: var(--accent); display: flex; align-items: center; justify-content: center; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.thumb.lg { width: 112px; border-radius: 12px; }
+
+/* 每週目標圈 */
+.week { margin-top: 28px; padding: 0 8px; display: flex; align-items: center; gap: 20px; }
+.ring { position: relative; width: 96px; height: 96px; flex: none; }
+.ring svg { display: block; }
+.ring-track { fill: none; stroke: var(--line-strong); stroke-width: 2; }
+.ring-fill { fill: none; stroke: var(--breath); stroke-width: 4; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 48px 48px; transition: stroke-dasharray 1s linear; }
+.ring-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.ring-num > span { display: flex; align-items: baseline; gap: 4px; font-family: var(--font-mono); }
+.ring-num .n { font-size: 28px; font-weight: 300; line-height: 1; }
+.ring-num .d { font-size: 15px; color: var(--text-2); }
+.week-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.week-head { font-size: calc(22px * var(--fs)); font-weight: 500; line-height: 1.3; }
+.week-sub { font-size: calc(14px * var(--fs)); line-height: 1.5; color: var(--text-2); }
+
+/* 今天 */
+.today { margin: 28px 0 32px; }
+.today-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.today-title { font-size: calc(22px * var(--fs)); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; }
+.media { display: flex; align-items: center; gap: 14px; }
+.media-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sum-top { display: flex; flex-direction: column; gap: 6px; }
+.sum-line { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.sum-count { font-size: calc(15px * var(--fs)); color: var(--text-2); }
+.sum-rows { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.sum-row { display: flex; justify-content: space-between; gap: 12px; font-size: calc(14px * var(--fs)); line-height: 1.5; color: var(--text-2); }
+.sum-row span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.sum-row span:last-child { flex: none; white-space: nowrap; }
+
+/* 影片清單 */
+.list { display: flex; flex-direction: column; margin-bottom: 28px; }
+.vlist { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.vrow {
+  display: flex; align-items: center; gap: 16px; width: 100%;
+  padding: 18px 8px; border: none; border-bottom: 1px solid var(--line); background: none;
+  font: inherit; color: var(--ink); text-align: left; cursor: pointer;
+}
+.vrow:hover { background: var(--surface-soft); }
+.vtext { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.vname { font-size: calc(22px * var(--fs)); font-weight: 300; letter-spacing: .04em; line-height: 1.35; overflow-wrap: anywhere; }
+.vmeta { font-size: calc(13px * var(--fs)); line-height: 1.5; color: var(--text-2); }
+.foot { text-align: center; margin-top: 14px; }
+
+/* 表單與設定 */
+.sections { display: flex; flex-direction: column; gap: 28px; }
+.sec { display: flex; flex-direction: column; }
+.field {
+  width: 100%; height: 52px; box-sizing: border-box; padding: 0 16px;
+  border: 1px solid var(--line); border-radius: 14px; background: var(--surface-card);
+  font: inherit; font-size: max(16px, calc(15px * var(--fs))); color: var(--ink);
+}
+.field::placeholder { color: var(--text-2); opacity: .8; }
+.field:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.preview { position: relative; margin-top: 12px; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; background: var(--video-bg); }
+.preview img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.preview iframe, .video iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.stepper { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; }
+.step-ctl { display: flex; align-items: center; gap: 8px; }
+.step-btn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface-soft); color: var(--brand); font: inherit; font-size: 20px; line-height: 1; cursor: pointer; }
+.step-btn:hover { background: var(--fill-hover); }
+.step-val { font: 400 calc(18px * var(--fs)) var(--font-mono); min-width: 76px; text-align: center; }
+.opts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.opts.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.opts.days { grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.opt { min-height: 48px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface-card); color: var(--ink); font: inherit; font-size: calc(14px * var(--fs)); font-weight: 500; cursor: pointer; padding: 0 4px; }
+.opt[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg-screen); }
+.toggle { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 56px; padding: 0; border: none; background: none; font: inherit; font-size: calc(15px * var(--fs)); color: var(--ink); cursor: pointer; text-align: left; }
+.switch { position: relative; width: 46px; height: 26px; border-radius: 13px; background: var(--track); transition: background .2s; flex: none; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: var(--knob); box-shadow: var(--shadow-knob); transition: transform .2s; }
+.toggle[aria-checked="true"] .switch { background: var(--breath); }
+.toggle[aria-checked="true"] .switch::after { transform: translateX(20px); }
+.card.cal { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card.cal .cap { margin: -4px 4px 0; }
+.bottom {
+  position: sticky; bottom: 0; margin-top: auto;
+  padding-top: 28px; padding-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(var(--fade-0), var(--bg-screen) 30%);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.bottom .cap { margin: 0 4px; text-align: center; }
+
+/* 跟著做 */
+.run-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.run-title { font-size: calc(15px * var(--fs)); font-weight: 500; min-width: 0; overflow-wrap: anywhere; }
+.run-right { flex: none; font: 400 calc(15px * var(--fs)) var(--font-mono); color: var(--brand); }
+.bar { height: 3px; margin-top: 14px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar span { display: block; height: 100%; width: 0; background: var(--breath); transition: width 1s linear; }
+.video { position: relative; margin-top: 24px; aspect-ratio: 16 / 9; border-radius: 16px; overflow: hidden; background: var(--video-bg); }
+.video-msg { position: absolute; inset: 0; margin: 0; padding: 16px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; font-size: calc(14px * var(--fs)); line-height: 1.6; color: var(--video-ink); }
+.video-msg a { color: var(--video-ink); }
+.ext { margin-top: 24px; display: flex; align-items: center; gap: 14px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 20px; background: var(--surface-card); }
+.center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 160px; text-align: center; padding: 16px 0; }
+.phase { font-size: calc(20px * var(--fs)); font-weight: 500; }
+.big { font: 300 56px/1 var(--font-mono); margin: 10px 0; }
+.actions { display: flex; flex-direction: column; gap: 10px; margin-top: auto; padding-bottom: calc(36px + env(safe-area-inset-bottom, 0px)); }
+
+/* 完成 */
+.done-center { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 24px; text-align: center; padding: 12px 0 28px; }
+.hero { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.done-label { font-size: calc(13px * var(--fs)); letter-spacing: .3em; text-indent: .3em; color: var(--brand); }
+.done-val { font: 300 56px/1 var(--font-mono); }
+.soft.wide { align-self: stretch; text-align: left; }
+.dots { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); border-top: 1px solid var(--line); padding-top: 12px; }
+.dot-col { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.dot-l { font-size: calc(12px * var(--fs)); line-height: 1.6; color: var(--text-2); }
+.dot-l.today { color: var(--ink); font-weight: 500; }
+.dot { width: 10px; height: 10px; box-sizing: border-box; border-radius: 50%; border: 2px solid var(--line-strong); }
+.dot.on { background: var(--ink); border-color: var(--ink); }
+
+/* 底部面板 */
+.scrim { position: fixed; inset: 0; z-index: 5; background: var(--scrim); display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  width: 100%; max-width: 480px; max-height: 92%; overflow-y: auto; box-sizing: border-box;
+  background: var(--bg-page); border-radius: 24px 24px 0 0;
+  padding-top: 28px; padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  padding-left: max(24px, env(safe-area-inset-left, 0px));
+  padding-right: max(24px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 18px;
+}
+.sheet h3 { margin: 0; font-size: calc(20px * var(--fs)); font-weight: 700; line-height: 1.4; overflow-wrap: anywhere; }
+.sheet .url-cap { margin: -6px 0 0; overflow-wrap: anywhere; }
+.stack { display: flex; flex-direction: column; gap: 10px; }
+.confirm { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; font-size: calc(14px * var(--fs)); }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 8px; font-size: calc(15px * var(--fs)); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function () {
+  'use strict';
+
+  // ---------- 設定 ----------
+  // 雲端同步：和好好呼吸用同一個 Google Cloud 用戶端，資料放在雲端硬碟的應用程式專用資料夾，另存一個檔案
+  var GOOGLE_CLIENT_ID = '1015820070001-lsv79hbhorgdjl31s4nbltm3drict1r6.apps.googleusercontent.com';
+  var SYNC_SCOPE = 'https://www.googleapis.com/auth/drive.appdata';
+  var SYNC_FILE = 'haohao-move.json';
+  var LS_DATA = 'haohao-move', LS_SYNC = 'haohao-move-sync';
+  var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
+  var YT_HOST = 'https://www.youtube-nocookie.com';
+
+  var TYPES = [
+    ['stretch', '伸展', 'M8 24L24 8M14 8H24V18M8 14V24H18'],
+    ['strength', '肌力', 'M5 12V20M9 8V24M9 16H23M23 8V24M27 12V20'],
+    ['cardio', '有氧', 'M3 17H10L13 8L18.5 25L22 17H29'],
+    ['yoga', '瑜伽', 'M16 6C12 11 12 19 16 24C20 19 20 11 16 6ZM16 24C10.5 24 5.5 20 4 13C8.5 13 12 15.5 13.6 19.5M16 24C21.5 24 26.5 20 28 13C23.5 13 20 15.5 18.4 19.5'],
+    ['dance', '舞蹈', 'M13 23a3.5 3.5 0 1 1-3.5-3.5A3.5 3.5 0 0 1 13 23V8l13-3v15a3.5 3.5 0 1 1-3.5-3.5A3.5 3.5 0 0 1 26 20'],
+    ['other', '其他', 'M6 16a10 10 0 1 0 20 0a10 10 0 1 0-20 0M16 10.5V16l3.5 3.5']
+  ];
+  var TYPE_KEYS = TYPES.map(function (t) { return t[0]; });
+  var DAY_LABELS = ['一', '二', '三', '四', '五', '六', '日'];
+  var BYDAY = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+  var RING_C = 2 * Math.PI * 42;
+  var UI = {
+    bell: ['M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2.5h-15L6 16.5ZM10 21.5h4', 1.8],
+    play: ['M8.5 5.5v13l10.5-6.5-10.5-6.5Z', 1.8],
+    cal: ['M4 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2ZM4 10h16M8 3v4M16 3v4', 1.8],
+    more: ['M5 12h.01M12 12h.01M19 12h.01', 3],
+    moon: ['M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z', 1.8],
+    sun: ['M12 8a4 4 0 1 0 0 8a4 4 0 1 0 0-8M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4', 1.8],
+    cloud: ['M7 18.5h10.5a4 4 0 0 0 .6-7.96A5.5 5.5 0 0 0 7.4 9.1 4.7 4.7 0 0 0 7 18.5Z', 1.8],
+    size: ['M2.5 19L8 5.5 13.5 19M4.7 14h6.6M15.5 19l3-7.5 3 7.5M16.7 16.2h3.6', 1.8],
+    phone: ['M7 3h10a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2ZM12 8v7M8.8 11.8 12 15l3.2-3.2', 1.8],
+    wind: ['M4 9h10a3 3 0 1 0-3-3M4 13h14a3 3 0 1 1-3 3M4 17h6', 1.8],
+    download: ['M12 4v10.5M7.8 10.6 12 14.8l4.2-4.2M5 16.5v2A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5v-2', 1.8]
+  };
+
+  var $app = document.getElementById('app');
+  function $(id) { return document.getElementById(id); }
+
+  // ---------- 小工具 ----------
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function rid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function mmss(sec) { sec = Math.max(0, Math.ceil(sec)); var h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), s = sec % 60; return (h ? h + ':' + pad(m) : m) + ':' + pad(s); }
+  function isoDay(d) { return ((d.getDay() + 6) % 7) + 1; }
+  function hashStr(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0; return h; }
+  function safeUrl(u) { return typeof u === 'string' && /^https:\/\/\S+$/.test(u) ? u : ''; }
+  function validYt(id) { return typeof id === 'string' && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : ''; }
+  function canon(v) { return Array.isArray(v) ? v.map(canon) : v && typeof v === 'object' ? Object.keys(v).sort().reduce(function (o, k) { o[k] = canon(v[k]); return o; }, {}) : v; }
+  function same(a, b) { return JSON.stringify(canon(a)) === JSON.stringify(canon(b)); }
+  function daysText(days) {
+    if (!days.length) return '沒有提醒日';
+    if (days.length === 7) return '每天';
+    return '每週' + days.map(function (d) { return DAY_LABELS[d - 1]; }).join('、');
+  }
+  function typeEntry(t) { return TYPES.find(function (x) { return x[0] === t; }) || TYPES[TYPES.length - 1]; }
+  function typeName(t) { return typeEntry(t)[1]; }
+  function typeIcon(t) {
+    return '<svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><path d="' + typeEntry(t)[2] + '" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  function uiIcon(name, size) {
+    size = size || 18;
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" aria-hidden="true"><path d="' + UI[name][0] + '" fill="none" stroke="currentColor" stroke-width="' + UI[name][1] + '" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  }
+  function disc(t) { return '<span class="disc">' + typeIcon(t) + '</span>'; }
+  function thumb(v, lg) {
+    if (v.yt) return '<span class="thumb' + (lg ? ' lg' : '') + '"><img alt="" loading="lazy" onerror="this.remove()" src="https://i.ytimg.com/vi/' + v.yt + '/mqdefault.jpg"></span>';
+    return disc(v.type);
+  }
+  function nextOccurrence(days, time, from) {
+    from = from || new Date();
+    if (!days.length) return null;
+    var hm = time.split(':').map(Number);
+    for (var i = 0; i < 8; i++) {
+      var d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i, hm[0], hm[1], 0, 0);
+      if (days.indexOf(isoDay(d)) >= 0 && d > from) return d;
+    }
+    return null;
+  }
+  function whenLabel(d) {
+    var now = new Date();
+    var diff = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000);
+    var day = diff === 0 ? '今天' : diff === 1 ? '明天' : '週' + DAY_LABELS[isoDay(d) - 1];
+    return day + ' <span class="mono">' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + '</span>';
+  }
+
+  // ---------- 網址 ----------
+  function parseYouTube(raw) {
+    var u;
+    try { u = new URL(raw.trim()); } catch (e) { return null; }
+    if (u.protocol !== 'https:' && u.protocol !== 'http:') return null;
+    var host = u.hostname.replace(/^(www|m|music)\./, ''), id = null, m;
+    if (host === 'youtu.be') id = u.pathname.slice(1).split('/')[0];
+    else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+      if (u.pathname === '/watch') id = u.searchParams.get('v');
+      else if ((m = u.pathname.match(/^\/(shorts|embed|live|v)\/([^/?#]+)/))) id = m[2];
+    }
+    id = validYt(id);
+    return id ? { id: id, url: 'https://www.youtube.com/watch?v=' + id } : null;
+  }
+  function generalUrl(t) {
+    try { var u = new URL(t.trim()); if (u.protocol === 'http:' || u.protocol === 'https:') { u.protocol = 'https:'; return u.href; } } catch (e) {}
+    return '';
+  }
+  function urlStatus(raw) {
+    var t = (raw || '').trim();
+    if (!t) return { ok: false, empty: true, msg: '在 YouTube 按「分享」，再按「複製連結」。', tone: '' };
+    var yt = parseYouTube(t);
+    if (yt) return { ok: true, yt: yt.id, url: yt.url, msg: '找到 YouTube 影片。', tone: 'ok' };
+    var g = generalUrl(t);
+    if (g) return { ok: true, yt: '', url: g, msg: '不是 YouTube 影片網址，開始時會直接打開這個網址。', tone: '' };
+    return { ok: false, msg: '請貼上完整網址，例如 https://youtu.be/…', tone: 'err' };
+  }
+
+  // ---------- 資料：存在這台裝置，登入後和雲端硬碟裡的合併 ----------
+  function normVideo(v) {
+    v = v && typeof v === 'object' ? v : {};
+    var minutes = Math.round(Number(v.minutes)), order = Number(v.order);
+    return {
+      title: typeof v.title === 'string' && v.title.trim() ? v.title.trim().slice(0, 80) : '未命名影片',
+      url: safeUrl(v.url),
+      yt: validYt(v.yt),
+      type: TYPE_KEYS.indexOf(v.type) >= 0 ? v.type : 'other',
+      minutes: isFinite(minutes) && minutes >= 1 && minutes <= 300 ? minutes : 15,
+      inRotation: v.inRotation !== false,
+      order: isFinite(order) ? order : 0,
+      createdAt: Number(v.createdAt) || 0,
+      at: Number(v.at) || 0,
+      del: v.del === true
+    };
+  }
+  function okId(k) { return /^[A-Za-z0-9_-]{1,40}$/.test(k); }
+  function normVideos(o) {
+    var out = {};
+    if (o && typeof o === 'object') Object.keys(o).forEach(function (k) { if (okId(k)) out[k] = normVideo(o[k]); });
+    return out;
+  }
+  function normLog(o) {
+    var out = {};
+    if (o && typeof o === 'object') Object.keys(o).forEach(function (k) {
+      var e = o[k];
+      if (!okId(k) || !e || typeof e.date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.date)) return;
+      out[k] = {
+        date: e.date, at: Number(e.at) || 0,
+        videoId: typeof e.videoId === 'string' ? e.videoId.slice(0, 40) : '',
+        title: typeof e.title === 'string' ? e.title.slice(0, 80) : '',
+        minutes: Math.max(0, Math.min(600, Math.round(Number(e.minutes)) || 0))
+      };
+    });
+    return out;
+  }
+  function normDays(a) {
+    if (!Array.isArray(a)) return null;
+    var out = [];
+    a.forEach(function (n) { n = Number(n); if (n >= 1 && n <= 7 && Math.floor(n) === n && out.indexOf(n) < 0) out.push(n); });
+    return out.sort(function (x, y) { return x - y; });
+  }
+  function okTime(t) { return typeof t === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(t); }
+  function normSettings(s) {
+    s = s && typeof s === 'object' ? s : {};
+    var goal = Math.round(Number(s.goal)), cal = null;
+    if (s.cal && typeof s.cal === 'object' && okTime(s.cal.time)) cal = { days: normDays(s.cal.days) || [], time: s.cal.time };
+    return {
+      goal: goal >= 1 && goal <= 7 ? goal : 3,
+      days: normDays(s.days) || [1, 3, 5],
+      time: okTime(s.time) ? s.time : '07:30',
+      order: s.order === 'random' ? 'random' : 'rotate',
+      cal: cal,
+      at: Number(s.at) || 0
+    };
+  }
+  function blank() {
+    var ui = { theme: 'light', fsz: 0 };
+    try {
+      var o = JSON.parse(localStorage.getItem('haohao-breath-settings')) || {};
+      if (o.theme === 'dark') ui.theme = 'dark';
+      var f = Number(o.fsz); if (f === 1 || f === 2) ui.fsz = f;
+    } catch (e) {}
+    return { v: 1, edited: 0, videos: {}, log: {}, settings: normSettings({}), ui: ui };
+  }
+  function load() {
+    try {
+      var d = JSON.parse(localStorage.getItem(LS_DATA));
+      if (d && d.v === 1) {
+        var ui = d.ui && typeof d.ui === 'object' ? d.ui : {};
+        return {
+          v: 1, edited: Number(d.edited) || 0,
+          videos: normVideos(d.videos), log: normLog(d.log), settings: normSettings(d.settings),
+          ui: { theme: ui.theme === 'dark' ? 'dark' : 'light', fsz: [0, 1, 2].indexOf(Number(ui.fsz)) >= 0 ? Number(ui.fsz) : 0 }
+        };
+      }
+    } catch (e) {}
+    return blank();
+  }
+  var data = load(), canStore = true;
+  function persist() {
+    try { localStorage.setItem(LS_DATA, JSON.stringify(data)); canStore = true; } catch (e) { canStore = false; }
+  }
+  function changed() { data.edited = Date.now(); persist(); syncSoon(); }
+  function hasSettings() { return data.settings.at > 0; }
+
+  function videoList() {
+    return Object.keys(data.videos).map(function (id) { var v = data.videos[id]; return Object.assign({ id: id }, v); })
+      .filter(function (v) { return !v.del; })
+      .sort(function (a, b) { return a.order - b.order || a.createdAt - b.createdAt; });
+  }
+  function getVideo(id) { var v = data.videos[id]; return v && !v.del ? Object.assign({ id: id }, v) : null; }
+  function rotationList() { return videoList().filter(function (v) { return v.inRotation; }); }
+  function entries() {
+    return Object.keys(data.log).map(function (k) { return data.log[k]; }).sort(function (a, b) { return a.at - b.at; });
+  }
+  function weekDates() {
+    var now = new Date(), s = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7)), out = [];
+    for (var i = 0; i < 7; i++) out.push(ymd(new Date(s.getFullYear(), s.getMonth(), s.getDate() + i)));
+    return out;
+  }
+  function weekStats() {
+    var days = weekDates(), doneDays = {};
+    var es = entries().filter(function (e) { return e.date >= days[0] && e.date <= days[6]; });
+    es.forEach(function (e) { doneDays[e.date] = true; });
+    return { count: es.length, minutes: es.reduce(function (a, e) { return a + e.minutes; }, 0), doneDays: doneDays, days: days };
+  }
+  function todayEntries() { var t = ymd(new Date()); return entries().filter(function (e) { return e.date === t; }); }
+  function todayPick() {
+    var list = rotationList();
+    if (!list.length) return null;
+    var base;
+    if (data.settings.order === 'random') base = hashStr(ymd(new Date())) % list.length;
+    else {
+      var es = entries(), last = es.length ? es[es.length - 1].videoId : '';
+      var i = list.findIndex(function (v) { return v.id === last; });
+      base = i < 0 ? 0 : (i + 1) % list.length;
+    }
+    return list[(base + state.skip) % list.length];
+  }
+
+  // ---------- 畫面狀態 ----------
+  var state = {
+    screen: 'home', menu: false, panel: null, sheet: null, confirmDelete: false,
+    skip: 0, notice: null, form: null, play: null, lastDone: null, rem: null, remSaved: false, menuSub: null
+  };
+
+  // ---------- 雲端同步（和好好呼吸同一套登入） ----------
+  var sync = null, syncBusy = false, syncAgain = false, syncErr = '', syncTimer = 0, tokenClient = null, gisP = null;
+  var syncOn = !!GOOGLE_CLIENT_ID;
+  function tokenOk() { return !!(sync && sync.token && sync.exp > Date.now() + 60000); }
+  function syncDirty() { return !!(sync && data.edited > (sync.at || 0)); }
+  function saveLogin() { try { if (sync) localStorage.setItem(LS_SYNC, JSON.stringify(sync)); else localStorage.removeItem(LS_SYNC); } catch (e) {} }
+  function syncSoon() { if (sync && tokenOk()) { clearTimeout(syncTimer); syncTimer = setTimeout(syncNow, 1500); } }
+  function gfetch(url, opt) {
+    opt = opt || {};
+    opt.headers = Object.assign({}, opt.headers, { Authorization: 'Bearer ' + sync.token });
+    return fetch(url, opt).then(function (r) {
+      if (r.status === 401) { sync.token = null; sync.exp = 0; saveLogin(); throw { code: 'auth' }; }
+      if (!r.ok) throw { code: 'http', status: r.status };
+      return r;
+    });
+  }
+  function findFile() {
+    if (sync.fileId) return Promise.resolve(sync.fileId);
+    var q = encodeURIComponent("name='" + SYNC_FILE + "' and trashed=false");
+    return gfetch(DRIVE + '/files?spaces=appDataFolder&orderBy=modifiedTime%20desc&fields=files(id)&q=' + q)
+      .then(function (r) { return r.json(); }).then(function (j) { return j.files && j.files[0] ? j.files[0].id : null; });
+  }
+  function readRemote(id) {
+    if (!id) return Promise.resolve(null);
+    return gfetch(DRIVE + '/files/' + id + '?alt=media').then(function (r) { return r.json(); }).catch(function (e) {
+      if (e && e.status === 404) { sync.fileId = null; return findFile().then(function (id2) { return id2 && id2 !== id ? readRemote(id2) : null; }); }
+      throw e;
+    });
+  }
+  function writeRemote(id, body) {
+    var payload = JSON.stringify(body);
+    if (id) return gfetch(UPLOAD + '/' + id + '?uploadType=media', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: payload }).then(function () { return id; });
+    var b = 'hhm' + Date.now();
+    var multi = '--' + b + '\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n' + JSON.stringify({ name: SYNC_FILE, parents: ['appDataFolder'] }) +
+      '\r\n--' + b + '\r\nContent-Type: application/json\r\n\r\n' + payload + '\r\n--' + b + '--';
+    return gfetch(UPLOAD + '?uploadType=multipart&fields=id', { method: 'POST', headers: { 'Content-Type': 'multipart/related; boundary=' + b }, body: multi })
+      .then(function (r) { return r.json(); }).then(function (j) { return j.id; });
+  }
+  // 合併：影片一支一支比修改時間（刪掉的也記著時間，不會被別台加回來）；紀錄取聯集；設定取比較新的
+  function mergeData(remote) {
+    var rv = normVideos(remote && remote.videos), rl = normLog(remote && remote.log);
+    var rs = remote && remote.settings ? normSettings(remote.settings) : null;
+    var videos = {}, ids = Object.keys(data.videos).concat(Object.keys(rv));
+    ids.forEach(function (id) {
+      var a = data.videos[id], b = rv[id];
+      videos[id] = !a ? b : !b ? a : (b.at > a.at ? b : a);
+    });
+    return { videos: videos, log: Object.assign({}, rl, data.log), settings: rs && rs.at > data.settings.at ? rs : data.settings };
+  }
+  function syncNow() {
+    if (!syncOn || !sync || !tokenOk()) { paintSync(); return Promise.resolve(); }
+    if (syncBusy || state.screen === 'play') { syncAgain = true; return Promise.resolve(); }
+    syncBusy = true; syncErr = ''; paintSync();
+    var t0 = Date.now(), id = null;
+    return findFile().then(function (fid) { id = fid; return readRemote(fid); }).then(function (remote) {
+      if (state.screen === 'play') throw { code: 'later' };
+      if (remote && remote.app !== 'haohao-move') remote = null;
+      var m = mergeData(remote);
+      if (!same(m, { videos: data.videos, log: data.log, settings: data.settings })) {
+        data.videos = m.videos; data.log = m.log; data.settings = m.settings;
+        persist();
+        refresh();
+      }
+      var theirs = remote ? { videos: normVideos(remote.videos), log: normLog(remote.log), settings: remote.settings ? normSettings(remote.settings) : null } : null;
+      if (theirs && same(theirs, m)) return id;
+      return writeRemote(id, { app: 'haohao-move', v: 1, at: Date.now(), videos: m.videos, log: m.log, settings: m.settings });
+    }).then(function (fid) {
+      if (!sync) return;
+      sync.fileId = fid || sync.fileId;
+      sync.at = t0;
+      saveLogin();
+    }).catch(function (e) {
+      if (e && e.code === 'later') { syncAgain = true; return; }
+      syncErr = e && e.code === 'auth' ? 'auth' : 'fail';
+    }).then(function () {
+      syncBusy = false;
+      paintSync();
+      if (syncAgain && state.screen !== 'play') { syncAgain = false; syncNow(); }
+    });
+  }
+  function loadGis() {
+    if (gisP) return gisP;
+    gisP = new Promise(function (res, rej) {
+      if (gisReady()) { res(); return; }
+      var sc = document.createElement('script');
+      sc.src = 'https://accounts.google.com/gsi/client';
+      sc.async = true;
+      sc.onload = function () { res(); };
+      sc.onerror = function () { gisP = null; rej({ code: 'gis' }); };
+      document.head.appendChild(sc);
+    });
+    return gisP;
+  }
+  function gisReady() { return !!(window.google && google.accounts && google.accounts.oauth2); }
+  // 一定要在按按鈕的當下呼叫，不然 Google 的視窗會被瀏覽器擋掉
+  function askToken(done) {
+    if (!gisReady()) { loadGis().catch(function () {}); syncErr = 'loading'; paintSync(); return; }
+    if (!tokenClient) tokenClient = google.accounts.oauth2.initTokenClient({ client_id: GOOGLE_CLIENT_ID, scope: SYNC_SCOPE, callback: function () {} });
+    tokenClient.callback = function (r) {
+      if (r && r.access_token && google.accounts.oauth2.hasGrantedAllScopes(r, SYNC_SCOPE)) done(r);
+      else { syncErr = 'denied'; paintSync(); }
+    };
+    tokenClient.error_callback = function () { syncErr = 'closed'; paintSync(); };
+    var opt = { prompt: '' };
+    if (sync && sync.email) opt.login_hint = sync.email;
+    tokenClient.requestAccessToken(opt);
+  }
+  function takeToken(r) {
+    sync = sync || {};
+    sync.token = r.access_token;
+    sync.exp = Date.now() + (Number(r.expires_in) || 3600) * 1000;
+    syncErr = '';
+    saveLogin();
+    paintSync();
+  }
+  function inApp() { return /Line\/|FBAN|FBAV|Instagram|MicroMessenger/i.test(navigator.userAgent || ''); }
+  function signIn() {
+    if (inApp()) { paintSync(); return; }
+    askToken(function (r) {
+      takeToken(r);
+      gfetch(DRIVE + '/about?fields=user(emailAddress)').then(function (x) { return x.json(); }).then(function (j) {
+        if (sync && j.user && j.user.emailAddress) { sync.email = j.user.emailAddress; saveLogin(); }
+      }).catch(function () {}).then(function () { syncNow(); });
+    });
+  }
+  function signOut() { sync = null; syncErr = ''; saveLogin(); paintSync(); }
+  function tapSync() {
+    if (!sync) { signIn(); return; }
+    if (tokenOk()) { syncNow(); return; }
+    if (inApp()) { paintSync(); return; }
+    askToken(function (r) { takeToken(r); syncNow(); });
+  }
+  function syncState() {
+    return !sync ? 'off' : syncBusy ? 'busy' : syncErr === 'fail' ? 'fail' : (!tokenOk() || !sync.at || syncDirty()) ? 'tap' : 'ok';
+  }
+  function agoLabel(t) {
+    var s = Math.round((Date.now() - t) / 1000);
+    if (s < 60) return '剛剛';
+    if (s < 3600) return Math.floor(s / 60) + ' 分鐘前';
+    if (s < 86400) return Math.floor(s / 3600) + ' 小時前';
+    var d = new Date(t);
+    return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ' ';
+  }
+  function paintSync() { if (state.screen === 'home' && (state.menu || state.panel === 'sync')) mount(); }
+
+  // ---------- 日曆提醒 ----------
+  function pageUrl() { return location.origin + location.pathname; }
+  function calWhen(s) { var st = nextOccurrence(s.days, s.time); return st ? { st: st, en: new Date(st.getTime() + 30 * 60000) } : null; }
+  function stamp(d) { return d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + 'T' + pad(d.getHours()) + pad(d.getMinutes()) + '00'; }
+  function rrule(s) { return 'RRULE:FREQ=WEEKLY;BYDAY=' + s.days.map(function (d) { return BYDAY[d - 1]; }).join(','); }
+  function gcalUrl(s) {
+    var w = calWhen(s), tz = '';
+    if (!w) return '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+      '&text=' + encodeURIComponent('好好運動 · 該動一動了') +
+      '&dates=' + stamp(w.st) + '/' + stamp(w.en) +
+      (tz ? '&ctz=' + encodeURIComponent(tz) : '') +
+      '&recur=' + encodeURIComponent(rrule(s)) +
+      '&details=' + encodeURIComponent('打開好好運動，挑一支影片跟著做：\n' + pageUrl());
+  }
+  function icsEsc(t) { return t.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+  function icsText(s) {
+    var w = calWhen(s), now = new Date();
+    var utc = now.getUTCFullYear() + pad(now.getUTCMonth() + 1) + pad(now.getUTCDate()) + 'T' + pad(now.getUTCHours()) + pad(now.getUTCMinutes()) + pad(now.getUTCSeconds()) + 'Z';
+    return [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//haohaobreath//move//ZH', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      'UID:haohao-move-' + rid() + '@haohaobreath.com',
+      'DTSTAMP:' + utc,
+      'DTSTART:' + stamp(w.st),
+      'DURATION:PT30M',
+      rrule(s),
+      'SUMMARY:' + icsEsc('好好運動 · 該動一動了'),
+      'DESCRIPTION:' + icsEsc('打開好好運動，挑一支影片跟著做：\n' + pageUrl()),
+      'URL:' + pageUrl(),
+      'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' + icsEsc('該動一動了'), 'TRIGGER:PT0M', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR', ''
+    ].join('\r\n');
+  }
+  function downloadIcs() {
+    var s = data.settings;
+    if (!s.days.length) return;
+    var blob = new Blob([icsText(s)], { type: 'text/calendar;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'haohao-move.ics';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+    markCal();
+  }
+  function markCal() {
+    var s = data.settings;
+    s.cal = { days: s.days.slice(), time: s.time };
+    s.at = Date.now();
+    changed();
+    setTimeout(function () { if (state.screen === 'reminders') mount(); }, 0);
+  }
+
+  // ---------- 畫面 ----------
+  function noticeHTML() {
+    var out = '';
+    if (!canStore && state.screen === 'home') out += '<p class="notice">這個瀏覽器沒辦法存檔（可能是無痕模式），關掉之後紀錄會不見。</p>';
+    if (state.notice) out += '<p class="notice" role="status">' + esc(state.notice.text) + '</p>';
+    return out;
+  }
+  function startBtn(v, cls, label) {
+    if (!v.yt && safeUrl(v.url)) return '<a class="' + cls + '" href="' + esc(v.url) + '" target="_blank" rel="noopener" data-act="start" data-id="' + esc(v.id) + '">' + label + '</a>';
+    return '<button class="' + cls + '" data-act="start" data-id="' + esc(v.id) + '">' + label + '</button>';
+  }
+
+  function homeHTML() {
+    var s = data.settings, wk = weekStats(), goal = s.goal, done = wk.count;
+    var arc = Math.min(done / goal, 1) * RING_C;
+    var head = done >= goal ? '本週達標' : '還差 ' + (goal - done) + ' 次';
+    var sub = wk.minutes > 0 ? '本週 ' + wk.minutes + ' 分鐘' : '這週還沒開始';
+    var pill = hasSettings() && s.days.length ? daysText(s.days) + ' · <span class="mono">' + s.time + '</span> 提醒' : '設定提醒時間';
+    var vids = videoList();
+    return '<main class="screen home">' +
+      menuHTML() +
+      '<h1 class="wordmark">好好運動</h1>' +
+      '<button class="pill" data-act="reminders">' + uiIcon('bell', 16) + '<span>' + pill + '</span></button>' +
+      noticeHTML() +
+      '<section class="week" aria-label="本週目標">' +
+        '<div class="ring"><svg width="96" height="96" viewBox="0 0 96 96" role="img" aria-label="本週完成 ' + done + ' 次，目標 ' + goal + ' 次">' +
+          '<circle cx="48" cy="48" r="42" class="ring-track"/>' +
+          (arc > 0 ? '<circle cx="48" cy="48" r="42" class="ring-fill" stroke-dasharray="' + arc.toFixed(1) + ' ' + RING_C.toFixed(1) + '"/>' : '') +
+        '</svg><div class="ring-num" aria-hidden="true"><span><span class="n">' + done + '</span><span class="d">/ ' + goal + '</span></span></div></div>' +
+        '<div class="week-text"><span class="label">本週目標 ' + goal + ' 次</span><span class="week-head">' + head + '</span><span class="week-sub">' + sub + '</span></div>' +
+      '</section>' +
+      todayHTML(vids) +
+      listHTML(vids) +
+      (vids.length ? '<button class="btn btn-secondary" data-act="add">加入影片</button>' : '') +
+      '<p class="cap foot">紀錄存在這台裝置；登入 Google 後會同步到你自己的雲端硬碟。</p>' +
+      '</main>' + overlayHTML();
+  }
+  function todayHTML(vids) {
+    if (!vids.length) {
+      return '<section class="soft today"><span class="today-title">還沒有影片</span>' +
+        '<p class="desc">貼上一支喜歡的 YouTube 運動影片，之後每天從這裡開始。</p>' +
+        '<button class="btn btn-primary" data-act="add">加入第一支影片</button></section>';
+    }
+    var te = todayEntries(), pick = todayPick(), s = data.settings;
+    if (te.length) {
+      var mins = te.reduce(function (a, e) { return a + e.minutes; }, 0);
+      return '<section class="soft today">' +
+        '<div class="sum-top"><span class="eyebrow">今天</span><div class="sum-line"><span class="today-title">' + mins + ' 分鐘</span><span class="sum-count">完成 ' + te.length + ' 次</span></div></div>' +
+        '<div class="sum-rows">' + te.map(function (e) { return '<div class="sum-row"><span>' + esc(e.title) + '</span><span>' + e.minutes + ' 分鐘</span></div>'; }).join('') + '</div>' +
+        (pick ? startBtn(pick, 'btn btn-secondary btn-md', '再做一支 · ' + esc(pick.title)) : '') +
+        '</section>';
+    }
+    if (!pick) return '<section class="soft today"><span class="eyebrow">今天</span><p class="desc">沒有影片排進輪流。點一支影片，選「編輯」，打開「排進每天輪流」。</p></section>';
+    var isDay = hasSettings() && s.days.indexOf(isoDay(new Date())) >= 0;
+    return '<section class="soft today">' +
+      '<div class="today-top"><span class="eyebrow">今天</span>' + (isDay ? '<span class="tag">運動日</span>' : '') + '</div>' +
+      '<div class="media">' + thumb(pick, true) + '<div class="media-text"><span class="today-title">' + esc(pick.title) + '</span><span class="desc">' + pick.minutes + ' 分鐘 · ' + typeName(pick.type) + '</span></div></div>' +
+      startBtn(pick, 'btn btn-primary', '開始 · ' + pick.minutes + ' 分鐘') +
+      (rotationList().length > 1 ? '<button class="text-btn" data-act="skip">換一支</button>' : '') +
+      '</section>';
+  }
+  function listHTML(vids) {
+    if (!vids.length) return '';
+    return '<section class="list"><div class="label-row"><span class="label">我的影片</span><span class="label-val">' + vids.length + ' 支</span></div><div class="vlist">' +
+      vids.map(function (v) {
+        return '<button class="vrow" data-act="open" data-id="' + esc(v.id) + '">' + thumb(v) +
+          '<span class="vtext"><span class="vname">' + esc(v.title) + '</span><span class="vmeta">' + v.minutes + ' 分鐘 · ' + typeName(v.type) + (v.inRotation ? '' : ' · 不排進輪流') + '</span></span></button>';
+      }).join('') + '</div></section>';
+  }
+  function menuHTML() {
+    var st = syncState();
+    var stText = { off: '', busy: '同步中', fail: '同步失敗', tap: '還沒同步', ok: '已同步' }[st];
+    var dark = data.ui.theme === 'dark';
+    var standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+    return '<div class="menu" id="menu"><button class="menu-btn" data-act="menu" aria-label="選單" aria-expanded="' + state.menu + '">' + uiIcon('more', 20) + '</button>' +
+      (state.menu ? '<div class="menu-pop">' +
+        (syncOn ? '<button class="menu-item" data-act="panel" data-v="sync">' + uiIcon('cloud') + '<span>雲端同步</span>' + (stText ? '<span class="menu-st">' + stText + '</span>' : '') + '</button>' : '') +
+        '<button class="menu-item" data-act="theme">' + uiIcon(dark ? 'sun' : 'moon') + '<span>' + (dark ? '淺色模式' : '深色模式') + '</span></button>' +
+        '<button class="menu-item" data-act="menu-sub" data-v="fsz" aria-expanded="' + (state.menuSub === 'fsz') + '">' + uiIcon('size') + '<span>字體大小</span><span class="menu-st">' + ['標準', '大', '特大'][data.ui.fsz] + '</span></button>' +
+        (state.menuSub === 'fsz' ? '<div class="menu-sub">' + ['標準', '大', '特大'].map(function (l, i) { return '<button class="menu-opt" data-act="fsz" data-v="' + i + '" aria-pressed="' + (data.ui.fsz === i) + '">' + l + '</button>'; }).join('') + '</div>' : '') +
+        (standalone ? '' : '<button class="menu-item" data-act="panel" data-v="install">' + uiIcon('phone') + '<span>加到手機桌面</span></button>') +
+        '<a class="menu-item" href="../">' + uiIcon('wind') + '<span>好好呼吸</span></a>' +
+      '</div>' : '') + '</div>';
+  }
+  function overlayHTML() {
+    if (state.sheet) return videoSheetHTML();
+    if (state.panel === 'sync') return syncSheetHTML();
+    if (state.panel === 'install') return installSheetHTML();
+    return '';
+  }
+  function sheetWrap(inner, label) {
+    return '<div class="scrim" data-act="close"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="' + label + '" data-stop>' + inner +
+      '<button class="text-btn" data-act="close-btn">關閉</button></div></div>';
+  }
+  function videoSheetHTML() {
+    var v = getVideo(state.sheet);
+    if (!v) return '';
+    var u = safeUrl(v.url);
+    return sheetWrap(
+      '<div class="media">' + thumb(v, true) + '<div class="media-text"><h3 id="sheet-t">' + esc(v.title) + '</h3><span class="desc">' + v.minutes + ' 分鐘 · ' + typeName(v.type) + '</span></div></div>' +
+      (u ? '<p class="cap url-cap">' + esc(u) + '</p>' : '') +
+      '<div class="stack">' + startBtn(v, 'btn btn-primary', '開始 · ' + v.minutes + ' 分鐘') +
+      '<button class="btn btn-secondary" data-act="edit" data-id="' + esc(v.id) + '">編輯</button>' +
+      (state.confirmDelete
+        ? '<div class="confirm"><span>確定刪除這支影片？做過的紀錄會保留。</span><div class="two"><button class="btn btn-outline btn-md" data-act="cancel-delete">取消</button><button class="btn btn-secondary btn-md" data-act="delete" data-id="' + esc(v.id) + '">刪除</button></div></div>'
+        : '<button class="btn btn-outline" data-act="ask-delete">刪除</button>') +
+      '</div>', 'sheet-t');
+  }
+  function syncSheetHTML() {
+    var st = syncState(), txt;
+    if (!sync) {
+      txt = syncErr === 'loading' ? '正在載入 Google 登入，請再按一次。'
+        : syncErr === 'denied' ? '沒有拿到存取雲端硬碟的允許，所以還沒開始同步。可以再按一次登入。'
+        : syncErr === 'closed' ? 'Google 登入的視窗沒有打開，或被關掉了。請再按一次；如果一直沒出現，請確認瀏覽器沒有封鎖彈出式視窗。'
+        : '用 Google 帳號登入後，這台裝置的影片和紀錄會和你其他裝置的合在一起，換手機、用電腦都看得到同一份。';
+    } else {
+      txt = '用 <b>' + esc(sync.email || '你的 Google 帳號') + '</b> 同步中<br>' + (
+        st === 'busy' ? '同步中…'
+        : st === 'fail' ? '這次沒有同步成功，可能是網路不穩，按「立即同步」再試一次。'
+        : syncErr === 'loading' ? '正在載入 Google 登入，請再按一次。'
+        : syncErr === 'closed' && !tokenOk() ? 'Google 登入的視窗沒有打開，或被關掉了。請再按一次。'
+        : !tokenOk() ? '登入已經過了一段時間，按「立即同步」重新連上（不用再輸入密碼）。'
+        : syncDirty() ? '有新的紀錄，幾秒後會自動存上去。'
+        : sync.at ? agoLabel(sync.at) + '存好' : '準備中…');
+    }
+    var ia = inApp() && (!sync || !tokenOk());
+    return sheetWrap(
+      '<h3 id="sync-t">雲端同步</h3><p class="desc" role="status">' + txt + '</p>' +
+      (ia ? '<p class="desc">這個 App 裡的瀏覽器不能登入 Google。請點右上角的選單，選「用瀏覽器開啟」，改用 Chrome 或 Safari 打開。</p>'
+          : '<button class="btn btn-primary" data-act="sync-go"' + (syncBusy ? ' disabled' : '') + '>' + (!sync ? '用 Google 登入同步' : syncBusy ? '同步中…' : '立即同步') + '</button>') +
+      (sync ? '<button class="text-btn" data-act="sync-out">登出</button>' : '') +
+      '<p class="cap" style="margin:0">同步的有影片清單、運動紀錄和提醒設定；深色模式和字體大小只留在這台裝置。資料存在你自己的 Google 雲端硬碟裡一個隱藏的專用資料夾，別人（包括做這個網站的人）都看不到。</p>',
+      'sync-t');
+  }
+  var installEvt = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); installEvt = e; });
+  function installSheetHTML() {
+    var ua = navigator.userAgent || '', ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    var how = ios
+      ? '<ol class="steps"><li>用 Safari 打開這一頁。</li><li>按下方的「分享」按鈕。</li><li>選「加入主畫面」。</li></ol>'
+      : /Android/.test(ua)
+        ? '<ol class="steps"><li>用 Chrome 打開這一頁。</li><li>按右上角的「⋮」。</li><li>選「加到主畫面」或「安裝應用程式」。</li></ol>'
+        : '<ol class="steps"><li>用 Chrome 或 Edge 打開這一頁。</li><li>按網址列右邊的安裝圖示。</li></ol>';
+    return sheetWrap(
+      '<h3 id="inst-t">加到手機桌面</h3><p class="desc">桌面上會多一個「好好運動」，點一下就打開，像一般的 App。</p>' +
+      (installEvt ? '<button class="btn btn-primary" data-act="install">加到桌面</button>' : how) +
+      (/Android/.test(ua) ? '<p class="cap" style="margin:0">加到桌面後，在 YouTube 按「分享」就能直接選「好好運動」加入影片。</p>' : ''),
+      'inst-t');
+  }
+
+  function playHTML() {
+    var p = state.play;
+    return '<main class="screen task">' +
+      '<div class="run-head"><span class="run-title">' + esc(p.title) + '</span><span class="run-right" id="remain">剩 ' + mmss(p.minutes * 60) + '</span></div>' +
+      '<div class="bar" aria-hidden="true"><span id="bar"></span></div>' +
+      (p.yt
+        ? '<div class="video"><div id="player"></div><div class="video-msg" id="vmsg">正在載入影片…</div></div>'
+        : '<div class="ext">' + disc(p.type) + '<div class="media-text"><span style="font-weight:500">影片在另一個分頁播放</span>' + (safeUrl(p.url) ? '<a href="' + esc(p.url) + '" target="_blank" rel="noopener">沒有打開？再開一次</a>' : '') + '</div></div>') +
+      '<div class="center"><span class="phase" id="phase">' + (p.yt ? '正在載入影片' : '跟著影片做') + '</span>' +
+        (p.yt ? '' : '<span class="big mono" id="big">' + mmss(p.minutes * 60) + '</span>') +
+        '<span class="desc">' + (p.yt ? '影片播完會自動記錄。不舒服就停下來休息。' : '做完回來按「做完了」。不舒服就停下來休息。') + '</span></div>' +
+      '<div class="actions"><button class="btn btn-primary" data-act="finish">做完了</button><button class="btn btn-secondary" data-act="stop">停止</button></div>' +
+      '</main>';
+  }
+
+  function doneHTML() {
+    var p = state.lastDone, wk = weekStats(), s = data.settings, today = ymd(new Date());
+    var next = hasSettings() ? nextOccurrence(s.days, s.time) : null;
+    var v = p ? getVideo(p.videoId) : null, doneNames = [];
+    var dots = wk.days.map(function (d, i) {
+      if (wk.doneDays[d]) doneNames.push('週' + DAY_LABELS[i]);
+      return '<div class="dot-col"><span class="dot-l' + (d === today ? ' today' : '') + '">' + DAY_LABELS[i] + '</span><span class="dot' + (wk.doneDays[d] ? ' on' : '') + '"></span></div>';
+    }).join('');
+    return '<main class="screen task">' + noticeHTML() + '<div class="done-center">' +
+      '<div class="hero"><span class="done-label">完成</span><span class="done-val">' + (p ? p.minutes + ':00' : '') + '</span><span class="desc">' + (p ? esc(p.title) : '') + '</span></div>' +
+      '<p class="desc">有動就好，不需要硬撐。</p>' +
+      '<section class="soft wide"><div class="sum-top"><span class="eyebrow">本週</span><div class="sum-line"><span class="today-title">' + wk.minutes + ' 分鐘</span><span class="sum-count">完成 ' + wk.count + ' 次 · 目標 ' + s.goal + ' 次</span></div></div>' +
+        '<div class="dots" role="img" aria-label="本週已完成：' + (doneNames.length ? doneNames.join('、') : '還沒有') + '">' + dots + '</div></section>' +
+      (next ? '<p class="desc">下次提醒 · ' + whenLabel(next) + '</p>' : '') +
+      '</div><div class="actions">' +
+      (v ? startBtn(v, 'btn btn-primary', '再練一次') : '') +
+      '<button class="btn btn-secondary" data-act="home">回首頁</button></div></main>';
+  }
+
+  function formHTML() {
+    var f = state.form, st = urlStatus(f.url), edit = !!f.id;
+    return '<main class="screen task">' +
+      '<button class="back" data-act="home">← 返回</button>' +
+      '<h2 class="h2">' + (edit ? '編輯影片' : '加入影片') + '</h2>' +
+      '<p class="desc lead">貼上 YouTube 網址，名字和長度會自動填好。</p>' +
+      noticeHTML() +
+      '<div class="sections">' +
+        '<div class="sec"><div class="label-row"><label class="label" for="f-url">影片網址</label></div>' +
+          '<input id="f-url" class="field" type="url" inputmode="url" autocomplete="off" placeholder="https://youtu.be/…" value="' + esc(f.url) + '">' +
+          '<p class="cap ' + st.tone + '" id="url-msg">' + esc(st.msg) + '</p>' +
+          '<div class="preview" id="preview" hidden></div></div>' +
+        '<div class="sec"><div class="label-row"><label class="label" for="f-title">名字</label></div>' +
+          '<input id="f-title" class="field" type="text" maxlength="80" autocomplete="off" placeholder="例如：肩頸放鬆" value="' + esc(f.title) + '">' +
+          '<p class="cap" id="title-msg"></p></div>' +
+        '<div id="form-controls" class="sections">' + formControlsHTML() + '</div>' +
+      '</div>' +
+      '<div class="bottom"><button class="btn btn-primary" data-act="save-video">' + (edit ? '儲存' : '加入') + '</button></div>' +
+      '</main>';
+  }
+  function formControlsHTML() {
+    var f = state.form;
+    return '<div class="sec"><div class="label-row"><span class="label">長度</span></div>' +
+        '<div class="card"><div class="stepper"><span>影片長度</span><div class="step-ctl">' +
+          '<button class="step-btn" data-act="min-dec" aria-label="縮短">−</button><span class="step-val">' + f.minutes + ' 分鐘</span><button class="step-btn" data-act="min-inc" aria-label="加長">+</button>' +
+        '</div></div></div><p class="cap">10 分鐘以上每按一下調 5 分鐘。</p></div>' +
+      '<div class="sec"><div class="label-row"><span class="label" id="type-l">類型</span></div>' +
+        '<div class="opts" role="group" aria-labelledby="type-l">' + TYPES.map(function (t) {
+          return '<button class="opt" data-act="type" data-v="' + t[0] + '" aria-pressed="' + (f.type === t[0]) + '">' + t[1] + '</button>';
+        }).join('') + '</div></div>' +
+      '<div class="sec"><div class="card"><button class="toggle" role="switch" aria-checked="' + f.inRotation + '" data-act="rot"><span>排進每天輪流</span><span class="switch"></span></button></div>' +
+        '<p class="cap">首頁的「今天」會照順序輪到這支影片。</p></div>';
+  }
+
+  function remDirty() {
+    var r = state.rem, s = data.settings;
+    return !hasSettings() || r.goal !== s.goal || r.time !== s.time || r.order !== s.order || r.days.join() !== s.days.join();
+  }
+  function remHTML() {
+    var r = state.rem, dirty = remDirty();
+    return '<main class="screen task">' +
+      '<button class="back" data-act="home">← 返回</button>' +
+      '<h2 class="h2">提醒</h2>' +
+      '<p class="desc lead">選好運動的日子和時間，再加到日曆，時間到手機會跳通知。</p>' +
+      noticeHTML() +
+      '<div class="sections">' +
+        '<div class="sec"><div class="label-row"><span class="label">每週目標</span></div>' +
+          '<div class="card"><div class="stepper"><span>每週次數</span><div class="step-ctl">' +
+            '<button class="step-btn" data-act="goal-dec" aria-label="減少一次">−</button><span class="step-val">' + r.goal + ' 次</span><button class="step-btn" data-act="goal-inc" aria-label="增加一次">+</button>' +
+          '</div></div></div></div>' +
+        '<div class="sec"><div class="label-row"><span class="label" id="days-l">提醒日</span><span class="label-val">' + (r.days.length === 7 ? '每天' : '每週 ' + r.days.length + ' 天') + '</span></div>' +
+          '<div class="opts days" role="group" aria-labelledby="days-l">' + DAY_LABELS.map(function (l, i) {
+            return '<button class="opt" data-act="day" data-v="' + (i + 1) + '" aria-pressed="' + (r.days.indexOf(i + 1) >= 0) + '" aria-label="星期' + l + '">' + l + '</button>';
+          }).join('') + '</div>' +
+          (r.days.length ? '' : '<p class="cap">至少選一天才會提醒。</p>') + '</div>' +
+        '<div class="sec"><div class="label-row"><span class="label">時間</span></div>' +
+          '<div class="card"><div class="stepper"><span>提醒時間</span><div class="step-ctl">' +
+            '<button class="step-btn" data-act="time-dec" aria-label="提早 15 分鐘">−</button><span class="step-val">' + r.time + '</span><button class="step-btn" data-act="time-inc" aria-label="延後 15 分鐘">+</button>' +
+          '</div></div></div><p class="cap">每按一下調 15 分鐘。</p></div>' +
+        '<div class="sec"><div class="label-row"><span class="label" id="order-l">影片順序</span></div>' +
+          '<div class="opts two" role="group" aria-labelledby="order-l">' +
+            '<button class="opt" data-act="order" data-v="rotate" aria-pressed="' + (r.order === 'rotate') + '">照順序輪流</button>' +
+            '<button class="opt" data-act="order" data-v="random" aria-pressed="' + (r.order === 'random') + '">隨機挑一支</button>' +
+          '</div><p class="cap">' + (r.order === 'rotate' ? '依「我的影片」的順序，一次輪一支。' : '每天隨機挑一支，同一天不會變。') + '</p></div>' +
+        calHTML(dirty) +
+      '</div>' +
+      '<div class="bottom">' + (state.remSaved && !dirty ? '<p class="cap ok" role="status">已儲存。</p>' : '') +
+        '<button class="btn btn-primary" data-act="save-rem"' + (dirty ? '' : ' disabled') + '>儲存</button></div>' +
+      '</main>';
+  }
+  function calHTML(dirty) {
+    var s = data.settings, body;
+    if (dirty || !s.days.length) {
+      body = '<p class="desc">' + (dirty ? '先按「儲存」，再加到日曆。' : '先選至少一天。') + '</p>';
+    } else {
+      var c = s.cal, stale = c && (c.time !== s.time || c.days.join() !== s.days.join());
+      body = '<p class="desc">加到日曆後，時間到手機會跳通知，點通知裡的連結就回到這裡。</p>' +
+        '<a class="btn btn-secondary btn-md" href="' + esc(gcalUrl(s)) + '" target="_blank" rel="noopener" data-act="gcal">' + uiIcon('cal') + '<span>加到 Google 日曆</span></a>' +
+        '<p class="cap">會打開 Google 日曆，確認後按「儲存」。通知照日曆的預設時間。</p>' +
+        '<button class="btn btn-secondary btn-md" data-act="ics">' + uiIcon('download') + '<span>加到 iPhone 或其他日曆</span></button>' +
+        '<p class="cap">下載一個日曆檔，打開後選「加入」，時間一到就通知。</p>' +
+        (c ? '<p class="cap ' + (stale ? 'err' : '') + '">' + (stale
+          ? '日曆裡可能還是舊的時間（' + daysText(c.days) + ' ' + c.time + '）。請再加一次，並刪掉日曆裡舊的那筆。'
+          : '已經加過：' + daysText(c.days) + ' ' + c.time + '。') + '</p>' : '');
+    }
+    return '<div class="sec"><div class="label-row"><span class="label">加到日曆</span></div><div class="card cal">' + body + '</div></div>';
+  }
+
+  // ---------- 繪製 ----------
+  function mount() {
+    document.body.classList.toggle('task', state.screen !== 'home');
+    var html;
+    if (state.screen === 'play' && state.play) html = playHTML();
+    else if (state.screen === 'done') html = doneHTML();
+    else if (state.screen === 'form' && state.form) html = formHTML();
+    else if (state.screen === 'reminders' && state.rem) html = remHTML();
+    else { state.screen = 'home'; html = homeHTML(); }
+    $app.innerHTML = html;
+    if (state.screen === 'play') afterPlayMount();
+    if (state.screen === 'form') afterFormMount();
+  }
+  // 資料變了（同步、換天）：有影片或輸入框的畫面不整個重畫
+  function refresh() {
+    if (state.screen === 'play') return;
+    if (state.screen === 'form') return;
+    mount();
+  }
+  function go(screen, notice) {
+    teardown();
+    state.screen = screen;
+    state.notice = notice || null;
+    state.menu = false; state.menuSub = null;
+    mount();
+    try { window.scrollTo(0, 0); } catch (e) {}
+  }
+  function teardown() {
+    clearInterval(poll); poll = null;
+    if (player) { try { player.destroy(); } catch (e) {} player = null; }
+    if (fplayer) { try { fplayer.destroy(); } catch (e) {} fplayer = null; }
+    try { if (wake) wake.release(); } catch (e) {}
+    wake = null;
+    if (state.screen === 'play' && syncAgain) setTimeout(function () { syncAgain = false; syncNow(); }, 0);
+  }
+
+  // ---------- YouTube 播放器 ----------
+  var ytP = null, player = null, fplayer = null, poll = null, wake = null;
+  function loadYT() {
+    if (ytP) return ytP;
+    ytP = new Promise(function (res, rej) {
+      if (window.YT && YT.Player) { res(); return; }
+      var prev = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = function () { if (prev) try { prev(); } catch (e) {} res(); };
+      var sc = document.createElement('script');
+      sc.src = 'https://www.youtube.com/iframe_api';
+      sc.async = true;
+      sc.onerror = function () { ytP = null; rej(); };
+      document.head.appendChild(sc);
+      setTimeout(function () { if (!(window.YT && YT.Player)) { ytP = null; rej(); } }, 15000);
+    });
+    return ytP;
+  }
+  function requestWake() {
+    try { if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function (l) { wake = l; }, function () {}); } catch (e) {}
+  }
+  function startVideo(id) {
+    var v = getVideo(id);
+    if (!v) return;
+    state.sheet = null; state.confirmDelete = false; state.panel = null;
+    state.play = { videoId: v.id, title: v.title, minutes: v.minutes, url: v.url, yt: v.yt, type: v.type, startedAt: Date.now(), st: 'loading' };
+    // 不是 YouTube 的連結：讓連結先在新分頁打開，再換畫面
+    setTimeout(function () { go('play'); }, 0);
+  }
+  function afterPlayMount() {
+    var p = state.play;
+    poll = setInterval(updatePlay, 1000);
+    requestWake();
+    updatePlay();
+    if (!p.yt) return;
+    loadYT().then(function () {
+      if (state.play !== p || !$('player')) return;
+      player = new YT.Player('player', {
+        host: YT_HOST, videoId: p.yt, width: '100%', height: '100%',
+        playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+        events: {
+          onReady: function (e) { if (state.play !== p) return; p.st = 'ready'; vmsg(''); try { e.target.playVideo(); } catch (err) {} updatePlay(); },
+          onStateChange: function (e) {
+            if (state.play !== p) return;
+            if (e.data === 0) { finish(true); return; }
+            if (e.data === 1) p.st = 'playing'; else if (e.data === 2) p.st = 'paused';
+            updatePlay();
+          },
+          onError: function () { if (state.play !== p) return; p.st = 'error'; vmsg('error'); updatePlay(); }
+        }
+      });
+    }, function () { if (state.play !== p) return; p.st = 'error'; vmsg('error'); updatePlay(); });
+  }
+  function vmsg(kind) {
+    var el = $('vmsg'), p = state.play;
+    if (!el || !p) return;
+    if (!kind) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = '<span>影片在這裡播不了，可能是網路不穩，或這支影片不允許在其他網站播放。</span>' +
+      '<a href="https://www.youtube.com/watch?v=' + p.yt + '" target="_blank" rel="noopener">到 YouTube 看</a>';
+  }
+  function updatePlay() {
+    var p = state.play;
+    if (!p) return;
+    var cur = 0, dur = 0;
+    if (p.yt) {
+      if (player && player.getDuration) { try { dur = player.getDuration() || 0; cur = player.getCurrentTime() || 0; } catch (e) {} }
+      if (!dur) dur = p.minutes * 60;
+    } else {
+      dur = p.minutes * 60; cur = (Date.now() - p.startedAt) / 1000;
+    }
+    var rem = Math.max(0, dur - cur);
+    var r = $('remain'); if (r) r.textContent = '剩 ' + mmss(rem);
+    var big = $('big'); if (big) big.textContent = mmss(rem);
+    var b = $('bar'); if (b) b.style.width = Math.min(100, cur / dur * 100) + '%';
+    var ph = $('phase');
+    if (ph) ph.textContent = p.yt
+      ? ({ loading: '正在載入影片', ready: '按下影片開始', playing: '跟著影片做', paused: '暫停中', error: '到 YouTube 看影片' }[p.st] || '跟著影片做')
+      : (rem <= 0 ? '時間到' : '跟著影片做');
+  }
+  function finish(auto) {
+    var p = state.play;
+    if (!p || p.finishing) return;
+    p.finishing = true;
+    var now = new Date();
+    data.log[rid()] = { date: ymd(now), at: now.getTime(), videoId: p.videoId, title: p.title, minutes: p.minutes };
+    changed();
+    state.lastDone = p; state.play = null; state.skip = 0;
+    go('done', auto ? { text: '影片播完了，已經記錄。' } : null);
+  }
+
+  // ---------- 加入／編輯影片 ----------
+  var urlTimer = 0;
+  function openForm(id, share) {
+    var v = id ? getVideo(id) : null;
+    state.form = v
+      ? { id: v.id, url: v.url, title: v.title, minutes: v.minutes, type: v.type, inRotation: v.inRotation, order: v.order, createdAt: v.createdAt, titleTouched: true, minTouched: true, previewYt: '' }
+      : { id: null, url: share ? share.url : '', title: share && share.title ? share.title.slice(0, 80) : '', minutes: 15, type: 'stretch', inRotation: true, order: 0, createdAt: 0, titleTouched: false, minTouched: false, previewYt: '' };
+    state.sheet = null; state.confirmDelete = false; state.panel = null;
+    go('form');
+  }
+  function afterFormMount() {
+    var st = urlStatus(state.form.url);
+    showPreview(st.ok ? st.yt : '');
+  }
+  function setMsg(id, text, tone) { var el = $(id); if (el) { el.textContent = text; el.className = 'cap ' + (tone || ''); } }
+  function renderFormControls() { var el = $('form-controls'); if (el && state.form) el.innerHTML = formControlsHTML(); }
+  function showPreview(yt) {
+    var f = state.form, box = $('preview');
+    if (!f || !box || yt === f.previewYt) return;
+    f.previewYt = yt;
+    if (fplayer) { try { fplayer.destroy(); } catch (e) {} fplayer = null; }
+    if (!yt) { box.hidden = true; box.innerHTML = ''; return; }
+    box.hidden = false;
+    box.innerHTML = '<img alt="" onerror="this.remove()" src="https://i.ytimg.com/vi/' + yt + '/hqdefault.jpg"><div id="fplayer"></div>';
+    loadYT().then(function () {
+      if (state.form !== f || f.previewYt !== yt || !$('fplayer')) return;
+      fplayer = new YT.Player('fplayer', {
+        host: YT_HOST, videoId: yt, width: '100%', height: '100%',
+        playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+        events: {
+          onReady: function (e) { readMeta(e.target, f, yt, 0); },
+          onError: function () { if (state.form === f && f.previewYt === yt) setMsg('url-msg', '這支影片可能不允許在其他網站播放；加入後會改成到 YouTube 看。', ''); }
+        }
+      });
+    }).catch(function () {});
+  }
+  // 從播放器讀出影片的名字和長度，自動填進還沒自己改過的欄位
+  function readMeta(p, f, yt, tries) {
+    if (state.form !== f || f.previewYt !== yt) return;
+    var dur = 0, title = '';
+    try { dur = p.getDuration() || 0; } catch (e) {}
+    try { var vd = p.getVideoData && p.getVideoData(); title = vd && typeof vd.title === 'string' ? vd.title.trim() : ''; } catch (e) {}
+    var filled = [];
+    if (title && !f.titleTouched && f.titleFor !== yt) {
+      f.title = title.slice(0, 80); f.titleFor = yt;
+      var ti = $('f-title'); if (ti) ti.value = f.title;
+      filled.push('名字');
+    }
+    if (dur && !f.minTouched && f.minFor !== yt) {
+      f.minutes = Math.min(300, Math.max(1, Math.round(dur / 60))); f.minFor = yt;
+      renderFormControls();
+      filled.push('長度');
+    }
+    if (filled.length) setMsg('url-msg', '找到影片，已經填好' + filled.join('和') + '。', 'ok');
+    if ((!dur || !title) && tries < 5) setTimeout(function () { readMeta(p, f, yt, tries + 1); }, 800);
+  }
+  function saveVideo() {
+    var f = state.form, st = urlStatus(f.url);
+    if (!st.ok) { setMsg('url-msg', st.empty ? '請先貼上影片網址。' : st.msg, 'err'); var u = $('f-url'); if (u) u.focus(); return; }
+    var title = f.title.trim().slice(0, 80);
+    if (!title) { setMsg('title-msg', '請取個名字，例如「晨間伸展」。', 'err'); var t = $('f-title'); if (t) t.focus(); return; }
+    var isNew = !f.id, id = f.id || rid(), now = Date.now();
+    var order = isNew ? videoList().reduce(function (m, v) { return Math.max(m, v.order); }, 0) + 1 : f.order;
+    data.videos[id] = normVideo({ title: title, url: st.url, yt: st.yt || '', type: f.type, minutes: f.minutes, inRotation: f.inRotation, order: order, createdAt: f.createdAt || now, at: now });
+    changed();
+    state.form = null;
+    go('home', { text: (isNew ? '已加入「' : '已儲存「') + title + '」。' });
+  }
+
+  // ---------- 提醒設定 ----------
+  function openRem() {
+    var s = data.settings;
+    state.rem = { goal: s.goal, days: s.days.slice(), time: s.time, order: s.order };
+    state.remSaved = false;
+    go('reminders');
+  }
+  function shiftTime(t, dir) {
+    var hm = t.split(':').map(Number), m = hm[0] * 60 + hm[1];
+    m = dir > 0 ? Math.floor(m / 15) * 15 + 15 : Math.ceil(m / 15) * 15 - 15;
+    m = (m + 1440) % 1440;
+    return pad(Math.floor(m / 60)) + ':' + pad(m % 60);
+  }
+
+  // ---------- 外觀 ----------
+  function applyUi() {
+    if (data.ui.theme === 'dark') document.documentElement.dataset.theme = 'dark';
+    else document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.setProperty('--fs', [1, 1.15, 1.3][data.ui.fsz] || 1);
+  }
+
+  // ---------- 事件 ----------
+  document.addEventListener('click', function (e) {
+    if (state.menu && !e.target.closest('#menu')) { state.menu = false; state.menuSub = null; mount(); if (!e.target.closest('[data-act]')) return; }
+    var el = e.target.closest('[data-act]');
+    if (!el || !$app.contains(el) || el.disabled) return;
+    var act = el.getAttribute('data-act'), id = el.getAttribute('data-id'), val = el.getAttribute('data-v');
+    if (act === 'close' && e.target.closest('[data-stop]')) return;
+    var f = state.form, r = state.rem;
+    switch (act) {
+      case 'start': if (el.tagName !== 'A') e.preventDefault(); startVideo(id); break;
+      case 'menu': state.menu = !state.menu; state.menuSub = null; mount(); break;
+      case 'menu-sub': state.menuSub = state.menuSub === val ? null : val; mount(); break;
+      case 'panel': state.menu = false; state.panel = val; if (val === 'sync') loadGis().catch(function () {}); mount(); break;
+      case 'theme': data.ui.theme = data.ui.theme === 'dark' ? 'light' : 'dark'; persist(); applyUi(); mount(); break;
+      case 'fsz': data.ui.fsz = Number(val) || 0; persist(); applyUi(); mount(); break;
+      case 'install': if (installEvt) { installEvt.prompt(); installEvt = null; } state.panel = null; mount(); break;
+      case 'sync-go': tapSync(); break;
+      case 'sync-out': signOut(); break;
+      case 'reminders': openRem(); break;
+      case 'add': openForm(null); break;
+      case 'edit': openForm(id); break;
+      case 'open': state.sheet = id; state.confirmDelete = false; mount(); break;
+      case 'close': case 'close-btn': state.sheet = null; state.panel = null; state.confirmDelete = false; mount(); break;
+      case 'ask-delete': state.confirmDelete = true; mount(); break;
+      case 'cancel-delete': state.confirmDelete = false; mount(); break;
+      case 'delete':
+        if (data.videos[id]) { data.videos[id] = Object.assign({}, data.videos[id], { del: true, at: Date.now() }); changed(); }
+        state.sheet = null; state.confirmDelete = false; state.notice = { text: '已刪除。' }; mount();
+        break;
+      case 'skip': state.skip++; mount(); break;
+      case 'home': state.play = null; go('home'); break;
+      case 'stop': state.play = null; go('home'); break;
+      case 'finish': finish(false); break;
+      case 'min-dec': f.minutes = f.minutes > 10 ? Math.ceil(f.minutes / 5) * 5 - 5 : Math.max(1, f.minutes - 1); f.minTouched = true; renderFormControls(); break;
+      case 'min-inc': f.minutes = f.minutes >= 10 ? Math.min(300, Math.floor(f.minutes / 5) * 5 + 5) : f.minutes + 1; f.minTouched = true; renderFormControls(); break;
+      case 'type': f.type = TYPE_KEYS.indexOf(val) >= 0 ? val : 'other'; renderFormControls(); break;
+      case 'rot': f.inRotation = !f.inRotation; renderFormControls(); break;
+      case 'save-video': saveVideo(); break;
+      case 'goal-dec': r.goal = Math.max(1, r.goal - 1); state.remSaved = false; mount(); break;
+      case 'goal-inc': r.goal = Math.min(7, r.goal + 1); state.remSaved = false; mount(); break;
+      case 'day':
+        var n = Number(val), i = r.days.indexOf(n);
+        if (i >= 0) r.days.splice(i, 1); else r.days.push(n);
+        r.days.sort(function (a, b) { return a - b; });
+        state.remSaved = false; mount(); break;
+      case 'time-dec': r.time = shiftTime(r.time, -1); state.remSaved = false; mount(); break;
+      case 'time-inc': r.time = shiftTime(r.time, 1); state.remSaved = false; mount(); break;
+      case 'order': r.order = val === 'random' ? 'random' : 'rotate'; state.remSaved = false; mount(); break;
+      case 'save-rem':
+        Object.assign(data.settings, { goal: r.goal, days: r.days.slice(), time: r.time, order: r.order, at: Date.now() });
+        changed();
+        state.remSaved = true; state.skip = 0; mount();
+        break;
+      case 'gcal': markCal(); break;
+      case 'ics': downloadIcs(); break;
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target, f = state.form;
+    if (!f) return;
+    if (t.id === 'f-url') {
+      f.url = t.value;
+      var st = urlStatus(t.value);
+      setMsg('url-msg', st.msg, st.tone);
+      clearTimeout(urlTimer);
+      urlTimer = setTimeout(function () { var s2 = urlStatus(f.url); showPreview(s2.ok ? s2.yt : ''); }, 350);
+    } else if (t.id === 'f-title') {
+      f.title = t.value; f.titleTouched = true;
+      setMsg('title-msg', '', '');
+    }
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    if (state.sheet || state.panel || state.menu) { state.sheet = null; state.panel = null; state.menu = false; state.confirmDelete = false; mount(); }
+  });
+  var lastDay = ymd(new Date());
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState !== 'visible') return;
+    if (state.screen === 'play') { requestWake(); updatePlay(); return; }
+    if (ymd(new Date()) !== lastDay) { lastDay = ymd(new Date()); state.skip = 0; refresh(); }
+    if (sync && tokenOk()) syncNow();
+  });
+
+  // ---------- 啟動 ----------
+  var share = null;
+  try {
+    var q = new URLSearchParams(location.search);
+    var raw = [q.get('url'), q.get('text')].filter(Boolean).join(' ');
+    var m = raw.match(/https?:\/\/\S+/);
+    if (m) share = { url: m[0], title: (q.get('title') || '').trim() };
+    if (q.has('url') || q.has('text') || q.has('title')) history.replaceState(null, '', location.pathname + location.hash);
+  } catch (e) {}
+  applyUi();
+  persist();
+  if (share) openForm(null, share); else mount();
+  if (syncOn) {
+    try { sync = JSON.parse(localStorage.getItem(LS_SYNC) || 'null'); } catch (e) { sync = null; }
+    if (sync) loadGis().catch(function () {});   // 先載入，按「立即同步」時才能馬上跳出 Google 的視窗
+    if (tokenOk()) syncNow();
+  }
+})();
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
