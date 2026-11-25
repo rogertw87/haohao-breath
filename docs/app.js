@@ -59,7 +59,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '' });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '', fsz: 0 });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -75,8 +75,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer, fsz } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer, fsz })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -898,7 +898,7 @@ function musicGrid(box, current, pick) {
   if (mine.length < MINE_MAX) {
     const b = document.createElement('button');
     b.className = 'music-opt music-upload';
-    b.textContent = '＋ 上傳錄音';
+    b.textContent = upLabel();
     b.addEventListener('click', () => $('mineFile').click());
     box.appendChild(b);
   }
@@ -1960,7 +1960,7 @@ function lsRenderSetup() {
   if (mine.length < MINE_MAX) {
     const b = document.createElement('button');
     b.className = 'music-opt music-upload' + (full ? ' ls-off' : '');
-    b.textContent = '＋ 上傳錄音';
+    b.textContent = upLabel();
     b.addEventListener('click', () => { if (lsSel().length >= LS_MAX) lsWarnGo(); else $('mineFile').click(); });
     box.appendChild(b);
   }
@@ -2373,7 +2373,7 @@ function lqRenderSheet() {
   snd.innerHTML = '';
   [...MUSIC.filter(([k]) => k !== 'none'), ...mine.map(m => ['mine:' + m.id, m.name]), ['silence', '安靜']]
     .forEach(([k, lb]) => { mk(snd, lb, sh.k === k, k === 'silence' && sh.k !== k ? 'lq-dash' : '', () => lqSheetPick(k)).dataset.snd = k; });
-  if (mine.length < MINE_MAX) mk(snd, '＋ 上傳錄音', false, 'music-upload', () => $('mineFile').click()).removeAttribute('aria-pressed');
+  if (mine.length < MINE_MAX) mk(snd, upLabel(), false, 'music-upload', () => $('mineFile').click()).removeAttribute('aria-pressed');
   // 播多久：播幾次、播幾分鐘各一個 ＋ －，正在用的那一個有框
   const noOnce = !lqOnceOk(sh.k), byN = sh.m === 'once';
   $('lqDurN').classList.toggle('on', byN); $('lqDurN').classList.toggle('off', noOnce);
@@ -2643,7 +2643,7 @@ function offMark() {
   if (!st) { st = document.createElement('style'); st.id = 'offMarkCss'; document.head.appendChild(st); }
   const need = navigator.onLine || !off.ready ? [] : offKeys().filter(k => !off.has.has(k));
   st.textContent = need.length ? need.map(k => '.music-opt[data-snd="' + k + '"]').join(',') + '{border-style:dashed;opacity:.6}'
-    + need.map(k => '.music-opt[data-snd="' + k + '"]::after').join(',') + '{content:"需要網路";display:block;font-size:11px;font-weight:400;line-height:1.3;opacity:.8}' : '';
+    + need.map(k => '.music-opt[data-snd="' + k + '"]::after').join(',') + '{content:"需要網路";display:block;font-size:calc(11px * var(--fs, 1));font-weight:400;line-height:1.3;opacity:.8}' : '';
 }
 window.addEventListener('online', () => { offMark(); if (!$('offSheet').hidden) offRender(); });
 window.addEventListener('offline', () => { offMark(); if (!$('offSheet').hidden) offRender(); });
@@ -3852,7 +3852,23 @@ function setMenu(open) {
   $('menuPop').hidden = !open;
   $('menuBtn').setAttribute('aria-expanded', open);
   setThemeOpen(false);   // 選單每次打開，主題都先收起來
+  setFszOpen(false);
 }
+// ---------- 字體大小（選單裡：標準、大、特大；記在這台裝置，不跟著雲端同步，每台裝置的螢幕不一樣） ----------
+// 一般的字乘 --fs；26px 以上的大字、大數字乘 --fsl（只放大一半，免得撐破版面）。styles.css 和說明、感謝、隱私權頁都用這兩個變數
+const FSZ = [['標準', 1], ['大', 1.15], ['特大', 1.3]];
+function fszK() { return FSZ[+state.fsz] ? +state.fsz : 0; }
+function upLabel() { return fszK() > 1 ? '＋ 上傳' : '＋ 上傳錄音'; }   // 特大時「＋ 上傳錄音」放不進三欄的按鈕
+function applyFsz() {
+  const k = fszK(), f = FSZ[k][1], st = document.documentElement.style;
+  if (f === 1) { st.removeProperty('--fs'); st.removeProperty('--fsl'); } else { st.setProperty('--fs', String(f)); st.setProperty('--fsl', String(1 + (f - 1) / 2)); }
+  document.querySelectorAll('[data-fsz-pick]').forEach(b => b.classList.toggle('on', +b.dataset.fszPick === k));
+  $('fszCur').textContent = FSZ[k][0];
+}
+function setFszOpen(open) { $('fszOpts').hidden = !open; $('fszItem').setAttribute('aria-expanded', open); }
+$('fszItem').addEventListener('click', () => setFszOpen($('fszOpts').hidden));
+document.querySelectorAll('[data-fsz-pick]').forEach(b => b.addEventListener('click', () => { state.fsz = +b.dataset.fszPick; save(); applyFsz(); }));
+applyFsz();
 // 選單裡的「主題」：和勳章同一層，點了才展開所有主題
 function setThemeOpen(open) { $('themeOpts').hidden = !open; $('themeItem').setAttribute('aria-expanded', open); }
 $('themeItem').addEventListener('click', () => setThemeOpen($('themeOpts').hidden));
