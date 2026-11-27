@@ -23,6 +23,8 @@ const EX = [
   { id: 'rebirth', name: '重生呼吸', own: true },
   // 白骨觀：靜坐觀想左腳的大拇趾（見下方「白骨觀」），算練習次數
   { id: 'bone', name: '白骨觀', own: true },
+  // 朗誦：唸「唵阿吽」或「唵阿」，跟著錄音唸（見下方「朗誦」），算練習次數
+  { id: 'recite', name: '朗誦', own: true },
   // 聆聽：不做呼吸練習，單純聽聲音（見下方「聆聽」），不算練習次數
   { id: 'listen', name: '聆聽', own: true },
 ];
@@ -39,7 +41,8 @@ const ICONS = {
   wimhof: 'M16 4V28M5.6 10L26.4 22M5.6 22L26.4 10M13 6.5L16 9L19 6.5M13 25.5L16 23L19 25.5M7.5 7.7L8.2 11.5L4.5 12.9M24.5 24.3L23.8 20.5L27.5 19.1M27.5 12.9L23.8 11.5L24.5 7.7M4.5 19.1L8.2 20.5L7.5 24.3',
 };
 // 鯨豚式呼吸：波浪球＋兩圈漣漪，和練習畫面的聲波紋同一個語彙
-const ICON_SVGS = { res: '<path d="M20.8 16.0L21.0 16.4L21.2 16.8L21.1 17.2L20.8 17.6L20.4 17.8L20.0 18.1L19.7 18.3L19.5 18.6L19.4 18.9L19.4 19.4L19.3 19.9L19.1 20.2L18.7 20.5L18.3 20.5L17.8 20.4L17.4 20.3L17.0 20.3L16.7 20.3L16.4 20.5L16.0 20.8L15.6 21.0L15.2 21.2L14.8 21.1L14.4 20.8L14.2 20.4L13.9 20.0L13.7 19.7L13.4 19.5L13.1 19.4L12.6 19.4L12.1 19.3L11.8 19.1L11.5 18.7L11.5 18.3L11.6 17.8L11.7 17.4L11.7 17.0L11.7 16.7L11.5 16.4L11.2 16.0L11.0 15.6L10.8 15.2L10.9 14.8L11.2 14.4L11.6 14.2L12.0 13.9L12.3 13.7L12.5 13.4L12.6 13.1L12.6 12.6L12.7 12.1L12.9 11.8L13.3 11.5L13.7 11.5L14.2 11.6L14.6 11.7L15.0 11.7L15.3 11.7L15.6 11.5L16.0 11.2L16.4 11.0L16.8 10.8L17.2 10.9L17.6 11.2L17.8 11.6L18.1 12.0L18.3 12.3L18.6 12.5L18.9 12.6L19.4 12.6L19.9 12.7L20.2 12.9L20.5 13.3L20.5 13.7L20.4 14.2L20.3 14.6L20.3 15.0L20.3 15.3L20.5 15.6L20.8 16.0Z" stroke="none" fill="currentColor"></path><path d="M25.9 16.0L26.0 16.8L26.0 17.6L25.8 18.3L25.4 19.1L24.9 19.7L24.5 20.3L24.1 21.0L23.7 21.6L23.4 22.3L23.0 23.0L22.5 23.7L22.0 24.2L21.2 24.6L20.5 24.8L19.7 24.9L18.9 25.1L18.2 25.2L17.5 25.4L16.8 25.7L16.0 25.9L15.2 26.0L14.4 26.0L13.7 25.8L12.9 25.4L12.3 24.9L11.7 24.5L11.0 24.1L10.4 23.7L9.7 23.4L9.0 23.0L8.3 22.5L7.8 22.0L7.4 21.2L7.2 20.5L7.1 19.7L6.9 18.9L6.8 18.2L6.6 17.5L6.3 16.8L6.1 16.0L6.0 15.2L6.0 14.4L6.2 13.7L6.6 12.9L7.1 12.3L7.5 11.7L7.9 11.0L8.3 10.4L8.6 9.7L9.0 9.0L9.5 8.3L10.0 7.8L10.8 7.4L11.5 7.2L12.3 7.1L13.1 6.9L13.8 6.8L14.5 6.6L15.2 6.3L16.0 6.1L16.8 6.0L17.6 6.0L18.3 6.2L19.1 6.6L19.7 7.1L20.3 7.5L21.0 7.9L21.6 8.3L22.3 8.6L23.0 9.0L23.7 9.5L24.2 10.0L24.6 10.8L24.8 11.5L24.9 12.3L25.1 13.1L25.2 13.8L25.4 14.5L25.7 15.2L25.9 16.0Z" fill="none" stroke-width="1.9" stroke-linejoin="round" opacity=".55"></path><path d="M30.4 16.0L30.4 17.1L30.3 18.3L29.9 19.3L29.5 20.4L28.9 21.4L28.4 22.3L27.9 23.3L27.4 24.3L26.8 25.2L26.2 26.2L25.4 27.0L24.5 27.7L23.5 28.2L22.4 28.6L21.4 28.9L20.3 29.3L19.3 29.6L18.2 29.9L17.1 30.2L16.0 30.4L14.9 30.4L13.7 30.3L12.7 29.9L11.6 29.5L10.6 28.9L9.7 28.4L8.7 27.9L7.7 27.4L6.8 26.8L5.8 26.2L5.0 25.4L4.3 24.5L3.8 23.5L3.4 22.4L3.1 21.4L2.7 20.3L2.4 19.3L2.1 18.2L1.8 17.1L1.6 16.0L1.6 14.9L1.7 13.7L2.1 12.7L2.5 11.6L3.1 10.6L3.6 9.7L4.1 8.7L4.6 7.7L5.2 6.8L5.8 5.8L6.6 5.0L7.5 4.3L8.5 3.8L9.6 3.4L10.6 3.1L11.7 2.7L12.7 2.4L13.8 2.1L14.9 1.8L16.0 1.6L17.1 1.6L18.3 1.7L19.3 2.1L20.4 2.5L21.4 3.1L22.3 3.6L23.3 4.1L24.3 4.6L25.2 5.2L26.2 5.8L27.0 6.6L27.7 7.5L28.2 8.5L28.6 9.6L28.9 10.6L29.3 11.7L29.6 12.7L29.9 13.8L30.2 14.9L30.4 16.0Z" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="2.4 2" opacity=".42"></path>' };
+// 朗誦：梵文的「嗡」（ॐ），用 GNU FreeFont 的 FreeSans Bold 字形，實心（其他練習的圖示是細線）
+const ICON_SVGS = { recite: '<path d="M21.08 3.5 23.63 6.05 21.08 8.6 18.53 6.05ZM20.99 8.99Q22.17 8.99 23.16 8.31Q24.15 7.63 24.15 6.14H26.97Q26.97 8.63 25.19 10.04Q23.42 11.45 21.02 11.45Q18.59 11.45 16.82 10.01Q15.04 8.57 15.01 6.14H17.77Q17.77 7.6 18.84 8.29Q19.9 8.99 20.99 8.99ZM10.52 9.84Q12.59 9.84 13.97 11.34Q15.35 12.84 15.35 15.03Q15.35 17 14.29 18.21Q14.68 18.4 15.03 18.56Q15.38 18.73 15.5 18.79Q15.62 18.85 15.8 18.9Q15.98 18.94 16.23 18.94Q16.8 18.94 17.7 18.18Q18.59 17.43 19.43 16.53Q20.26 15.64 21.45 14.88Q22.63 14.12 23.66 14.12Q26 14.12 27.39 16.03Q28.79 17.94 28.79 20.88Q28.79 23.77 27.42 25.72Q26.06 27.68 23.75 27.68Q21.63 27.68 20.02 25.68L21.54 23.31Q22.36 24.53 23.75 24.53Q24.39 24.53 24.92 23.66Q25.45 22.8 25.45 21.52Q25.45 17.3 23.6 17.3Q23.36 17.3 22.78 17.99Q22.2 18.67 21.49 19.52Q20.78 20.37 19.52 21.17Q18.26 21.98 16.83 22.16Q16.96 22.61 16.96 23.16Q16.96 24.68 16.47 25.77Q15.98 26.86 15.15 27.42Q14.32 27.98 13.45 28.24Q12.59 28.5 11.65 28.5Q10.22 28.5 8.82 27.68Q7.43 26.86 6.46 25.69Q5.49 24.53 4.73 23.27Q3.97 22.01 3.59 21.11Q3.21 20.22 3.21 19.94L5.46 18.79Q5.97 19.7 6.26 20.16Q6.55 20.61 7.34 21.76Q8.13 22.92 8.73 23.55Q9.34 24.19 10.17 24.75Q11.01 25.31 11.74 25.31Q13.59 25.31 13.59 23.28Q13.59 21.83 12.71 21.23Q11.83 20.64 10.22 20.64Q9.58 20.64 9.07 21.01L7.28 17.52H8.28Q9.52 17.52 10.75 16.77Q11.98 16.03 11.98 15Q11.98 13 10.46 13Q9.31 13 8.31 13.75Q7.31 14.51 6.82 15.48L4.49 13.79Q4.79 13.21 5.17 12.68Q5.55 12.15 6.28 11.43Q7 10.72 8.11 10.28Q9.22 9.84 10.52 9.84Z" style="stroke:none;fill:currentColor"></path>', res: '<path d="M20.8 16.0L21.0 16.4L21.2 16.8L21.1 17.2L20.8 17.6L20.4 17.8L20.0 18.1L19.7 18.3L19.5 18.6L19.4 18.9L19.4 19.4L19.3 19.9L19.1 20.2L18.7 20.5L18.3 20.5L17.8 20.4L17.4 20.3L17.0 20.3L16.7 20.3L16.4 20.5L16.0 20.8L15.6 21.0L15.2 21.2L14.8 21.1L14.4 20.8L14.2 20.4L13.9 20.0L13.7 19.7L13.4 19.5L13.1 19.4L12.6 19.4L12.1 19.3L11.8 19.1L11.5 18.7L11.5 18.3L11.6 17.8L11.7 17.4L11.7 17.0L11.7 16.7L11.5 16.4L11.2 16.0L11.0 15.6L10.8 15.2L10.9 14.8L11.2 14.4L11.6 14.2L12.0 13.9L12.3 13.7L12.5 13.4L12.6 13.1L12.6 12.6L12.7 12.1L12.9 11.8L13.3 11.5L13.7 11.5L14.2 11.6L14.6 11.7L15.0 11.7L15.3 11.7L15.6 11.5L16.0 11.2L16.4 11.0L16.8 10.8L17.2 10.9L17.6 11.2L17.8 11.6L18.1 12.0L18.3 12.3L18.6 12.5L18.9 12.6L19.4 12.6L19.9 12.7L20.2 12.9L20.5 13.3L20.5 13.7L20.4 14.2L20.3 14.6L20.3 15.0L20.3 15.3L20.5 15.6L20.8 16.0Z" stroke="none" fill="currentColor"></path><path d="M25.9 16.0L26.0 16.8L26.0 17.6L25.8 18.3L25.4 19.1L24.9 19.7L24.5 20.3L24.1 21.0L23.7 21.6L23.4 22.3L23.0 23.0L22.5 23.7L22.0 24.2L21.2 24.6L20.5 24.8L19.7 24.9L18.9 25.1L18.2 25.2L17.5 25.4L16.8 25.7L16.0 25.9L15.2 26.0L14.4 26.0L13.7 25.8L12.9 25.4L12.3 24.9L11.7 24.5L11.0 24.1L10.4 23.7L9.7 23.4L9.0 23.0L8.3 22.5L7.8 22.0L7.4 21.2L7.2 20.5L7.1 19.7L6.9 18.9L6.8 18.2L6.6 17.5L6.3 16.8L6.1 16.0L6.0 15.2L6.0 14.4L6.2 13.7L6.6 12.9L7.1 12.3L7.5 11.7L7.9 11.0L8.3 10.4L8.6 9.7L9.0 9.0L9.5 8.3L10.0 7.8L10.8 7.4L11.5 7.2L12.3 7.1L13.1 6.9L13.8 6.8L14.5 6.6L15.2 6.3L16.0 6.1L16.8 6.0L17.6 6.0L18.3 6.2L19.1 6.6L19.7 7.1L20.3 7.5L21.0 7.9L21.6 8.3L22.3 8.6L23.0 9.0L23.7 9.5L24.2 10.0L24.6 10.8L24.8 11.5L24.9 12.3L25.1 13.1L25.2 13.8L25.4 14.5L25.7 15.2L25.9 16.0Z" fill="none" stroke-width="1.9" stroke-linejoin="round" opacity=".55"></path><path d="M30.4 16.0L30.4 17.1L30.3 18.3L29.9 19.3L29.5 20.4L28.9 21.4L28.4 22.3L27.9 23.3L27.4 24.3L26.8 25.2L26.2 26.2L25.4 27.0L24.5 27.7L23.5 28.2L22.4 28.6L21.4 28.9L20.3 29.3L19.3 29.6L18.2 29.9L17.1 30.2L16.0 30.4L14.9 30.4L13.7 30.3L12.7 29.9L11.6 29.5L10.6 28.9L9.7 28.4L8.7 27.9L7.7 27.4L6.8 26.8L5.8 26.2L5.0 25.4L4.3 24.5L3.8 23.5L3.4 22.4L3.1 21.4L2.7 20.3L2.4 19.3L2.1 18.2L1.8 17.1L1.6 16.0L1.6 14.9L1.7 13.7L2.1 12.7L2.5 11.6L3.1 10.6L3.6 9.7L4.1 8.7L4.6 7.7L5.2 6.8L5.8 5.8L6.6 5.0L7.5 4.3L8.5 3.8L9.6 3.4L10.6 3.1L11.7 2.7L12.7 2.4L13.8 2.1L14.9 1.8L16.0 1.6L17.1 1.6L18.3 1.7L19.3 2.1L20.4 2.5L21.4 3.1L22.3 3.6L23.3 4.1L24.3 4.6L25.2 5.2L26.2 5.8L27.0 6.6L27.7 7.5L28.2 8.5L28.6 9.6L28.9 10.6L29.3 11.7L29.6 12.7L29.9 13.8L30.2 14.9L30.4 16.0Z" fill="none" stroke-width="1.5" stroke-linejoin="round" stroke-dasharray="2.4 2" opacity=".42"></path>' };
 
 const MUSIC = [['none', '無'], ['handpan', '手碟'], ['drums', '非洲鼓'], ['rain', '雨聲'], ['evening', '傍晚'], ['chant', '藥師真言'], ['campfire', '營火'], ['rainforest', '雷雨'], ['cat', '貓咪呼嚕'], ['shurangama', '楞嚴咒心'], ['dabei', '大悲咒'], ['singing', '歌聲'], ['bowl', '水晶缽'], ['andrew', '百字明咒']];
 // 每首可以列多個檔案，例如 ['audio/rain.m4a', 'audio/rain.mp3']：先播第一個，載入失敗就換下一個
@@ -59,7 +62,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '', fsz: 0 });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '', rcWhat: '3', fsz: 0 });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -75,8 +78,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer, fsz } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, litHide, todayHide, litCer, fsz })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, rcWhat, litHide, todayHide, litCer, fsz } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, rcWhat, litHide, todayHide, litCer, fsz })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -654,7 +657,7 @@ function delMine(m) {
   renderMusicSetup();
 }
 // 上傳或刪除錄音後，重畫目前打開的設定頁
-function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else if (cur != null && EX[cur].id === 'listen') lsRenderSetup(); else if (cur != null && EX[cur].id === 'bone') bpRenderSetup(); else renderSetup(); }
+function renderMusicSetup() { if (cur != null && EX[cur].id === 'rebirth') rbRenderSetup(); else if (cur != null && EX[cur].id === 'listen') lsRenderSetup(); else if (cur != null && EX[cur].id === 'bone') bpRenderSetup(); else if (cur != null && EX[cur].id === 'recite') rcRenderSetup(); else renderSetup(); }
 $('mineFile').addEventListener('change', e => { const f = e.target.files && e.target.files[0]; e.target.value = ''; if (f) addMine(f); });
 
 // ---------- 節拍音效（即時合成） ----------
@@ -678,7 +681,7 @@ function ctx() {
 // ---------- 背景音樂與提示音保持一致 ----------
 // 練習中只要其中一個被系統停掉，另一個也跟著停；回到網頁時兩個一起恢復
 let syncPaused = false;
-const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden || !$('rbRun').hidden || !$('bpRun').hidden;
+const practicing = () => !screens.run.hidden || !$('whRun').hidden || !$('whHold').hidden || !$('rbRun').hidden || !$('bpRun').hidden || !$('rcRun').hidden;
 const showResumeTip = on => document.querySelectorAll('.resume-tip').forEach(b => { b.hidden = !on; });
 function pauseAllAudio() {
   if (!practicing() || syncPaused) return;
@@ -845,7 +848,7 @@ function stopCue() {
 }
 
 // ---------- 畫面 ----------
-const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone'), lsSetup: $('lsSetup'), lsRun: $('lsRun'), lsDone: $('lsDone'), bpSetup: $('bpSetup'), bpRun: $('bpRun'), bpDone: $('bpDone') };
+const screens = { badges: $('badges'), setup: $('setup'), run: $('run'), done: $('done'), whSetup: $('whSetup'), whRun: $('whRun'), whHold: $('whHold'), whDone: $('whDone'), rbSetup: $('rbSetup'), rbRun: $('rbRun'), rbDone: $('rbDone'), lsSetup: $('lsSetup'), lsRun: $('lsRun'), lsDone: $('lsDone'), bpSetup: $('bpSetup'), bpRun: $('bpRun'), bpDone: $('bpDone'), rcSetup: $('rcSetup'), rcRun: $('rcRun'), rcDone: $('rcDone') };
 function show(mode) {
   for (const k in screens) screens[k].hidden = k !== mode;
   document.body.style.overflow = mode ? 'hidden' : '';
@@ -984,7 +987,7 @@ function clearAll() {
 function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（Google 登入要用它開視窗）
   clearAll(); stopMusic(true);
   cur = i;
-  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else if (EX[i].id === 'listen') lsOpen(); else if (EX[i].id === 'bone') bpOpen(); else whOpen(); return; }
+  if (EX[i].own) { if (EX[i].id === 'rebirth') rbOpen(); else if (EX[i].id === 'listen') lsOpen(); else if (EX[i].id === 'bone') bpOpen(); else if (EX[i].id === 'recite') rcOpen(); else whOpen(); return; }
   renderSetup();
   show('setup');
   screens.setup.scrollTop = 0;
@@ -992,6 +995,7 @@ function openEx(i) {   // 不能叫 open，會蓋掉瀏覽器的 window.open（G
 function closeEx() {
   if (rb) rbEnd();
   if (bp) bpEnd();
+  if (rc) rcEnd();
   g = null; gPause0 = null; gPausedUi(false);
   lsStopAll();
   clearAll(); stopMusic(); releaseWake(); duck = 1;
@@ -1865,6 +1869,221 @@ function bpAction(a) {
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden && bp) lockWake(); });
 
+// ---------- 朗誦：唸「唵阿吽」或「唵阿」，跟著錄音唸（畫面中間一個大字） ----------
+// 兩段錄音是瓊文、煜琪和心靈錄的，原檔只剪掉頭尾、開頭唸誦前的小雜音換成無聲，沒有重新壓縮。下面是照聲音分析出來的每個字起訖秒數
+// 3＝「唵阿吽」：吸一口氣，唵、阿接著唸，停一下再短短一聲吽，共 15 遍。每一口氣記：唵開始、阿開始、吽開始、吽結束
+// 2＝「唵阿」：一口氣唸一個字，唵、阿輪流，共 22 個字（11 遍）。每個字記：開始、結束
+const RC_CH = ['唵', '阿', '吽'];
+const RC_REC = {
+  3: { src: 'audio/om-ahhum-solo.mp4?v=2', T: 313.9, br: [[2.93,9.63,19.26,20.58],[24.3,31.01,40.99,42.24],[45.07,50.37,58.49,59.83],[62.58,70.03,79.61,80.8],[83.5,89.04,98.19,99.41],[102.11,107.69,116.78,118.07],[121.24,127.79,138.67,139.9],[143.34,150.47,160.52,161.75],[164.27,170.95,180.62,181.97],[184.77,191.84,201.55,202.84],[206.24,214.37,224.12,225.4],[228.34,235.26,245.61,246.86],[249.68,257.4,268.19,269.4],[273.21,280.41,290.01,291.3],[294.86,302.76,311.95,313.21]] },
+  2: { src: 'audio/om-ah-solo.mp4?v=2', T: 387.5, ch: [[3.09,16.77],[21.54,35.42],[40.06,54.76],[58.55,73.1],[76.65,90.97],[94.66,107.89],[112.35,126.15],[130.26,140.8],[144.79,157.41],[161.32,173.65],[178.19,191.26],[195.09,209.19],[214.03,228.36],[232.91,246.08],[250.23,263.79],[268.45,282.41],[287.04,301.41],[305.88,319.66],[323.44,335.67],[339.59,353.12],[356.56,370.25],[373.48,386.87]] },
+};
+const RC_INFO = {
+  3: { name: '唵阿吽', desc: '吸一口氣，唸「唵」接著唸「阿」，停一下再短短一聲「吽」；再吸氣，唸下一遍。', len: '5 分 14 秒', lenNote: '一遍一口氣，15 到 20 秒，中間吸氣 3 到 4 秒', what: '唵 → 阿 → 吽', whatNote: '唵 5 到 8 秒、阿 7 到 10 秒，吽很短，共 15 遍' },
+  2: { name: '唵阿', desc: '吸一口氣，把一個字唸得又長又穩；再吸氣，唸下一個字。', len: '6 分 28 秒', lenNote: '一個字 10 到 15 秒，中間換氣 3 到 5 秒', what: '唵、阿輪流', whatNote: '一口氣唸一個字，共 22 個字（11 遍）' },
+};
+const RC_TAU = 2 * Math.PI, RC_SERIF = '"Noto Serif TC","Songti TC","PMingLiU",serif';
+const rcE = u => (u <= 0 ? 0 : u >= 1 ? 1 : u * u * (3 - 2 * u));
+const rcA = (c, a) => 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + Math.max(0, Math.min(1, a)).toFixed(3) + ')';
+const rcN = () => (state.rcWhat === '2' ? 2 : 3);
+// 整段切成一段一段：吸氣（in）、唸一個字（ch）。唵阿吽一口氣接著唸三個字，所以三個 ch 連在一起
+function rcSegs(n) {
+  const S = []; let t = 0;
+  if (n === 3) RC_REC[3].br.forEach((b, k) => { S.push({ kind: 'in', si: 0, set: k, t0: t, dur: b[0] - t }); for (let j = 0; j < 3; j++) S.push({ kind: 'ch', si: j, set: k, t0: b[j], dur: b[j + 1] - b[j] }); t = b[3]; });
+  else RC_REC[2].ch.forEach((r, k) => { S.push({ kind: 'in', si: k % 2, set: k >> 1, t0: t, dur: r[0] - t }); S.push({ kind: 'ch', si: k % 2, set: k >> 1, t0: r[0], dur: r[1] - r[0] }); t = r[1]; });
+  S.n = n; S.T = RC_REC[n].T; S.sets = n === 3 ? RC_REC[3].br.length : Math.ceil(RC_REC[2].ch.length / 2);
+  // 同一口氣：b0＝這口氣開始唸的時間、bd＝這口氣總共唸多久（光圈和外圈照整口氣慢慢收）
+  for (let k = 0; k < S.length; k++) { const s = S[k], p = S[k - 1]; if (s.kind === 'ch') s.b0 = p && p.kind === 'ch' ? p.b0 : s.t0; }
+  for (let k = S.length - 1; k >= 0; k--) { const s = S[k], p = S[k + 1]; if (s.kind === 'ch') s.bd = p && p.kind === 'ch' ? p.bd : s.t0 + s.dur - s.b0; }
+  return S;
+}
+function rcAt(S, t) {
+  const tt = Math.max(0, Math.min(S.T - .001, t)); let i = 0;
+  for (; i < S.length - 1; i++) if (tt < S[i].t0 + S[i].dur) break;
+  const sg = S[i], tau = Math.min(sg.dur, Math.max(0, tt - sg.t0)), ch = sg.kind === 'ch', pv = i > 0 ? S[i - 1] : null, u = sg.dur > 0 ? tau / sg.dur : 1;
+  return { tt, i, sg, tau, u, rem: sg.dur - tau, ch, psi: pv ? pv.si : -1, pch: ch && !!pv && pv.kind === 'ch', nx: S[i + 1] || null, bu: ch ? Math.min(1, (sg.t0 + tau - sg.b0) / sg.bd) : u };
+}
+// 以下都畫在 312×292 的範圍裡（外面會照畫面大小縮放）。C＝主題的顏色；rm＝減少動態效果
+function rcTxt(g, C, s, x, y, font, col, a) {
+  g.save(); g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+  if (C.sh) { g.shadowColor = 'rgba(0,0,0,.75)'; g.shadowBlur = 5; g.shadowOffsetY = 1; }
+  g.fillStyle = rcA(col, a == null ? 1 : a); g.fillText(s, x, y); g.restore();
+}
+// 光圈的大小：吸氣變大，唸的時候（整口氣）慢慢變小（和呼吸練習的圓點同一個方向）
+const rcLvl = (c, rm) => (rm ? (c.ch ? .7 : .4) : c.ch ? 1 - rcE(c.bu) : rcE(c.u));
+// 聲音的漣漪：唸的時候一圈一圈往外散
+function rcRipples(g, cx, cy, r0, grow, c, col, amp, rm) {
+  if (!c.ch || rm) return;
+  const gap = 1.5, life = 3;
+  for (let k = Math.max(0, Math.ceil((c.tau - life) / gap)); k * gap <= c.tau; k++) {
+    const age = c.tau - k * gap, v = age / life, a = amp * (1 - v) * Math.min(1, age / .35) * Math.min(1, c.rem / .6);
+    if (a <= .004) continue;
+    g.strokeStyle = rcA(col, a); g.lineWidth = 1.4; g.beginPath(); g.arc(cx, cy, r0 + grow * v, 0, RC_TAU); g.stroke();
+  }
+}
+// 外圈：這口氣還剩多長（唸的時候慢慢收掉，吸氣時補回來）
+function rcArc(g, C, cx, cy, R, c) {
+  g.lineWidth = 3; g.lineCap = 'round'; g.strokeStyle = rcA(C.mut, .28); g.beginPath(); g.arc(cx, cy, R, 0, RC_TAU); g.stroke();
+  const fr = c.ch ? 1 - c.bu : c.u; if (fr <= .002) return;
+  g.strokeStyle = rcA(C.acc, c.ch ? 1 : .45); g.beginPath(); g.arc(cx, cy, R, -RC_TAU / 4, -RC_TAU / 4 + RC_TAU * fr); g.stroke();
+}
+function rcDisc(g, C, cx, cy, r, c, rm) {
+  const pulse = c.ch && !rm ? .5 + .5 * Math.sin(c.tau * RC_TAU * 1.1) : 0, k = C.dark ? 1.5 : 1, gr = g.createRadialGradient(cx, cy, r * .1, cx, cy, r);
+  gr.addColorStop(0, rcA(C.acc, (.25 + .05 * pulse) * k)); gr.addColorStop(1, rcA(C.acc, .11 * k));
+  g.fillStyle = gr; g.beginPath(); g.arc(cx, cy, r, 0, RC_TAU); g.fill(); g.strokeStyle = rcA(C.acc, .4); g.lineWidth = 1.2; g.stroke();
+}
+// 中間的大字：唸的時候是現在的字；吸氣時前一個字淡出、下一個字淡入；同一口氣換字時很快換過去
+function rcBig(g, C, c, x, y, size, scale, rm) {
+  let show = c.sg.si, op = 1;
+  if (!rm) {
+    if (!c.ch) { if (c.u < .42) { if (c.psi >= 0) { show = c.psi; op = 1 - rcE(c.u / .42); } else op = 0; } else op = rcE((c.u - .42) / .58); }
+    else if (c.pch && c.tau < .5) { if (c.tau < .2) { show = c.psi; op = 1 - rcE(c.tau / .2); } else op = rcE((c.tau - .2) / .3); }
+  }
+  if (op <= .005) return;
+  g.save(); g.translate(x, y); g.scale(scale, scale); rcTxt(g, C, RC_CH[show], 0, size * .04, '700 ' + size + 'px ' + RC_SERIF, C.ink, op); g.restore();
+}
+// 一個大字：上面一排字標出現在唸哪一個；中間的光圈和外圈是這口氣還剩多長
+function rcView(g, c, S, C, rm) {
+  const cx = 156, cy = 163, lvl = rcLvl(c, rm), r = 60 + 30 * lvl, gap = 30, x0 = cx - (S.n - 1) * gap / 2;
+  for (let j = 0; j < S.n; j++) {
+    const on = j === c.sg.si, x = x0 + j * gap;
+    rcTxt(g, C, RC_CH[j], x, 14, '700 17px ' + RC_SERIF, on ? C.ink : C.mut, on ? 1 : .6);
+    if (on) { g.strokeStyle = rcA(C.acc, 1); g.lineWidth = 2; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 9, 27); g.lineTo(x + 9, 27); g.stroke(); }
+  }
+  rcArc(g, C, cx, cy, 122, c); rcRipples(g, cx, cy, r + 3, 24, c, C.acc, .36, rm); rcDisc(g, C, cx, cy, r, c, rm); rcBig(g, C, c, cx, cy, 74, .9 + .1 * lvl, rm);
+}
+// 畫面用主題自己的顏色：字、重點色（呼吸圓點的顏色）、淡色；深色主題光圈亮一點，油畫、影片主題的字加暗影
+let rcC = null;
+function rcColors() {
+  const key = state.theme; if (rcC && rcC.key === key) return rcC;
+  const cs = getComputedStyle(document.documentElement), rgb = v => {
+    v = (v || '').trim(); let m = /^#([0-9a-f]{3})$/i.exec(v); if (m) return m[1].split('').map(h => parseInt(h + h, 16));
+    m = /^#([0-9a-f]{6})$/i.exec(v); if (m) { const n = parseInt(m[1], 16); return [n >> 16, (n >> 8) & 255, n & 255]; }
+    m = /^rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)/i.exec(v); return m ? [+m[1], +m[2], +m[3]] : null;
+  }, get = (v, d) => rgb(cs.getPropertyValue(v)) || rgb(d), bg = get('--screen', '#eef4f5');
+  return rcC = { key, ink: get('--ink', '#15303a'), acc: get('--dot', '#5aaac0'), mut: get('--muted-2', '#5d7f8a'), dark: (bg[0] * .299 + bg[1] * .587 + bg[2] * .114) < 110, sh: key === 'oil' || key === 'vfire' };
+}
+let rc = null, rcRaf = 0;
+function rcOpen() {
+  $('rcErr').hidden = true;
+  rcRenderSetup();
+  show('rcSetup');
+  screens.rcSetup.scrollTop = 0;
+}
+function rcRenderSetup() {
+  const n = rcN(), I = RC_INFO[n];
+  $('rcDesc').textContent = I.desc;
+  rbOpts($('rcWhatOpts'), [['3', '唵阿吽'], ['2', '唵阿']], v => String(n) === v, v => { state.rcWhat = v; save(); $('rcErr').hidden = true; rcRenderSetup(); });
+  $('rcRecLen').textContent = I.len; $('rcRecLenNote').textContent = I.lenNote; $('rcRecWhat').textContent = I.what; $('rcRecWhatNote').textContent = I.whatNote;
+  $('rcStartT').textContent = I.len;
+  // 背景音樂：和其他練習共用同一個設定
+  musicGrid($('rcMusic'), state.music, k => { state.music = k; save(); rcRenderSetup(); });
+  $('rcMineBox').hidden = !mine.length;
+  $('rcMineRows').innerHTML = '';
+  mine.forEach(mm => {
+    const row = document.createElement('div');
+    row.className = 'mine-row';
+    row.innerHTML = '<span></span><button>刪除</button>';
+    row.firstChild.textContent = mm.name;
+    row.lastChild.addEventListener('click', () => delMine(mm));
+    $('rcMineRows').appendChild(row);
+  });
+  $('rcMusicHint').hidden = state.music === 'none';
+}
+function rcText(id, v) { const e = $(id); if (e.textContent !== v) e.textContent = v; }
+function rcPausedUi(on) { $('rcPauseBtn').hidden = on; $('rcResumeBtn').hidden = !on; }
+function rcKill() {
+  cancelAnimationFrame(rcRaf);
+  if (rc && rc.au) { const au = rc.au; au.onpause = au.onended = au.onerror = null; try { au.pause(); } catch (e) {} }
+  rc = null;
+}
+function rcStart() {
+  clearAll(); stopMusic(true); stopPreview(); rcKill();
+  ctx(); keepAlive.play().catch(() => {}); lockWake();
+  if (state.music !== 'none') playMusic(state.music);   // 背景音樂：和其他練習一樣，開始時播放
+  const n = rcN(), S = rcSegs(n), au = new Audio(RC_REC[n].src);
+  au.preload = 'auto'; au.setAttribute('playsinline', '');
+  const b = rc = { n, S, au, pAt: null, i: -1, left: -1, br: null, cv: null };
+  au.onended = () => { if (rc === b) rcFinish(); };
+  au.onerror = () => { if (rc === b) rcFail(); };
+  // 錄音被系統停掉（來電、拔耳機）：練習一起暫停
+  au.onpause = () => { if (rc === b && !au.ended && b.pAt == null) rcPause(); };
+  const p = au.play(); if (p && p.catch) p.catch(e => { if (rc === b && e && e.name !== 'AbortError') rcFail(); });
+  rcPausedUi(false);
+  rcText('rcName', '朗誦・' + RC_INFO[n].name + '・跟著錄音');
+  rcText('rcLeft', fmt(S.T)); rcText('rcLabel', '吸氣'); rcText('rcHint', '接著唸「唵」'); rcText('rcCnt', ''); rcText('rcRep', '第 1 遍・共 ' + S.sets + ' 遍');
+  $('rcProgress').style.transition = 'none'; $('rcProgress').style.width = '0%'; void $('rcProgress').offsetWidth; $('rcProgress').style.transition = '';
+  show('rcRun');
+  const tick = () => { rcTick(); rcRaf = requestAnimationFrame(tick); };
+  rcRaf = requestAnimationFrame(tick);
+}
+function rcTick() {
+  const b = rc; if (!b) return;
+  if (syncPaused && b.pAt == null) rcPause();   // 聲音被系統停掉：整個練習一起暫停
+  const el = b.au.currentTime || 0, c = rcAt(b.S, el);
+  if (b.pAt == null) {
+    if (c.i !== b.i) {   // 會跟著呼吸動的主題背景：吸氣算吸，唸字算吐（同一口氣唸好幾個字時算一整口氣）
+      b.i = c.i;
+      b.br = c.ch ? { k: OUT, t0: performance.now() - (c.sg.t0 + c.tau - c.sg.b0) * 1000, dur: Math.max(.1, c.sg.bd) } : { k: IN, t0: performance.now() - c.tau * 1000, dur: Math.max(.1, c.sg.dur) };
+    }
+    const ch = RC_CH[c.sg.si];
+    rcText('rcLabel', c.ch ? '唸「' + ch + '」' : '吸氣');
+    rcText('rcHint', !c.ch ? '接著唸「' + ch + '」' : c.nx && c.nx.kind === 'ch' ? '接著唸「' + RC_CH[c.nx.si] + '」' : c.pch ? '唸完再吸氣' : '一口氣唸長、唸穩');
+    rcText('rcCnt', String(Math.max(1, Math.ceil(c.rem - 1e-6))));
+    rcText('rcRep', '第 ' + (c.sg.set + 1) + ' 遍・共 ' + b.S.sets + ' 遍');
+    const left = Math.max(0, Math.ceil(b.S.T - el));
+    if (left !== b.left) { b.left = left; rcText('rcLeft', fmt(left)); $('rcProgress').style.width = Math.min(100, el / b.S.T * 100) + '%'; }
+  }
+  rcDraw(c);
+}
+// 畫在 312×292 的範圍裡，再照畫面能用的大小縮放、放在正中間
+function rcDraw(c) {
+  const cv = $('rcCv'), W = cv.clientWidth, H = cv.clientHeight; if (!W || !H || !rc) return;
+  const d = Math.min(2, window.devicePixelRatio || 1);
+  if (cv.width !== Math.round(W * d) || cv.height !== Math.round(H * d)) { cv.width = Math.round(W * d); cv.height = Math.round(H * d); }
+  const g2 = cv.getContext('2d'), k = Math.min(W / 312, H / 292, 1.3), q = d * k;
+  g2.setTransform(1, 0, 0, 1, 0, 0); g2.clearRect(0, 0, cv.width, cv.height); g2.setTransform(q, 0, 0, q, d * (W - 312 * k) / 2, d * (H - 292 * k) / 2);
+  rcView(g2, c, rc.S, rcColors(), reducedMotion());
+}
+function rcPause() {
+  const b = rc; if (!b || b.pAt != null) return;
+  b.pAt = performance.now(); try { b.au.pause(); } catch (e) {}
+  rcPausedUi(true); rcText('rcLabel', '已暫停'); rcText('rcHint', '按「繼續」接著練習'); rcText('rcCnt', '');
+}
+function rcResume() {
+  const b = rc; if (!b || b.pAt == null) return;
+  if (syncPaused) resumeAllAudio(); else { ctx(); keepAlive.play().catch(() => {}); }
+  if (b.br) b.br.t0 += performance.now() - b.pAt;
+  b.pAt = null; b.i = -1; rcPausedUi(false);
+  const p = b.au.play(); if (p && p.catch) p.catch(() => {});
+}
+function rcEnd() { rcKill(); releaseWake(); stopMusic(); keepAlive.pause(); }
+// 錄音播完：響一聲鐘，記進今天的練習；中途停止不記錄
+function rcFinish() {
+  const b = rc, sec = Math.round(b.S.T), name = RC_INFO[b.n].name;
+  rcEnd();
+  if (!syncPaused) { ctx(); [[1, .14, 2.6], [2.76, .04, 1.5], [5.4, .015, .8]].forEach(([m, v, d]) => {
+    const now = ac.currentTime, o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 523.25 * m; g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(v, now + .01); g.gain.exponentialRampToValueAtTime(.0001, now + d);
+    o.connect(g); g.connect(ac.destination); o.start(now); o.stop(now + d + .05);
+  }); }
+  logDone('recite', sec);
+  $('rcDoneText').textContent = rcDur(sec) + '・' + name;
+  show('rcDone');
+  showAward();
+}
+const rcDur = sec => { const m = Math.floor(sec / 60), r = sec % 60; return m ? (r ? m + ' 分 ' + r + ' 秒' : m + ' 分鐘') : r + ' 秒'; };
+// 錄音播不出來：回到設定，說明原因
+function rcFail() { rcEnd(); syncPaused = false; showResumeTip(false); rcRenderSetup(); $('rcErr').textContent = '錄音播不出來。請確認網路後再試一次。'; $('rcErr').hidden = false; show('rcSetup'); }
+function rcStop() { rcEnd(); syncPaused = false; showResumeTip(false); rcRenderSetup(); show('rcSetup'); }
+function rcAction(a) {
+  if (a === 'start') rcStart();
+  else if (a === 'stop') rcStop();
+  else if (a === 'pause') rcPause();
+  else if (a === 'resume') rcResume();
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden && rc) lockWake(); });
+
 // ---------- 聆聽：不做呼吸練習，單純聽聲音 ----------
 // 最多同時 3 種聲音，各自調音量；時間 10–60 分鐘或不限，結束前慢慢變小聲（音量平方曲線，聽起來比較均勻）
 // 自動變暗：開始播放後 10 秒沒碰螢幕，蓋上一層全黑的畫面。不算練習次數、不給印章
@@ -2600,6 +2819,7 @@ document.addEventListener('click', e => {
   else if (a.startsWith('rb-')) rbAction(a.slice(3));
   else if (a.startsWith('ls-')) lsAction(a.slice(3));
   else if (a.startsWith('bp-')) bpAction(a.slice(3));
+  else if (a.startsWith('rc-')) rcAction(a.slice(3));
   else if (a === 'reset') { const c = { ...state.custom }; delete c[EX[cur].id === '478' ? '478-' + fKey() : EX[cur].id]; state.custom = c; save(); renderSetup(); }
 });
 $('minutes').addEventListener('input', e => {
@@ -2612,13 +2832,15 @@ $('minutes').addEventListener('input', e => {
 // 背景聲音比較大，在這裡一種一種下載；有網路時播過一次的也會自動留著。存在 hh-sound，和 sw.js 用同一個地方。
 const SND_CACHE = 'hh-sound';
 // 每個檔案的大小（位元組），下載前顯示用；換了音檔要一起改（測試會檢查）
-const SND_SIZE = {'audio/handpan.mp3': 4127996, 'audio/drums.mp3': 1460344, 'audio/rain.mp3': 2996441, 'audio/evening.mp3': 9601060, 'audio/chant.mp3': 928390, 'audio/campfire.mp3': 3393522, 'audio/rainforest.mp3': 3842615, 'audio/dabei.mp3': 2712141, 'audio/singing.mp3': 3116205, 'audio/crystalbowl.mp3': 11906583, 'audio/andrew.mp3': 5460969, 'audio/cat1.mp3': 1013229, 'audio/cat2.mp3': 1077165, 'audio/cat3.mp3': 1404909, 'audio/shurangama1.mp3': 1612530, 'audio/shurangama2.mp3': 1530610};
-const sndFiles = k => [...new Set(MUSIC_LISTS[k] || [].concat(MUSIC_FILES[k] || []).slice(0, 1))];
+const SND_SIZE = {'audio/handpan.mp3': 4127996, 'audio/drums.mp3': 1460344, 'audio/rain.mp3': 2996441, 'audio/evening.mp3': 9601060, 'audio/chant.mp3': 928390, 'audio/campfire.mp3': 3393522, 'audio/rainforest.mp3': 3842615, 'audio/dabei.mp3': 2712141, 'audio/singing.mp3': 3116205, 'audio/crystalbowl.mp3': 11906583, 'audio/andrew.mp3': 5460969, 'audio/cat1.mp3': 1013229, 'audio/cat2.mp3': 1077165, 'audio/cat3.mp3': 1404909, 'audio/shurangama1.mp3': 1612530, 'audio/shurangama2.mp3': 1530610, 'audio/om-ahhum-solo.mp4': 3791658, 'audio/om-ah-solo.mp4': 4684598};
+// 朗誦的兩段錄音：和背景聲音一樣算網站資料（rec:3＝唵阿吽、rec:2＝唵阿）
+const REC_KEYS = ['rec:3', 'rec:2'];
+const sndFiles = k => (REC_KEYS.includes(k) ? [RC_REC[k.slice(4)].src] : [...new Set(MUSIC_LISTS[k] || [].concat(MUSIC_FILES[k] || []).slice(0, 1))]);
 const sndUrl = f => new URL(f, location.href).href;
 const sndBytes = k => sndFiles(k).reduce((a, f) => a + (SND_SIZE[f.split('?')[0]] || 0), 0);
 const fmtMB = b => (b / 1048576 < 9.95 ? (b / 1048576).toFixed(1) : Math.round(b / 1048576)) + ' MB';
 const off = { sw: 'serviceWorker' in navigator && 'caches' in window, ready: false, has: new Set(), dl: {}, err: {}, busy: false };
-const offKeys = () => MUSIC.map(([k]) => k).filter(k => k !== 'none');
+const offKeys = () => MUSIC.map(([k]) => k).filter(k => k !== 'none').concat(REC_KEYS);
 if (off.sw && location.protocol !== 'file:') {
   window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').then(() => navigator.serviceWorker.ready).then(offCheck).catch(() => {}); });
 }
@@ -2819,6 +3041,7 @@ const fx = { c: null, raf: 0, last: null, kind: null, st: null, w: 0, h: 0, draw
 let brPhase = null;  // 練習時目前這一段（吸氣、閉氣或吐氣）什麼時候開始、有多長
 // 練習時吸飽的程度 0～1：吸氣慢慢變 1、吐氣慢慢變 0、閉氣時維持；不在練習（或冰人呼吸）就是 null
 function breathNow() {
+  if (rc && !screens.rcRun.hidden && rc.br) { const u = Math.min(1, Math.max(0, ((rc.pAt || performance.now()) - rc.br.t0) / (rc.br.dur * 1000))); return rc.br.k === IN ? u : 1 - u; }
   if (!brPhase || screens.run.hidden || cur == null || EX[cur].id === 'wimhof') return null;
   const u = Math.min(1, Math.max(0, ((gPause0 || performance.now()) - brPhase.t0) / (brPhase.dur * 1000)));   // 暫停時停在原地
   return brPhase.k === IN ? u : brPhase.k === OUT ? 1 - u : (brPhase.prev === OUT ? 0 : 1);
@@ -3277,7 +3500,7 @@ function bnEl() {
   const now = performance.now();
   if (!bnWas) { bnWas = true; bnE = 0; bnLast = now; }
   const dt = bnLast == null ? 0 : Math.min(1, Math.max(0, now - bnLast) / 1000); bnLast = now;
-  if (!(syncPaused || wh.paused || (rb && rb.pausedAt != null))) bnE += dt;
+  if (!(syncPaused || wh.paused || (rb && rb.pausedAt != null) || (rc && rc.pAt != null))) bnE += dt;
   return bnE;
 }
 // 會動的背景：白描是宣紙，月白、燭光有幾點很淡的微塵，燭光的光微微晃動；再畫左腳（練習時大拇趾在正中間）
@@ -3886,7 +4109,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck', 'bnSkin'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck', 'bnSkin', 'rcWhat'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;

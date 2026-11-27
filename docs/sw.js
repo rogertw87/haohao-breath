@@ -1,9 +1,9 @@
 // 好好呼吸：離線存檔
 // 1. 練習要用的東西（網頁、程式、主題圖片、提示音、呼吸聲）第一次打開時就存起來，之後沒網路也能練習
-// 2. 背景聲音存在另一個地方（hh-sound），在「離線使用」裡下載，或有網路時播過一次就自動留著；換新版也不會被清掉
+// 2. 背景聲音和朗誦的錄音存在另一個地方（hh-sound），在「離線使用」裡下載，或有網路時播過一次就自動留著；換新版也不會被清掉
 // 3. 網頁本身先試網路（拿到新版），網路太慢或沒網路就用存著的
 // 改了不帶版本號的檔案（圖片、提示音、說明頁）時，把 VER 加一，手機才會換成新的
-const VER = 'v6';
+const VER = 'v7';
 const APP = 'hh-app-' + VER, SND = 'hh-sound', FONT = 'hh-font';
 const CORE = [
   './', 'index.html', 'help.html', 'privacy.html', 'thanks.html', 'manifest.webmanifest', 'favicon.ico',
@@ -36,8 +36,8 @@ self.addEventListener('activate', e => {
   })());
 });
 
-// 背景聲音：audio/ 底下的 mp3（呼吸聲除外，那是練習本身要用的）
-const isSound = u => u.origin === location.origin && /\/audio\/[^/]+\.mp3$/.test(u.pathname) && !/\/breath-(in|out)\.mp3$/.test(u.pathname);
+// 背景聲音：audio/ 底下的 mp3（呼吸聲除外，那是練習本身要用的），和朗誦的兩段錄音（audio/om-*.mp4）
+const isSound = u => u.origin === location.origin && (/\/audio\/[^/]+\.mp3$/.test(u.pathname) || /\/audio\/om-[^/]+\.mp4$/.test(u.pathname)) && !/\/breath-(in|out)\.mp3$/.test(u.pathname);
 
 self.addEventListener('fetch', e => {
   const r = e.request;
