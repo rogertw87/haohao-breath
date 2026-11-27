@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=72">
+<link rel="stylesheet" href="styles.css?v=73">
 </head>
 <body>
 <main class="home">
@@ -623,6 +623,71 @@
   </div>
 </div>
 
+<!-- 朗誦：設定頁（唸「唵阿吽」或「唵阿」，跟著錄音唸） -->
+<section class="screen" id="rcSetup" hidden>
+  <div class="setup-inner">
+    <button class="back" data-action="close">← 返回</button>
+    <h2 class="ex-name">朗誦</h2>
+    <p class="desc wh-desc rc-desc" id="rcDesc"></p>
+
+    <span class="section-title music-title">唸什麼</span>
+    <div class="music-grid rc-what" id="rcWhatOpts"></div>
+
+    <span class="section-title music-title">這段錄音</span>
+    <div class="panel rows">
+      <div class="rc-rec"><div class="rc-rec-top"><span class="phase-row-label">長度</span><span class="rc-rec-len" id="rcRecLen"></span></div><div class="rc-rec-note" id="rcRecLenNote"></div></div>
+      <div class="rc-rec"><div class="rc-rec-top"><span class="phase-row-label">內容</span><span class="rc-rec-what" id="rcRecWhat"></span></div><div class="rc-rec-note" id="rcRecWhatNote"></div></div>
+    </div>
+    <p class="hint rb-hint">畫面會跟著錄音裡的聲音走，一起唸就好。</p>
+
+    <span class="section-title music-title">背景音樂</span>
+    <div class="music-grid" id="rcMusic"></div>
+    <div class="mine" id="rcMineBox" hidden>
+      <span class="mine-title">我的錄音</span>
+      <div id="rcMineRows"></div>
+    </div>
+    <p class="hint music-hint" id="rcMusicHint" hidden>練習開始時播放。</p>
+    <p class="rc-err" id="rcErr" role="alert" hidden></p>
+
+    <div class="start-bar">
+      <button class="btn btn-primary" data-action="rc-start">開始 · <span id="rcStartT"></span></button>
+    </div>
+  </div>
+</section>
+
+<!-- 朗誦：練習畫面（中間一個大字，照錄音的節奏換字） -->
+<section class="screen screen-center rc-run" id="rcRun" hidden>
+  <div class="run-inner">
+    <div class="run-head">
+      <span class="run-name" id="rcName">朗誦</span>
+      <span class="run-left">剩 <span id="rcLeft">0:00</span></span>
+    </div>
+    <div class="progress"><div class="progress-fill" id="rcProgress"></div></div>
+    <div class="rc-box" data-fxvis><canvas class="rc-cv" id="rcCv" role="img" aria-label="朗誦的畫面"></canvas></div>
+    <div class="rc-text" data-fxclear><span class="wh-label" id="rcLabel"></span><span class="wh-hint" id="rcHint"></span><span class="rc-cnt" id="rcCnt"></span><span class="rc-rep" id="rcRep"></span></div>
+    <div class="rb-actions">
+      <button class="wh-btn" id="rcPauseBtn" data-action="rc-pause">暫停</button>
+      <button class="wh-btn wh-btn-primary" id="rcResumeBtn" data-action="rc-resume" hidden>繼續</button>
+      <button class="wh-btn rb-stop" data-action="rc-stop">停止</button>
+    </div>
+  </div>
+</section>
+
+<!-- 朗誦：完成 -->
+<section class="screen screen-center" id="rcDone" hidden>
+  <div class="run-inner">
+    <div class="done-body">
+      <span class="done-tag">完成</span>
+      <span class="rb-done-title">唸完了</span>
+      <span class="rb-done-text" id="rcDoneText"></span>
+    </div>
+    <div class="done-actions">
+      <button class="btn btn-primary" data-action="rc-start">再唸一次</button>
+      <button class="btn btn-secondary" data-action="close">返回</button>
+    </div>
+  </div>
+</section>
+
 <!-- 聆聽：設定頁（不做呼吸練習，單純聽聲音） -->
 <section class="screen" id="lsSetup" hidden>
   <div class="setup-inner">
@@ -754,7 +819,7 @@
   </div>
 </section>
 
-<script src="app.js?v=89"></script>
+<script src="app.js?v=90"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
