@@ -19,7 +19,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&family=Noto+Serif+TC:wght@700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=73">
+<link rel="stylesheet" href="styles.css?v=74">
 </head>
 <body>
 <main class="home">
@@ -111,11 +111,15 @@
 
       <div class="section-head">
         <span class="section-title">總練習長度</span>
-        <span class="minutes-val"><span data-bind="minutes"></span> 分鐘</span>
+        <span class="minutes-val" id="lenVal">3 分鐘</span>
       </div>
-      <div class="panel slider-panel">
-        <input type="range" id="minutes" min="1" max="30" step="1">
-        <div class="ticks"><span>1</span><span>10</span><span>20</span><span>30</span></div>
+      <div class="panel slider-panel" id="lenPanel">
+        <div class="n-modes len-modes" id="lenModes" hidden></div>
+        <div id="lenSlider">
+          <input type="range" id="minutes" min="1" max="30" step="1">
+          <div class="ticks"><span>1</span><span>10</span><span>20</span><span>30</span></div>
+        </div>
+        <p class="len-note" id="lenNote" hidden>沒有時間限制，練到你按「結束」為止。練習時上面會顯示已經練了多久。</p>
       </div>
 
       <span class="section-title music-title">背景音樂</span>
@@ -132,7 +136,7 @@
       </div>
 
       <div class="start-bar">
-        <button class="btn btn-primary" data-action="start">開始 · <span data-bind="minutes"></span> 分鐘</button>
+        <button class="btn btn-primary" data-action="start">開始 · <span id="startLen">3 分鐘</span></button>
       </div>
     </div>
   </div>
@@ -143,9 +147,9 @@
   <div class="run-inner">
     <div class="run-head">
       <span class="run-name" data-bind="name"></span>
-      <span class="run-left">剩 <span id="totalText">0:00</span></span>
+      <span class="run-left"><span id="totalPre">剩</span> <span id="totalText">0:00</span></span>
     </div>
-    <div class="progress"><div class="progress-fill" id="progress"></div></div>
+    <div class="progress" id="progressBar"><div class="progress-fill" id="progress"></div></div>
 
     <div class="stage">
       <!-- 方塊呼吸 -->
@@ -191,7 +195,7 @@
     <div class="run-btns">
       <button class="btn btn-secondary" id="gPauseBtn" data-action="g-pause">暫停</button>
       <button class="btn btn-primary" id="gResumeBtn" data-action="g-resume" hidden>繼續</button>
-      <button class="btn btn-secondary run-stop" data-action="stop">停止</button>
+      <button class="btn btn-secondary run-stop" id="gStopBtn" data-action="stop">停止</button>
     </div>
   </div>
 </section>
@@ -201,7 +205,7 @@
   <div class="run-inner">
     <div class="done-body">
       <span class="done-tag">完成</span>
-      <span class="done-time"><span data-bind="minutes"></span>:00</span>
+      <span class="done-time" id="doneTime">3:00</span>
       <span class="done-name" data-bind="name"></span>
     </div>
     <div class="done-actions">
@@ -819,7 +823,7 @@
   </div>
 </section>
 
-<script src="app.js?v=90"></script>
+<script src="app.js?v=91"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "04c79372ae6c47f0a3ed04bc256d7bb4"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
