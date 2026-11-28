@@ -62,7 +62,7 @@ const fmtS = v => (Number.isInteger(v) ? v : v.toFixed(1)) + ' 秒';
 const $ = id => document.getElementById(id);
 
 // ---------- 狀態（設定會存在 localStorage） ----------
-const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '', rcWhat: '3', fsz: 0 });
+const DEFAULTS = () => ({ theme: 'light', custom: {}, minutes: 3, music: 'none', vol: 0.5, wh: {}, whAck: false, whHist: [], log: null, nMode: '3', rMode: '4', bdg: null, cueSet: 'bell', bellyCue: 'beat', bellyNoEnd: false, sy: null, fMode: '4780', rbAck: false, rbSnd: 'breath', lsSel: ['rain'], lsVol: {}, lsMin: 30, lsFade: 1, lsDim: true, lsMode: 'mix', lsSeq: [], lsXf: 'x', bnOpen: false, bnMin: 10, bnAck: false, bnSkin: '', rcWhat: '3', fsz: 0 });
 const state = Object.assign(
   DEFAULTS(),
   (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch (e) { return {}; } })()
@@ -78,8 +78,8 @@ let g = null, gPause0 = null, gPh = null;   // 一般練習的時間表、暫停
 
 function save() {
   syncMark();   // 雲端同步：記下改了什麼（見下方「雲端同步」）
-  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, rcWhat, litHide, todayHide, litCer, fsz } = state;
-  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, rcWhat, litHide, todayHide, litCer, fsz })); } catch (e) {}
+  const { custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, bellyNoEnd, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, rcWhat, litHide, todayHide, litCer, fsz } = state;
+  try { localStorage.setItem(KEY, JSON.stringify({ custom, minutes, music, vol, theme, wh, whAck, whHist, log, nMode, rMode, bdg, cueSet, bellyCue, bellyNoEnd, sy, fMode, rbAck, rbSnd, lsSel, lsVol, lsMin, lsFade, lsDim, lsMode, lsSeq, lsXf, bnOpen, bnMin, bnAck, bnSkin, rcWhat, litHide, todayHide, litCer, fsz })); } catch (e) {}
 }
 
 // ---------- 今日紀錄（存在這台裝置，登入雲端同步時會和其他裝置合併；日期換了就重新計算） ----------
@@ -951,6 +951,21 @@ function renderSetup() {
     : '一輪 ' + fmtS(r1) + '，' + state.minutes + ' 分鐘約 ' + Math.floor(state.minutes * 60 / cycle) + ' 輪';
 
   $('minutes').value = state.minutes;
+  // 總練習長度：諧振式呼吸可以選「不限時間」，其他練習只有拉桿
+  const canOpen = ex.id === 'belly', open = noEnd(ex);
+  $('lenModes').hidden = !canOpen;
+  $('lenPanel').classList.toggle('len-pick', canOpen);
+  $('lenModes').innerHTML = '';
+  if (canOpen) [[false, '定時'], [true, '不限時間']].forEach(([k, l]) => {
+    const b = document.createElement('button');
+    b.className = 'music-opt' + (open === k ? ' on' : '');
+    b.textContent = l; b.setAttribute('aria-pressed', open === k);
+    b.addEventListener('click', () => { state.bellyNoEnd = k; save(); renderSetup(); });
+    $('lenModes').appendChild(b);
+  });
+  $('lenSlider').hidden = open;
+  $('lenNote').hidden = !open;
+  $('lenVal').textContent = $('startLen').textContent = open ? '不限時間' : state.minutes + ' 分鐘';
   $('music').innerHTML = '';
   musicGrid($('music'), state.music, k => { state.music = k; save(); renderSetup(); });
   $('mineBox').hidden = !mine.length;
@@ -1045,7 +1060,12 @@ function run(i) {
   phaseTimers.push(setTimeout(() => run((i + 1) % seq.length), t * 1000));
 }
 
+// 諧振式呼吸選了「不限時間」：沒有結束時間，練到按「結束」
+const noEnd = ex => ex.id === 'belly' && !!state.bellyNoEnd;
+// 不限時間：從第一段開始到現在練了幾秒（暫停的時間不算）
+const gEl = () => g ? Math.max(0, ((gPause0 || performance.now()) - g.goAt) / 1000) : 0;
 function updateTotal() {
+  if (g && g.open) { $('totalText').textContent = fmt(Math.floor(gEl())); return; }
   $('totalText').textContent = fmt(totalLeft);
   $('progress').style.width = Math.min(100, 100 - (totalLeft / (state.minutes * 60)) * 100) + '%';
 }
@@ -1055,7 +1075,7 @@ function start() {
   // 按下開始後先等 2.5 秒（讓音樂先進來、準備好），再開始第一段
   const LEAD = 2500;
   duck = 1;
-  const ex = EX[cur], total = state.minutes * 60, end = Date.now() + LEAD + total * 1000;
+  const ex = EX[cur], open = noEnd(ex), total = open ? 0 : state.minutes * 60, end = Date.now() + LEAD + total * 1000;
   ctx(); // 在按下按鈕時就啟用音效，手機瀏覽器才不會擋
   loadCues();
   keepAlive.play().catch(() => {});
@@ -1075,8 +1095,13 @@ function start() {
   $('countText').textContent = '';
 
   totalLeft = total;
+  $('totalPre').textContent = open ? '已練' : '剩';
+  $('progressBar').style.visibility = open ? 'hidden' : '';
+  $('gStopBtn').textContent = open ? '結束' : '停止';
+  g = null;
+  if (open) $('totalText').textContent = '0:00';
   $('progress').style.transition = 'none';
-  updateTotal();
+  if (!open) updateTotal();
   void $('progress').offsetWidth;
   $('progress').style.transition = '';
   bind('minutes', state.minutes);
@@ -1084,9 +1109,9 @@ function start() {
 
   waveStart = null;
   raf = requestAnimationFrame(tick);
-  // g：這次練習的時間表（暫停時整個往後挪）。goAt 準備好、開始第一段，endAt 練完
+  // g：這次練習的時間表（暫停時整個往後挪）。goAt 準備好、開始第一段，endAt 練完；open＝不限時間，沒有 endAt
   const now = performance.now();
-  g = { total, exId: ex.id, goAt: now + LEAD, endAt: now + LEAD + total * 1000, go: false }; gPause0 = null; gPh = null;
+  g = { total, open, exId: ex.id, goAt: now + LEAD, endAt: open ? null : now + LEAD + total * 1000, go: false }; gPause0 = null; gPh = null;
   gPausedUi(false);
   gSched();
 }
@@ -1094,8 +1119,9 @@ function start() {
 function gSched() {
   const now = performance.now(), G = g;
   if (!G.go) timers.push(setTimeout(() => { G.go = true; run(0); }, Math.max(0, G.goAt - now)));
+  if (G.open) { timers.push(setInterval(updateTotal, 1000)); return; }   // 不限時間：每秒更新「已練」，不會自己結束
   timers.push(setInterval(() => { totalLeft = Math.min(G.total, (G.endAt - performance.now()) / 1000); updateTotal(); }, 1000));
-  timers.push(setTimeout(() => { clearAll(); stopMusic(); g = null; gPause0 = null; logDone(G.exId, G.total); show('done'); showAward(); }, Math.max(0, G.endAt - now)));
+  timers.push(setTimeout(() => { clearAll(); stopMusic(); g = null; gPause0 = null; logDone(G.exId, G.total); $('doneTime').textContent = fmt(G.total); show('done'); showAward(); }, Math.max(0, G.endAt - now)));
 }
 function gPausedUi(on) { $('gPauseBtn').hidden = on; $('gResumeBtn').hidden = !on; }
 // 暫停：倒數、圓點、波形、主題的動態背景都停在原地，提示音收掉（背景音樂照常，和其他練習一樣）
@@ -1103,7 +1129,8 @@ function gPause() {
   if (!g || gPause0 || screens.run.hidden) return;
   const now = performance.now(); gPause0 = now;
   clearPhase(); timers.forEach(t => { clearTimeout(t); clearInterval(t); }); timers = []; cancelAnimationFrame(raf); stopBreath(); stopCue();
-  totalLeft = Math.min(g.total, (g.endAt - now) / 1000); updateTotal();
+  if (!g.open) totalLeft = Math.min(g.total, (g.endAt - now) / 1000);
+  updateTotal();
   const el = dotEl(EX[cur]);
   if (el) { const m = new DOMMatrixReadOnly(getComputedStyle(el).transform); setDot(el, m.m41, m.m42, 0); }
   $('phaseLabel').textContent = '已暫停';
@@ -1113,7 +1140,7 @@ function gPause() {
 function gResume() {
   if (!g || !gPause0) return;
   const now = performance.now(), dt = now - gPause0; gPause0 = null;
-  g.goAt += dt; g.endAt += dt; if (waveStart != null) waveStart += dt; if (brPhase) brPhase.t0 += dt;
+  g.goAt += dt; if (g.endAt != null) g.endAt += dt; if (waveStart != null) waveStart += dt; if (brPhase) brPhase.t0 += dt;
   gSched();
   const ph = gPh;
   if (g.go && ph) {
@@ -1128,7 +1155,10 @@ function gResume() {
   gPausedUi(false);
 }
 
+// 練習中下面的按鈕：定時的是「停止」（回設定、不記錄）；不限時間的是「結束」：練了 10 秒以上就到完成畫面、記進今天的練習，不到 10 秒當作沒開始
 function stopEx() {
+  const G = g, sec = G && G.open && G.go ? Math.floor(gEl()) : 0;
+  if (sec >= 10) { clearAll(); stopMusic(); g = null; gPause0 = null; gPausedUi(false); logDone(G.exId, sec); $('doneTime').textContent = fmt(sec); show('done'); showAward(); return; }
   clearAll(); stopMusic(); g = null; gPause0 = null; gPausedUi(false);
   renderSetup();
   show('setup');
@@ -4109,7 +4139,7 @@ var LS_SYNC = 'haohao-breath-sync';   // 這台裝置的登入狀態 { email, to
 var DRIVE = 'https://www.googleapis.com/drive/v3', UPLOAD = 'https://www.googleapis.com/upload/drive/v3/files';
 var syncOn = !!GOOGLE_CLIENT_ID;
 // 會同步的設定（音量每台裝置不一樣，不同步）
-var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck', 'bnSkin', 'rcWhat'];
+var SET_KEYS = ['custom', 'minutes', 'music', 'theme', 'wh', 'whAck', 'nMode', 'rMode', 'cueSet', 'bellyCue', 'bellyNoEnd', 'fMode', 'rbAck', 'rbSnd', 'lsSel', 'lsMin', 'lsFade', 'lsDim', 'lsMode', 'lsSeq', 'lsXf', 'bnOpen', 'bnMin', 'bnAck', 'bnSkin', 'rcWhat'];
 // state.sy（跟著設定一起存）：dev 這台裝置的代號、others 其他裝置的紀錄、stamps 每項設定最後修改的時間、dirty 最後一次有變更的時間
 var sync = null, lastSnap = null, applying = false;
 var syncTimer = 0, syncBusy = false, syncAgain = false, syncErr = '', tokenClient = null, gisP = null;
